@@ -1,0 +1,21 @@
+:root {
+  --background: #161713;
+  --surface: #1d1f1a;
+  --text: #e7e6df;
+  --muted: #85877d;
+  --accent: #d9b46d;
+  --success: #87b26c;
+  --danger: #d46f64;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  color: var(--text);
+  background: var(--background);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}

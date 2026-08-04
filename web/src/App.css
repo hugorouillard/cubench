@@ -1,0 +1,72 @@
+main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 3rem;
+  box-sizing: border-box;
+}
+
+header,
+footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mark {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: 0.35rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.welcome {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.welcome h1 {
+  margin: 0.4rem 0 0.8rem;
+  color: var(--text);
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  font-weight: 500;
+  letter-spacing: -0.06em;
+}
+
+.welcome p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.eyebrow {
+  color: var(--accent) !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.status {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status--ok {
+  background: var(--success);
+}
+
+.status--offline {
+  background: var(--danger);
+}
