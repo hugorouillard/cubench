@@ -1,5 +1,24 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { randomScrambleForEvent } from 'cubing/scramble'
+import {
+  BarChart3,
+  Box,
+  Database,
+  Palette,
+  Plus,
+  RefreshCw,
+  Settings2,
+  Timer,
+  Trash2,
+  X,
+} from 'lucide-react'
 import {
   createSession,
   createSolve,
@@ -26,7 +45,66 @@ function phaseInstruction(phase: TimerPhase): string {
   if (phase === 'ready') return 'release to start'
   if (phase === 'running') return 'space to stop'
   if (phase === 'stopped') return 'hold space for next solve'
-  return 'hold space to ready'
+  return 'hold space to start'
+}
+
+function newestSolvesFirst(solves: Solve[]): Solve[] {
+  return solves.sort(
+    (left, right) =>
+      new Date(right.recorded_at).getTime() - new Date(left.recorded_at).getTime(),
+  )
+}
+
+type ModalProps = {
+  open: boolean
+  onClose: () => void
+  labelledBy: string
+  children: ReactNode
+}
+
+function Modal({ open, onClose, labelledBy, children }: ModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    if (open && !dialog.open) {
+      dialog.showModal()
+      requestAnimationFrame(() => {
+        dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+      })
+    } else if (!open && dialog.open) {
+      dialog.close()
+    }
+  }, [open])
+
+  return (
+    <dialog
+      className="app-dialog"
+      ref={dialogRef}
+      aria-labelledby={labelledBy}
+      onClose={() => {
+        requestAnimationFrame(() => {
+          if (
+            !document.querySelector('dialog[open]') &&
+            document.activeElement instanceof HTMLElement
+          ) {
+            document.activeElement.blur()
+          }
+        })
+      }}
+      onCancel={(event) => {
+        event.preventDefault()
+        onClose()
+      }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div className="dialog-panel">{children}</div>
+    </dialog>
+  )
 }
 
 type AppProps = {
@@ -40,12 +118,21 @@ function App({ initialTheme }: AppProps) {
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [pendingSaveIds, setPendingSaveIds] = useState<string[]>([])
+  const [saveFailed, setSaveFailed] = useState(false)
+  const [latestResultId, setLatestResultId] = useState('')
   const [error, setError] = useState('')
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
+  const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
   const [view, setView] = useState<'timer' | 'progress'>('timer')
   const [theme, setTheme] = useState<Theme>(initialTheme)
+  const activeSessionIdRef = useRef(activeSessionId)
+  const latestResultIdRef = useRef(latestResultId)
+  const deletedSolveIdsRef = useRef(new Set<string>())
+  activeSessionIdRef.current = activeSessionId
+  latestResultIdRef.current = latestResultId
+  const saving = pendingSaveIds.length > 0
 
   useEffect(() => {
     let cancelled = false
@@ -66,12 +153,29 @@ function App({ initialTheme }: AppProps) {
   }, [])
 
   useEffect(() => {
-    if (!activeSessionId) return
+    setLatestResultId('')
+    setSaveFailed(false)
+    if (!activeSessionId) {
+      setHistoryLoading(false)
+      return
+    }
+
     let cancelled = false
     setHistoryLoading(true)
     getSolves(activeSessionId)
       .then((loadedSolves) => {
-        if (!cancelled) setSolves(loadedSolves)
+        if (cancelled) return
+        setSolves((current) => {
+          const merged = new Map(
+            loadedSolves
+              .filter((solve) => !deletedSolveIdsRef.current.has(solve.id))
+              .map((solve) => [solve.id, solve]),
+          )
+          for (const solve of current) {
+            if (solve.session_id === activeSessionId) merged.set(solve.id, solve)
+          }
+          return newestSolvesFirst([...merged.values()])
+        })
       })
       .catch((loadError: unknown) => {
         if (!cancelled) setError(errorMessage(loadError))
@@ -83,6 +187,14 @@ function App({ initialTheme }: AppProps) {
       cancelled = true
     }
   }, [activeSessionId])
+
+  function selectSession(sessionId: string) {
+    setSolves([])
+    setLatestResultId('')
+    latestResultIdRef.current = ''
+    setSaveFailed(false)
+    setActiveSessionId(sessionId)
+  }
 
   async function generateScramble() {
     setScrambleLoading(true)
@@ -101,29 +213,45 @@ function App({ initialTheme }: AppProps) {
     const completedScramble = scramble
     if (!sessionId || !completedScramble) return
 
-    setSaving(true)
+    const solveId = crypto.randomUUID()
+    setPendingSaveIds((current) => [...current, solveId])
+    setSaveFailed(false)
+    setLatestResultId(solveId)
+    latestResultIdRef.current = solveId
     void generateScramble()
     try {
       const savedSolve = await createSolve({
-        id: crypto.randomUUID(),
+        id: solveId,
         session_id: sessionId,
         duration_ms: durationMs,
         penalty: 'none',
         scramble: completedScramble,
         recorded_at: new Date().toISOString(),
       })
-      if (sessionId === activeSessionId) {
-        setSolves((current) => [savedSolve, ...current])
+      if (sessionId === activeSessionIdRef.current) {
+        setSolves((current) => newestSolvesFirst([savedSolve, ...current]))
       }
     } catch (saveError) {
+      if (latestResultIdRef.current === solveId) {
+        setLatestResultId('')
+        latestResultIdRef.current = ''
+        setSaveFailed(true)
+      }
       setError(`Solve was not saved: ${errorMessage(saveError)}`)
     } finally {
-      setSaving(false)
+      setPendingSaveIds((current) => current.filter((id) => id !== solveId))
     }
   }
 
   const { phase, elapsedMs } = useTimer(
-    Boolean(view === 'timer' && activeSessionId && scramble && !scrambleLoading),
+    Boolean(
+      view === 'timer' &&
+      activeSessionId &&
+      scramble &&
+      !scrambleLoading &&
+      !sessionFormOpen &&
+      !practiceSettingsOpen,
+    ),
     handleTimerComplete,
   )
   const controlsDisabled = phase === 'holding' || phase === 'ready' || phase === 'running'
@@ -135,7 +263,7 @@ function App({ initialTheme }: AppProps) {
     try {
       const session = await createSession(newSessionName)
       setSessions((current) => [...current, session])
-      setActiveSessionId(session.id)
+      selectSession(session.id)
       setNewSessionName('')
       setSessionFormOpen(false)
     } catch (sessionError) {
@@ -159,7 +287,12 @@ function App({ initialTheme }: AppProps) {
     if (!window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return
     try {
       await deleteSolve(solve.id)
+      deletedSolveIdsRef.current.add(solve.id)
       setSolves((current) => current.filter((item) => item.id !== solve.id))
+      if (solve.id === latestResultIdRef.current) {
+        setLatestResultId('')
+        latestResultIdRef.current = ''
+      }
     } catch (deleteError) {
       setError(errorMessage(deleteError))
     }
@@ -189,6 +322,8 @@ function App({ initialTheme }: AppProps) {
   }
 
   const lastSolve = solves[0]
+  const latestResult = solves.find((solve) => solve.id === latestResultId)
+  const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
   const activeSession = sessions.find((session) => session.id === activeSessionId)
   const statTime = (duration: number | null) =>
@@ -202,39 +337,306 @@ function App({ initialTheme }: AppProps) {
 
   return (
     <div className={`app app--${phase}`}>
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="Cube Timer home">
-          <span className="brand__mark">CT</span>
-          <span className="brand__name">cube timer</span>
-          <span className="brand__edition">local / 001</span>
+      <header className="site-header page-width focus-chrome">
+        <a
+          className="brand"
+          href="/"
+          aria-label="Cubetimer home"
+          tabIndex={controlsDisabled ? -1 : 0}
+        >
+          <span className="brand-mark" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className="brand-copy">
+            <strong>cubetimer</strong>
+            <small>solve better</small>
+          </span>
         </a>
 
-        <nav className="view-tabs" aria-label="Main views">
+        <nav className="main-nav" aria-label="Main views">
           <button
             className={view === 'timer' ? 'is-active' : ''}
             type="button"
             onClick={() => setView('timer')}
             disabled={controlsDisabled}
+            aria-label="Timer"
+            aria-current={view === 'timer' ? 'page' : undefined}
+            title="Timer"
           >
-            timer
+            <Timer aria-hidden="true" />
           </button>
           <button
             className={view === 'progress' ? 'is-active' : ''}
             type="button"
             onClick={() => setView('progress')}
             disabled={controlsDisabled}
+            aria-label="Progress"
+            aria-current={view === 'progress' ? 'page' : undefined}
+            title="Progress"
           >
-            progress
+            <BarChart3 aria-hidden="true" />
           </button>
         </nav>
 
-        <div className="session-control">
-          <span className="control-label">session</span>
+        <div className={`app-status${error ? ' app-status--error' : ''}`} role="status">
+          <span />
+          <Database aria-hidden="true" />
+          <small>{error ? 'attention' : saving ? 'saving' : 'local'}</small>
+        </div>
+      </header>
+
+      {error && (
+        <aside className="notification" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError('')} aria-label="Dismiss error">
+            <X aria-hidden="true" />
+          </button>
+        </aside>
+      )}
+
+      {view === 'timer' ? (
+        <main className="practice-view page-width">
+          <div className="practice-config-row focus-chrome">
+            <div className="practice-config practice-config--desktop" aria-label="Practice settings">
+              <div className="config-group config-event">
+                <Box aria-hidden="true" />
+                <span className="config-active">3x3</span>
+              </div>
+              <span className="config-separator" />
+              <div className="config-group config-session">
+                <select
+                  value={activeSessionId}
+                  onChange={(event) => selectSession(event.target.value)}
+                  disabled={controlsDisabled}
+                  aria-label="Practice session"
+                >
+                  {sessions.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {session.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setSessionFormOpen(true)}
+                  disabled={controlsDisabled}
+                  aria-label="Create session"
+                  title="Create session"
+                >
+                  <Plus aria-hidden="true" />
+                </button>
+              </div>
+              <span className="config-separator" />
+              <div className="config-group">
+                <button
+                  type="button"
+                  onClick={() => void generateScramble()}
+                  disabled={controlsDisabled || scrambleLoading}
+                  aria-label="New scramble"
+                  title="New scramble"
+                >
+                  <RefreshCw aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <button
+              className="practice-config-mobile"
+              type="button"
+              onClick={() => setPracticeSettingsOpen(true)}
+              disabled={controlsDisabled}
+            >
+              <Settings2 aria-hidden="true" />
+              practice settings
+            </button>
+          </div>
+
+          <section className="timer-stage" aria-label="Timer">
+            <button
+              className="scramble"
+              type="button"
+              onClick={() => void generateScramble()}
+              disabled={controlsDisabled || scrambleLoading}
+              title="Generate another scramble"
+            >
+              {scrambleLoading ? 'preparing scramble...' : scramble}
+            </button>
+
+            <div className="timer-readout" aria-live="off">
+              {displayedTime}
+            </div>
+
+            <div className="timer-status" aria-live="polite">
+              <span className="keycap">space</span>
+              <span>{phaseInstruction(phase)}</span>
+            </div>
+
+            <div className="post-solve" aria-live="polite">
+              {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
+              {phase === 'stopped' && saveFailed && (
+                <span className="post-solve-error">solve not saved</span>
+              )}
+              {phase === 'stopped' && !latestResultPending && latestResult && (
+                <div className="post-solve-actions" aria-label="Latest solve actions">
+                  <button
+                    className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
+                    type="button"
+                    onClick={() => void handlePenalty(latestResult, 'plus2')}
+                    aria-pressed={latestResult.penalty === 'plus2'}
+                  >
+                    +2
+                  </button>
+                  <button
+                    className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
+                    type="button"
+                    onClick={() => void handlePenalty(latestResult, 'dnf')}
+                    aria-pressed={latestResult.penalty === 'dnf'}
+                  >
+                    dnf
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(latestResult)}
+                    aria-label="Delete latest solve"
+                    title="Delete latest solve"
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="session-stats focus-chrome" aria-label="Current statistics">
+              <div>
+                <span>mean</span>
+                <strong>{statTime(summary.mean)}</strong>
+              </div>
+              <div>
+                <span>ao5</span>
+                <strong>{statTime(summary.currentAo5)}</strong>
+              </div>
+              <div>
+                <span>best ao5</span>
+                <strong>{statTime(summary.bestAo5)}</strong>
+              </div>
+              <div>
+                <span>ao12</span>
+                <strong>{statTime(summary.currentAo12)}</strong>
+              </div>
+              <div>
+                <span>best</span>
+                <strong>{statTime(summary.bestSingle)}</strong>
+              </div>
+            </div>
+          </section>
+        </main>
+      ) : (
+        <ProgressView
+          session={activeSession}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          solves={solves}
+          loading={historyLoading}
+          onSessionChange={selectSession}
+          onCreateSession={() => setSessionFormOpen(true)}
+          onPenalty={handlePenalty}
+          onDelete={handleDelete}
+          onExport={() => void handleExport()}
+        />
+      )}
+
+      <footer className="site-footer page-width focus-chrome">
+        <div className="footer-copy">
+          <span>space / hold / release / stop</span>
+          <span>browser performance clock</span>
+        </div>
+        <div className="footer-controls">
+          <label className="footer-theme">
+            <Palette aria-hidden="true" />
+            <span className="sr-only">Theme</span>
+            <select value={theme} onChange={handleThemeChange} disabled={controlsDisabled}>
+              {THEME_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span>local / 001</span>
+        </div>
+      </footer>
+
+      <Modal
+        open={sessionFormOpen}
+        onClose={() => setSessionFormOpen(false)}
+        labelledBy="session-dialog-title"
+      >
+        <div className="dialog-heading">
+          <div>
+            <span>practice sessions</span>
+            <h2 id="session-dialog-title">Create a session</h2>
+          </div>
+          <button type="button" onClick={() => setSessionFormOpen(false)} aria-label="Close">
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        <form className="session-form" onSubmit={handleCreateSession}>
+          <label htmlFor="session-name">session name</label>
+          <input
+            id="session-name"
+            value={newSessionName}
+            onChange={(event) => setNewSessionName(event.target.value)}
+            maxLength={60}
+            placeholder="e.g. slow solves"
+            data-autofocus
+          />
+          <div className="dialog-actions">
+            <button className="button-primary" type="submit">
+              create
+            </button>
+            <button type="button" onClick={() => setSessionFormOpen(false)}>
+              cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={practiceSettingsOpen}
+        onClose={() => setPracticeSettingsOpen(false)}
+        labelledBy="practice-dialog-title"
+      >
+        <div className="dialog-heading">
+          <div>
+            <span>timer</span>
+            <h2 id="practice-dialog-title">Practice settings</h2>
+          </div>
+          <button type="button" onClick={() => setPracticeSettingsOpen(false)} aria-label="Close">
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        <div className="setting-row">
+          <div>
+            <strong>event</strong>
+            <span>scramble type</span>
+          </div>
+          <span className="setting-value is-active">
+            3x3
+          </span>
+        </div>
+        <div className="setting-row setting-row--session">
+          <div>
+            <strong>session</strong>
+            <span>where solves are saved</span>
+          </div>
           <select
             value={activeSessionId}
-            onChange={(event) => setActiveSessionId(event.target.value)}
-            disabled={controlsDisabled}
+            onChange={(event) => selectSession(event.target.value)}
             aria-label="Practice session"
+            data-autofocus
           >
             {sessions.map((session) => (
               <option key={session.id} value={session.id}>
@@ -242,193 +644,31 @@ function App({ initialTheme }: AppProps) {
               </option>
             ))}
           </select>
-          <button
-            className="icon-button"
-            type="button"
-            onClick={() => setSessionFormOpen((open) => !open)}
-            disabled={controlsDisabled}
-            aria-label="Create a practice session"
-            title="New session"
-          >
-            +
-          </button>
-          {sessionFormOpen && (
-            <form className="session-form" onSubmit={handleCreateSession}>
-              <label htmlFor="session-name">new session</label>
-              <input
-                id="session-name"
-                value={newSessionName}
-                onChange={(event) => setNewSessionName(event.target.value)}
-                maxLength={60}
-                placeholder="e.g. slow solves"
-                autoFocus
-              />
-              <div>
-                <button type="submit">create</button>
-                <button type="button" onClick={() => setSessionFormOpen(false)}>
-                  cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
-
-        <div className="theme-control">
-          <label className="control-label" htmlFor="theme-select">
-            theme
-          </label>
-          <select
-            id="theme-select"
-            value={theme}
-            onChange={handleThemeChange}
-            disabled={controlsDisabled}
-          >
-            {THEME_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <span className="connection">
-          <i className={error ? 'connection__dot connection__dot--error' : 'connection__dot'} />
-          {error ? 'attention' : saving ? 'saving' : 'local api'}
-        </span>
-      </header>
-
-      {error && (
-        <aside className="error-banner" role="alert">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError('')}>
-            dismiss
-          </button>
-        </aside>
-      )}
-
-      {view === 'timer' ? (
-      <main className="workspace">
-        <section className="timer-stage" aria-label="Timer">
-          <div className="event-label">
-            <span>event</span>
-            <strong>3x3</strong>
-          </div>
-
+        <div className="dialog-actions dialog-actions--stacked">
           <button
-            className="scramble"
+            className="button-primary"
             type="button"
-            onClick={() => void generateScramble()}
-            disabled={controlsDisabled || scrambleLoading}
-            title="Generate another scramble"
+            onClick={() => {
+              setPracticeSettingsOpen(false)
+              void generateScramble()
+            }}
           >
-            {scrambleLoading ? 'preparing scramble...' : scramble}
+            <RefreshCw aria-hidden="true" />
+            new scramble
           </button>
-
-          <div className="timer-readout" aria-live="off">
-            {displayedTime}
-          </div>
-
-          <div className="timer-instruction" aria-live="polite">
-            <span className="space-key">space</span>
-            <span>{phaseInstruction(phase)}</span>
-          </div>
-
-          <div className="live-stats" aria-label="Current statistics">
-            <div>
-              <span>mean</span>
-              <strong>{statTime(summary.mean)}</strong>
-            </div>
-            <div>
-              <span>current ao5</span>
-              <strong>{statTime(summary.currentAo5)}</strong>
-            </div>
-            <div>
-              <span>best ao5</span>
-              <strong>{statTime(summary.bestAo5)}</strong>
-            </div>
-            <div>
-              <span>current ao12</span>
-              <strong>{statTime(summary.currentAo12)}</strong>
-            </div>
-            <div>
-              <span>best</span>
-              <strong>{statTime(summary.bestSingle)}</strong>
-            </div>
-          </div>
-        </section>
-
-        <aside className="history-panel">
-          <div className="panel-heading">
-            <div>
-              <span className="panel-kicker">session log</span>
-              <h2>Recent solves</h2>
-            </div>
-            <span className="solve-count">{solves.length}</span>
-          </div>
-
-          <div className="solve-list">
-            {historyLoading ? (
-              <p className="empty-state">loading history...</p>
-            ) : solves.length === 0 ? (
-              <p className="empty-state">Your first solve will appear here.</p>
-            ) : (
-              solves.slice(0, 12).map((solve, index) => (
-                <article className="solve-row" key={solve.id}>
-                  <span className="solve-index">{String(solves.length - index).padStart(2, '0')}</span>
-                  <div className="solve-result">
-                    <strong>{formatTime(solve.duration_ms, solve.penalty)}</strong>
-                    <span>
-                      {new Date(solve.recorded_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                      {solve.penalty === 'dnf' && ` / ${formatTime(solve.duration_ms)}`}
-                    </span>
-                  </div>
-                  <div className="solve-actions">
-                    <button
-                      className={solve.penalty === 'plus2' ? 'is-active' : ''}
-                      type="button"
-                      onClick={() => void handlePenalty(solve, 'plus2')}
-                      title="Toggle two-second penalty"
-                    >
-                      +2
-                    </button>
-                    <button
-                      className={solve.penalty === 'dnf' ? 'is-active' : ''}
-                      type="button"
-                      onClick={() => void handlePenalty(solve, 'dnf')}
-                      title="Toggle DNF"
-                    >
-                      dnf
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(solve)}
-                      title="Delete solve"
-                    >
-                      del
-                    </button>
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </aside>
-      </main>
-      ) : (
-        <ProgressView
-          session={activeSession}
-          solves={solves}
-          onExport={() => void handleExport()}
-        />
-      )}
-
-      <footer className="bottombar">
-        <span>timing: browser performance clock</span>
-        <span>space / hold / release / stop</span>
-        <span>data: sqlite</span>
-      </footer>
+          <button
+            type="button"
+            onClick={() => {
+              setPracticeSettingsOpen(false)
+              setSessionFormOpen(true)
+            }}
+          >
+            <Plus aria-hidden="true" />
+            new session
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

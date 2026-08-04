@@ -5,6 +5,7 @@ export const THEME_OPTIONS = [
     background: '#1e1e2e',
   },
   { id: 'original', label: 'original', background: '#161713' },
+  { id: 'serika-dark', label: 'serika dark', background: '#323437' },
 ] as const
 
 export type Theme = (typeof THEME_OPTIONS)[number]['id']
