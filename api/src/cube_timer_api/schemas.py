@@ -52,3 +52,10 @@ class SolveUpdate(BaseModel):
 
 class Solve(SolveCreate):
     created_at: datetime
+
+
+class ExportData(BaseModel):
+    version: int
+    exported_at: datetime
+    sessions: list[PracticeSession]
+    solves: list[Solve]

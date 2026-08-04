@@ -1,0 +1,244 @@
+.progress-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(0rem, 4vw, 4rem) 2rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-light) transparent;
+}
+
+.progress-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.4rem;
+}
+
+.progress-heading h1 {
+  margin: 0.55rem 0 0;
+  color: var(--text);
+  font-size: clamp(2rem, 4.5vw, 4.5rem);
+  font-weight: 400;
+  letter-spacing: -0.07em;
+}
+
+.export-button {
+  border: 1px solid var(--line-light);
+  padding: 0.65rem 0.9rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.metric-grid article {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  padding: 1.1rem;
+}
+
+.metric-grid article:last-child {
+  border-right: 0;
+}
+
+.metric-grid span {
+  display: block;
+  margin-bottom: 0.8rem;
+  color: var(--muted-dark);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.metric-grid strong {
+  color: var(--text);
+  font-size: clamp(1rem, 2vw, 1.65rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 0.7fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.chart-card,
+.pb-card {
+  min-height: 23rem;
+  border: 1px solid var(--line);
+  padding: 1.25rem;
+}
+
+.card-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem;
+}
+
+.card-heading h2 {
+  margin: 0.3rem 0 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 1rem;
+  color: var(--muted-dark);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+
+.chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chart-legend i {
+  width: 0.7rem;
+  height: 2px;
+}
+
+.mean-key {
+  background: var(--accent);
+}
+
+.best-key {
+  background: var(--muted);
+}
+
+.progress-chart {
+  width: 100%;
+  min-height: 17rem;
+  margin-top: 1.2rem;
+  overflow: visible;
+}
+
+.progress-chart line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.chart-line--mean {
+  stroke: var(--accent);
+}
+
+.chart-line--best {
+  stroke: var(--muted);
+  stroke-dasharray: 4 5;
+}
+
+.chart-point {
+  fill: var(--background);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.progress-chart text {
+  fill: var(--muted-dark);
+  font-size: 11px;
+}
+
+.chart-empty {
+  display: grid;
+  min-height: 16rem;
+  place-items: center;
+  margin: 0;
+  color: var(--muted-dark);
+  font-size: 0.7rem;
+}
+
+.pb-list {
+  margin-top: 0.3rem;
+}
+
+.pb-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  min-height: 3.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pb-row span,
+.pb-row time {
+  color: var(--muted-dark);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+
+.pb-row strong {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+@media (max-width: 1000px) {
+  .metric-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .metric-grid article:nth-child(3) {
+    border-right: 0;
+  }
+
+  .metric-grid article:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .progress-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .progress-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .metric-grid article:nth-child(odd) {
+    border-right: 1px solid var(--line);
+  }
+
+  .metric-grid article:nth-child(even) {
+    border-right: 0;
+  }
+
+  .metric-grid article:nth-child(-n + 4) {
+    border-bottom: 1px solid var(--line);
+  }
+}

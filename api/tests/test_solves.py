@@ -52,3 +52,16 @@ def test_duplicate_solve_is_rejected(client: TestClient) -> None:
     response = client.post("/api/solves", json=payload)
 
     assert response.status_code == 409
+
+
+def test_export_contains_sessions_and_solves(client: TestClient) -> None:
+    session_id = client.get("/api/sessions").json()[0]["id"]
+    payload = solve_payload(session_id)
+    client.post("/api/solves", json=payload)
+
+    response = client.get("/api/export")
+
+    assert response.status_code == 200
+    assert response.json()["version"] == 1
+    assert response.json()["sessions"][0]["id"] == session_id
+    assert response.json()["solves"][0]["id"] == payload["id"]

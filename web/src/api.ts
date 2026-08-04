@@ -1,4 +1,10 @@
-import type { Penalty, PracticeSession, Solve, SolveInput } from './types'
+import type {
+  ExportData,
+  Penalty,
+  PracticeSession,
+  Solve,
+  SolveInput,
+} from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -51,4 +57,8 @@ export function updateSolvePenalty(
 
 export function deleteSolve(solveId: string): Promise<void> {
   return request(`/api/solves/${solveId}`, { method: 'DELETE' })
+}
+
+export function getExportData(): Promise<ExportData> {
+  return request('/api/export')
 }

@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Query, Response, status
 
 from cube_timer_api.database import connect, initialize_database
 from cube_timer_api.schemas import (
+    ExportData,
     PracticeSession,
     PracticeSessionCreate,
     PracticeSessionUpdate,
@@ -171,3 +172,24 @@ def delete_solve(solve_id: UUID) -> Response:
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Solve not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get("/api/export", response_model=ExportData)
+def export_data() -> dict:
+    with connect() as connection:
+        sessions = connection.execute(
+            "SELECT id, name, created_at FROM practice_sessions ORDER BY created_at"
+        ).fetchall()
+        solves = connection.execute(
+            """
+            SELECT id, session_id, duration_ms, penalty, scramble,
+                   recorded_at, created_at
+            FROM solves ORDER BY recorded_at
+            """
+        ).fetchall()
+    return {
+        "version": 1,
+        "exported_at": datetime.now(UTC).isoformat(),
+        "sessions": [dict(row) for row in sessions],
+        "solves": [dict(row) for row in solves],
+    }

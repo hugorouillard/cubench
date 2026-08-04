@@ -17,3 +17,10 @@ export type Solve = {
 }
 
 export type SolveInput = Omit<Solve, 'created_at'>
+
+export type ExportData = {
+  version: number
+  exported_at: string
+  sessions: PracticeSession[]
+  solves: Solve[]
+}

@@ -63,6 +63,30 @@
   gap: 0.55rem;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 0.2rem;
+  border: 1px solid var(--line);
+  padding: 0.18rem;
+}
+
+.view-tabs button {
+  border: 0;
+  padding: 0.42rem 0.75rem;
+  color: var(--muted-dark);
+  background: transparent;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.view-tabs button:hover,
+.view-tabs button.is-active {
+  color: var(--background);
+  background: var(--accent);
+}
+
 .control-label {
   color: var(--muted-dark);
 }
@@ -284,6 +308,46 @@ select:disabled {
   text-transform: uppercase;
 }
 
+.live-stats {
+  position: absolute;
+  right: clamp(1rem, 3vw, 3rem);
+  bottom: 1.15rem;
+  left: clamp(1rem, 3vw, 3rem);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
+  transition: opacity 150ms ease;
+}
+
+.live-stats div {
+  border-right: 1px solid var(--line);
+}
+
+.live-stats div:last-child {
+  border-right: 0;
+}
+
+.live-stats span,
+.live-stats strong {
+  display: block;
+}
+
+.live-stats span {
+  margin-bottom: 0.35rem;
+  color: var(--muted-dark);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.live-stats strong {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
 .space-key {
   border: 1px solid var(--line-light);
   border-radius: 0.2rem;
@@ -305,6 +369,10 @@ select:disabled {
 .app--running .scramble,
 .app--running .event-label {
   opacity: 0.16;
+}
+
+.app--running .live-stats {
+  opacity: 0;
 }
 
 .app--running .timer-readout {
@@ -439,6 +507,14 @@ select:disabled {
     display: none;
   }
 
+  .topbar {
+    gap: 0.7rem;
+  }
+
+  .view-tabs {
+    margin-left: auto;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -447,6 +523,11 @@ select:disabled {
     min-height: 65vh;
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+
+  .live-stats {
+    grid-template-columns: repeat(5, minmax(4rem, 1fr));
+    overflow-x: auto;
   }
 
   .history-panel {
@@ -466,6 +547,10 @@ select:disabled {
 
   .brand__name {
     display: none;
+  }
+
+  .view-tabs button {
+    padding-inline: 0.45rem;
   }
 
   select {

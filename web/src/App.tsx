@@ -4,10 +4,13 @@ import {
   createSession,
   createSolve,
   deleteSolve,
+  getExportData,
   getSessions,
   getSolves,
   updateSolvePenalty,
 } from './api'
+import { ProgressView } from './ProgressView'
+import { summarizeSolves } from './stats'
 import { formatTime } from './timer'
 import type { Penalty, PracticeSession, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
@@ -36,6 +39,7 @@ function App() {
   const [error, setError] = useState('')
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
+  const [view, setView] = useState<'timer' | 'progress'>('timer')
 
   useEffect(() => {
     let cancelled = false
@@ -113,7 +117,7 @@ function App() {
   }
 
   const { phase, elapsedMs } = useTimer(
-    Boolean(activeSessionId && scramble && !scrambleLoading),
+    Boolean(view === 'timer' && activeSessionId && scramble && !scrambleLoading),
     handleTimerComplete,
   )
   const controlsDisabled = phase === 'holding' || phase === 'ready' || phase === 'running'
@@ -155,7 +159,27 @@ function App() {
     }
   }
 
+  async function handleExport() {
+    try {
+      const data = await getExportData()
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      )
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `cube-timer-${new Date().toISOString().slice(0, 10)}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (exportError) {
+      setError(errorMessage(exportError))
+    }
+  }
+
   const lastSolve = solves[0]
+  const summary = summarizeSolves(solves)
+  const activeSession = sessions.find((session) => session.id === activeSessionId)
+  const statTime = (duration: number | null) =>
+    duration === null ? '--' : formatTime(duration)
   const displayedTime =
     phase === 'running' || phase === 'stopped'
       ? formatTime(elapsedMs)
@@ -171,6 +195,25 @@ function App() {
           <span className="brand__name">cube timer</span>
           <span className="brand__edition">local / 001</span>
         </a>
+
+        <nav className="view-tabs" aria-label="Main views">
+          <button
+            className={view === 'timer' ? 'is-active' : ''}
+            type="button"
+            onClick={() => setView('timer')}
+            disabled={controlsDisabled}
+          >
+            timer
+          </button>
+          <button
+            className={view === 'progress' ? 'is-active' : ''}
+            type="button"
+            onClick={() => setView('progress')}
+            disabled={controlsDisabled}
+          >
+            progress
+          </button>
+        </nav>
 
         <div className="session-control">
           <span className="control-label">session</span>
@@ -232,6 +275,7 @@ function App() {
         </aside>
       )}
 
+      {view === 'timer' ? (
       <main className="workspace">
         <section className="timer-stage" aria-label="Timer">
           <div className="event-label">
@@ -256,6 +300,29 @@ function App() {
           <div className="timer-instruction" aria-live="polite">
             <span className="space-key">space</span>
             <span>{phaseInstruction(phase)}</span>
+          </div>
+
+          <div className="live-stats" aria-label="Current statistics">
+            <div>
+              <span>mean</span>
+              <strong>{statTime(summary.mean)}</strong>
+            </div>
+            <div>
+              <span>current ao5</span>
+              <strong>{statTime(summary.currentAo5)}</strong>
+            </div>
+            <div>
+              <span>best ao5</span>
+              <strong>{statTime(summary.bestAo5)}</strong>
+            </div>
+            <div>
+              <span>current ao12</span>
+              <strong>{statTime(summary.currentAo12)}</strong>
+            </div>
+            <div>
+              <span>best</span>
+              <strong>{statTime(summary.bestSingle)}</strong>
+            </div>
           </div>
         </section>
 
@@ -318,6 +385,13 @@ function App() {
           </div>
         </aside>
       </main>
+      ) : (
+        <ProgressView
+          session={activeSession}
+          solves={solves}
+          onExport={() => void handleExport()}
+        />
+      )}
 
       <footer className="bottombar">
         <span>timing: browser performance clock</span>
