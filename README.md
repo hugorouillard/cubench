@@ -18,10 +18,18 @@ frontend, a FastAPI backend, and a SQLite database.
 - Node.js 22 or newer
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
+- [just](https://just.systems/)
 
 ## Run locally
 
-Start the API in one terminal:
+Install dependencies and run the complete stack:
+
+```bash
+just install
+just dev
+```
+
+Alternatively, start each process separately. Start the API in one terminal:
 
 ```bash
 cd api
