@@ -1,4 +1,24 @@
 :root {
+  --background: #1e1e2e;
+  --surface: #181825;
+  --text: #cdd6f4;
+  --muted: #a6adc8;
+  --muted-dark: #6c7086;
+  --accent: #cba6f7;
+  --success: #a6e3a1;
+  --danger: #f38ba8;
+  --line: #313244;
+  --line-light: #45475a;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  color: var(--text);
+  background: var(--background);
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='original'] {
   --background: #161713;
   --surface: #1d1f1a;
   --text: #e7e6df;
@@ -9,12 +29,6 @@
   --danger: #d46f64;
   --line: #292b25;
   --line-light: #3a3d35;
-  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
-  color: var(--text);
-  background: var(--background);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
 }
 
 body {

@@ -63,6 +63,16 @@
   gap: 0.55rem;
 }
 
+.theme-control {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.theme-control select {
+  min-width: 10.5rem;
+}
+
 .view-tabs {
   display: flex;
   gap: 0.2rem;
@@ -494,16 +504,10 @@ select:disabled {
   transition: opacity 150ms ease;
 }
 
-@media (max-width: 900px) {
-  .app {
-    overflow: auto;
-  }
-
+@media (max-width: 1100px) {
   .brand__edition,
   .control-label,
-  .connection,
-  .bottombar span:first-child,
-  .bottombar span:last-child {
+  .connection {
     display: none;
   }
 
@@ -513,6 +517,17 @@ select:disabled {
 
   .view-tabs {
     margin-left: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .app {
+    overflow: auto;
+  }
+
+  .bottombar span:first-child,
+  .bottombar span:last-child {
+    display: none;
   }
 
   .workspace {
@@ -540,6 +555,23 @@ select:disabled {
   }
 }
 
+@media (max-width: 760px) {
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .view-tabs,
+  .theme-control {
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  .theme-control select {
+    min-width: 8.5rem;
+  }
+}
+
 @media (max-width: 560px) {
   .app {
     padding: 1rem;
@@ -555,6 +587,11 @@ select:disabled {
 
   select {
     min-width: 7rem;
+  }
+
+  .theme-control select {
+    min-width: 7.25rem;
+    max-width: 7.25rem;
   }
 
   .timer-stage {

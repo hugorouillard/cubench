@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { randomScrambleForEvent } from 'cubing/scramble'
 import {
   createSession,
@@ -11,6 +11,7 @@ import {
 } from './api'
 import { ProgressView } from './ProgressView'
 import { summarizeSolves } from './stats'
+import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatTime } from './timer'
 import type { Penalty, PracticeSession, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
@@ -28,7 +29,11 @@ function phaseInstruction(phase: TimerPhase): string {
   return 'hold space to ready'
 }
 
-function App() {
+type AppProps = {
+  initialTheme: Theme
+}
+
+function App({ initialTheme }: AppProps) {
   const [sessions, setSessions] = useState<PracticeSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState('')
   const [solves, setSolves] = useState<Solve[]>([])
@@ -40,6 +45,7 @@ function App() {
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
   const [view, setView] = useState<'timer' | 'progress'>('timer')
+  const [theme, setTheme] = useState<Theme>(initialTheme)
 
   useEffect(() => {
     let cancelled = false
@@ -175,6 +181,13 @@ function App() {
     }
   }
 
+  function handleThemeChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextTheme = event.target.value
+    if (!isTheme(nextTheme)) return
+    setTheme(nextTheme)
+    applyTheme(nextTheme)
+  }
+
   const lastSolve = solves[0]
   const summary = summarizeSolves(solves)
   const activeSession = sessions.find((session) => session.id === activeSessionId)
@@ -258,6 +271,24 @@ function App() {
               </div>
             </form>
           )}
+        </div>
+
+        <div className="theme-control">
+          <label className="control-label" htmlFor="theme-select">
+            theme
+          </label>
+          <select
+            id="theme-select"
+            value={theme}
+            onChange={handleThemeChange}
+            disabled={controlsDisabled}
+          >
+            {THEME_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <span className="connection">

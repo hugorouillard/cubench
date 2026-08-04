@@ -11,6 +11,7 @@ frontend, a FastAPI backend, and a SQLite database.
 - `+2`, `DNF`, and solve deletion
 - Mean, best single, `ao5`, and `ao12` statistics
 - Daily progress chart and personal-best timeline
+- Persistent theme selection with Catppuccin Mocha as the default
 - Complete JSON data export
 
 ## Requirements
