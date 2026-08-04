@@ -1,8 +1,173 @@
-from fastapi import FastAPI
+import sqlite3
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from typing import Annotated
+from uuid import UUID, uuid4
 
-app = FastAPI(title="Cube Timer API")
+from fastapi import FastAPI, HTTPException, Query, Response, status
+
+from cube_timer_api.database import connect, initialize_database
+from cube_timer_api.schemas import (
+    PracticeSession,
+    PracticeSessionCreate,
+    PracticeSessionUpdate,
+    Solve,
+    SolveCreate,
+    SolveUpdate,
+)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    initialize_database()
+    yield
+
+
+app = FastAPI(title="Cube Timer API", lifespan=lifespan)
 
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/sessions", response_model=list[PracticeSession])
+def list_sessions() -> list[dict]:
+    with connect() as connection:
+        rows = connection.execute(
+            "SELECT id, name, created_at FROM practice_sessions ORDER BY created_at"
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.post(
+    "/api/sessions",
+    response_model=PracticeSession,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_session(payload: PracticeSessionCreate) -> dict:
+    session = {
+        "id": str(uuid4()),
+        "name": payload.name,
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    with connect() as connection:
+        connection.execute(
+            "INSERT INTO practice_sessions (id, name, created_at) VALUES (?, ?, ?)",
+            tuple(session.values()),
+        )
+        connection.commit()
+    return session
+
+
+@app.patch("/api/sessions/{session_id}", response_model=PracticeSession)
+def update_session(session_id: UUID, payload: PracticeSessionUpdate) -> dict:
+    with connect() as connection:
+        cursor = connection.execute(
+            "UPDATE practice_sessions SET name = ? WHERE id = ?",
+            (payload.name, str(session_id)),
+        )
+        connection.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Session not found")
+        row = connection.execute(
+            "SELECT id, name, created_at FROM practice_sessions WHERE id = ?",
+            (str(session_id),),
+        ).fetchone()
+    return dict(row)
+
+
+@app.delete("/api/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(session_id: UUID) -> Response:
+    with connect() as connection:
+        session_count = connection.execute(
+            "SELECT count(*) FROM practice_sessions"
+        ).fetchone()[0]
+        if session_count == 1:
+            raise HTTPException(status_code=409, detail="Cannot delete the only session")
+        cursor = connection.execute(
+            "DELETE FROM practice_sessions WHERE id = ?", (str(session_id),)
+        )
+        connection.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Session not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get("/api/solves", response_model=list[Solve])
+def list_solves(
+    session_id: Annotated[UUID | None, Query()] = None,
+) -> list[dict]:
+    query = (
+        "SELECT id, session_id, duration_ms, penalty, scramble, recorded_at, "
+        "created_at FROM solves"
+    )
+    parameters: tuple[str, ...] = ()
+    if session_id:
+        query += " WHERE session_id = ?"
+        parameters = (str(session_id),)
+    query += " ORDER BY recorded_at DESC"
+    with connect() as connection:
+        rows = connection.execute(query, parameters).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.post(
+    "/api/solves", response_model=Solve, status_code=status.HTTP_201_CREATED
+)
+def create_solve(payload: SolveCreate) -> dict:
+    solve = {
+        **payload.model_dump(mode="json"),
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    try:
+        with connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO solves (
+                    id, session_id, duration_ms, penalty, scramble,
+                    recorded_at, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                tuple(solve.values()),
+            )
+            connection.commit()
+    except sqlite3.IntegrityError as error:
+        message = str(error)
+        if "FOREIGN KEY" in message:
+            raise HTTPException(status_code=404, detail="Session not found") from error
+        raise HTTPException(status_code=409, detail="Solve already exists") from error
+    return solve
+
+
+@app.patch("/api/solves/{solve_id}", response_model=Solve)
+def update_solve(solve_id: UUID, payload: SolveUpdate) -> dict:
+    with connect() as connection:
+        cursor = connection.execute(
+            "UPDATE solves SET penalty = ? WHERE id = ?",
+            (payload.penalty, str(solve_id)),
+        )
+        connection.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Solve not found")
+        row = connection.execute(
+            """
+            SELECT id, session_id, duration_ms, penalty, scramble,
+                   recorded_at, created_at
+            FROM solves WHERE id = ?
+            """,
+            (str(solve_id),),
+        ).fetchone()
+    return dict(row)
+
+
+@app.delete("/api/solves/{solve_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_solve(solve_id: UUID) -> Response:
+    with connect() as connection:
+        cursor = connection.execute(
+            "DELETE FROM solves WHERE id = ?", (str(solve_id),)
+        )
+        connection.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Solve not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
