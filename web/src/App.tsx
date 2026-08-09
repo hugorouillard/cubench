@@ -306,7 +306,7 @@ function App({ initialTheme }: AppProps) {
       )
       const link = document.createElement('a')
       link.href = url
-      link.download = `cube-timer-${new Date().toISOString().slice(0, 10)}.json`
+      link.download = `cubebench-${new Date().toISOString().slice(0, 10)}.json`
       link.click()
       URL.revokeObjectURL(url)
     } catch (exportError) {
@@ -341,7 +341,7 @@ function App({ initialTheme }: AppProps) {
         <a
           className="brand"
           href="/"
-          aria-label="Cubetimer home"
+          aria-label="Cubebench home"
           tabIndex={controlsDisabled ? -1 : 0}
         >
           <span className="brand-mark" aria-hidden="true">
@@ -351,7 +351,7 @@ function App({ initialTheme }: AppProps) {
             <i />
           </span>
           <span className="brand-copy">
-            <strong>cubetimer</strong>
+            <strong>cubebench</strong>
             <small>solve better</small>
           </span>
         </a>

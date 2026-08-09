@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from cube_timer_api.main import app
+from cubebench_api.main import app
 
 
 def test_health() -> None:

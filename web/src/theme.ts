@@ -12,7 +12,7 @@ export type Theme = (typeof THEME_OPTIONS)[number]['id']
 
 export const DEFAULT_THEME: Theme = 'catppuccin-mocha'
 
-const STORAGE_KEY = 'cube-timer-theme'
+const STORAGE_KEY = 'cubebench-theme'
 
 export function isTheme(value: string | null): value is Theme {
   return THEME_OPTIONS.some((theme) => theme.id === value)

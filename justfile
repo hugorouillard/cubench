@@ -8,7 +8,7 @@ install:
 
 # Run the FastAPI development server.
 api:
-    cd api && uv run fastapi dev src/cube_timer_api/main.py
+    cd api && uv run fastapi dev src/cubebench_api/main.py
 
 # Run the Vite development server.
 web:
@@ -29,7 +29,7 @@ dev:
     }
     trap cleanup EXIT INT TERM
 
-    (cd api && exec uv run fastapi dev src/cube_timer_api/main.py) &
+    (cd api && exec uv run fastapi dev src/cubebench_api/main.py) &
     api_pid=$!
     (cd web && exec npm run dev) &
     web_pid=$!

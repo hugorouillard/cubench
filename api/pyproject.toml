@@ -1,7 +1,7 @@
 [project]
-name = "cube-timer-api"
+name = "cubebench-api"
 version = "0.1.0"
-description = "Local API for the Cube Timer MVP"
+description = "Local API for the Cubebench MVP"
 authors = [
     { name = "hugo rouillard", email = "rouillard.hugo1@gmail.com" }
 ]

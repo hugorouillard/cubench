@@ -6,3 +6,4 @@ __pycache__/
 api/data/
 web/node_modules/
 web/dist/
+roadmap.md

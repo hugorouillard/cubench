@@ -1,4 +1,4 @@
-# Cube Timer
+# Cubebench
 
 A focused, keyboard-first 3x3 speedcubing timer. The local MVP uses a React
 frontend, a FastAPI backend, and a SQLite database.
@@ -34,7 +34,7 @@ Alternatively, start each process separately. Start the API in one terminal:
 
 ```bash
 cd api
-uv run fastapi dev src/cube_timer_api/main.py
+uv run fastapi dev src/cubebench_api/main.py
 ```
 
 Start the web app in another terminal:
@@ -50,7 +50,7 @@ FastAPI at http://localhost:8000.
 
 Hold the spacebar until the timer turns green, release it to start, and press
 space again to stop. FastAPI creates the SQLite database automatically at
-`api/data/cube_timer.db` the first time it starts.
+`api/data/cubebench.db` the first time it starts.
 
 FastAPI also provides interactive API documentation at
 http://localhost:8000/docs.

@@ -1,1 +1,0 @@
-"""Cube Timer API package."""

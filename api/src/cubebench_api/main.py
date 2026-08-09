@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Response, status
 
-from cube_timer_api.database import connect, initialize_database
-from cube_timer_api.schemas import (
+from cubebench_api.database import connect, initialize_database
+from cubebench_api.schemas import (
     ExportData,
     PracticeSession,
     PracticeSessionCreate,
@@ -24,7 +24,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Cube Timer API", lifespan=lifespan)
+app = FastAPI(title="Cubebench API", lifespan=lifespan)
 
 
 @app.get("/api/health")
