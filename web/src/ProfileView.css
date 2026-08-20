@@ -1,0 +1,1058 @@
+.profile-view {
+  min-width: 0;
+  padding-block: 1.5rem 4rem;
+}
+
+.profile-view button,
+.profile-view summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-view button:focus-visible,
+.profile-view textarea:focus-visible,
+.profile-view summary:focus-visible,
+.profile-dialog button:focus-visible,
+.profile-dialog input:focus-visible,
+.profile-dialog textarea:focus-visible {
+  outline: 2px solid var(--text-color);
+  outline-offset: 3px;
+}
+
+.profile-kicker {
+  color: var(--sub-readable-color);
+  font-size: 0.65rem;
+}
+
+.profile-sr-only,
+.profile-solve-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.profile-load-state {
+  min-height: min(36rem, 65vh);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.profile-load-state > div {
+  width: min(30rem, 100%);
+  border-block: 2px solid var(--sub-alt-color);
+  padding: 3rem 1rem;
+}
+
+.profile-load-state p {
+  margin: 0.6rem 0 0;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.profile-identity-band {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  border-radius: var(--roundness);
+  padding: 1.35rem 1.5rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: calc(var(--roundness) * 1.2);
+  color: var(--bg-color);
+  background: var(--main-color);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: -0.06em;
+}
+
+.profile-identity-copy {
+  min-width: 0;
+}
+
+.profile-identity-copy h1 {
+  margin: 0.25rem 0 0;
+  color: var(--text-color);
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.profile-identity-copy p {
+  max-width: 50rem;
+  margin: 0.5rem 0;
+  color: var(--sub-readable-color);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.profile-tracking {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+  color: var(--sub-readable-color);
+  font-size: 0.62rem;
+}
+
+.profile-tracking svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.profile-edit-button,
+.profile-export-button,
+.profile-load-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0.65rem 0.8rem;
+  color: var(--sub-readable-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  font-size: 0.68rem;
+  transition: color 125ms ease, background 125ms ease;
+}
+
+.profile-edit-button:hover,
+.profile-export-button:hover,
+.profile-load-more:hover {
+  color: var(--bg-color);
+  background: var(--text-color);
+}
+
+.profile-edit-button svg,
+.profile-export-button svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.profile-lifetime-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 5vw, 5rem);
+  padding: 2.5rem 1.5rem;
+}
+
+.profile-lifetime-metrics div,
+.profile-filtered-stats div {
+  min-width: 0;
+}
+
+.profile-lifetime-metrics span,
+.profile-lifetime-metrics strong,
+.profile-lifetime-metrics small,
+.profile-filtered-stats span,
+.profile-filtered-stats strong,
+.profile-filtered-stats small {
+  display: block;
+}
+
+.profile-lifetime-metrics span,
+.profile-filtered-stats span {
+  margin-bottom: 0.45rem;
+  color: var(--sub-readable-color);
+  font-size: 0.65rem;
+}
+
+.profile-lifetime-metrics strong {
+  color: var(--text-color);
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 1.1;
+}
+
+.profile-lifetime-metrics div:first-child strong {
+  color: var(--main-color);
+}
+
+.profile-lifetime-metrics small,
+.profile-filtered-stats small {
+  margin-top: 0.35rem;
+  color: var(--sub-readable-color);
+  font-size: 0.57rem;
+}
+
+.profile-pb-band {
+  display: grid;
+  grid-template-columns: minmax(11rem, 1.1fr) repeat(3, minmax(8rem, 1fr));
+  align-items: center;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+}
+
+.profile-pb-band > div {
+  min-width: 0;
+  padding: 1.15rem 1.5rem;
+}
+
+.profile-pb-band > div + div {
+  border-left: 2px solid var(--bg-color);
+}
+
+.profile-pb-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-pb-title > svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--main-color);
+}
+
+.profile-pb-title h2,
+.profile-section-heading h2,
+.profile-filter-heading h2 {
+  margin: 0.25rem 0 0;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.profile-pb-band > div:not(.profile-pb-title) > span,
+.profile-pb-band > div:not(.profile-pb-title) > strong,
+.profile-pb-band > div:not(.profile-pb-title) > time {
+  display: block;
+}
+
+.profile-pb-band > div:not(.profile-pb-title) > span {
+  margin-bottom: 0.3rem;
+  color: var(--sub-readable-color);
+  font-size: 0.6rem;
+}
+
+.profile-pb-band > div:not(.profile-pb-title) > strong {
+  color: var(--main-color);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.profile-pb-band > div:not(.profile-pb-title) > time,
+.profile-pb-band > div:not(.profile-pb-title) > span:last-child {
+  margin-top: 0.35rem;
+  color: var(--sub-readable-color);
+  font-size: 0.56rem;
+}
+
+.profile-activity {
+  min-width: 0;
+  padding-block: 3rem;
+}
+
+.profile-section-heading,
+.profile-filter-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.profile-activity-totals {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+
+.profile-activity-totals span {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--sub-readable-color);
+  font-size: 0.57rem;
+}
+
+.profile-activity-totals strong {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.profile-heatmap-scroll {
+  max-width: 100%;
+  margin-top: 1.2rem;
+  padding-bottom: 0.4rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--sub-color) transparent;
+}
+
+.profile-heatmap-key {
+  min-width: 46rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  margin-bottom: 0.55rem;
+  color: var(--sub-readable-color);
+  font-size: 0.5rem;
+}
+
+.profile-heatmap-key i {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 0.12rem;
+  background: var(--line-color);
+}
+
+.profile-heatmap-key i.level-1 { background: color-mix(in srgb, var(--main-color) 28%, var(--line-color)); }
+.profile-heatmap-key i.level-2 { background: color-mix(in srgb, var(--main-color) 50%, var(--line-color)); }
+.profile-heatmap-key i.level-3 { background: color-mix(in srgb, var(--main-color) 72%, var(--line-color)); }
+.profile-heatmap-key i.level-4 { background: var(--main-color); }
+
+.profile-heatmap-layout {
+  width: max-content;
+  min-width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.profile-heatmap-days {
+  width: 1.45rem;
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-rows: repeat(7, 0.65rem);
+  gap: 0.22rem;
+  color: var(--sub-readable-color);
+  font-size: 0.48rem;
+  line-height: 0.65rem;
+}
+
+.profile-heatmap-days span:nth-child(1) { grid-row: 2; }
+.profile-heatmap-days span:nth-child(2) { grid-row: 4; }
+.profile-heatmap-days span:nth-child(3) { grid-row: 6; }
+
+.profile-heatmap {
+  min-width: 44rem;
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  gap: 0.22rem;
+}
+
+.profile-heatmap-week {
+  display: grid;
+  flex: 1 0 0.65rem;
+  grid-template-rows: repeat(7, 0.65rem);
+  gap: 0.22rem;
+}
+
+.profile-heatmap-cell {
+  width: 100%;
+  min-width: 0.65rem;
+  border-radius: 0.12rem;
+  background: var(--line-color);
+}
+
+.profile-heatmap-cell.level-1 { background: var(--main-color); opacity: 0.28; }
+.profile-heatmap-cell.level-2 { background: var(--main-color); opacity: 0.5; }
+.profile-heatmap-cell.level-3 { background: var(--main-color); opacity: 0.72; }
+.profile-heatmap-cell.level-4 { background: var(--main-color); opacity: 1; }
+.profile-heatmap-cell.is-outside { visibility: hidden; }
+
+.profile-filter-boundary {
+  min-width: 0;
+  border-block: 2px solid var(--line-color);
+  padding: 2rem 1.5rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-filter-heading {
+  margin-bottom: 1.5rem;
+}
+
+.profile-export-button {
+  color: var(--sub-readable-color);
+  background: var(--bg-color);
+}
+
+.profile-filter-group {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.1rem;
+}
+
+.profile-filter-group legend {
+  margin-bottom: 0.55rem;
+  padding: 0;
+  color: var(--sub-readable-color);
+  font-size: 0.58rem;
+}
+
+.profile-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.profile-filter-options button,
+.profile-filter-options label > span,
+.profile-series-toggles button {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: calc(var(--roundness) * 0.75);
+  padding: 0.45rem 0.7rem;
+  color: var(--sub-readable-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  font-size: 0.62rem;
+  transition: color 125ms ease, background 125ms ease;
+}
+
+.profile-filter-options button:hover,
+.profile-filter-options button.is-active,
+.profile-filter-options label:hover > span,
+.profile-filter-options label > input:checked + span,
+.profile-series-toggles button:hover,
+.profile-series-toggles button.is-active {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.profile-filter-options label {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.profile-filter-options label > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.profile-filter-options label > input:focus-visible + span {
+  outline: 2px solid var(--text-color);
+  outline-offset: 3px;
+}
+
+.profile-filter-options label > span {
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-filter-summary {
+  margin: 1.35rem 0 0;
+  color: var(--sub-readable-color);
+  font-size: 0.62rem;
+  line-height: 1.6;
+}
+
+.profile-filter-summary span {
+  color: var(--main-color);
+}
+
+.profile-filtered-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin-block: 3rem;
+  border-radius: var(--roundness);
+  background: var(--bg-color);
+  overflow: hidden;
+}
+
+.profile-filtered-stats div {
+  min-height: 5.2rem;
+  padding: 1rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-filtered-stats strong {
+  color: var(--text-color);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.profile-filtered-stats div:nth-child(6) strong,
+.profile-filtered-stats div:nth-child(8) strong,
+.profile-filtered-stats div:nth-child(10) strong {
+  color: var(--main-color);
+}
+
+.profile-chart-section,
+.profile-table-section {
+  min-width: 0;
+}
+
+.profile-history-section {
+  padding-bottom: 3rem;
+}
+
+.profile-series-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.profile-series-toggles button {
+  min-height: 1.8rem;
+  padding: 0.35rem 0.55rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-chart {
+  position: relative;
+  width: 100%;
+  height: 23rem;
+  margin-top: 1rem;
+}
+
+.profile-small-chart {
+  height: 18rem;
+}
+
+.profile-chart canvas {
+  max-width: 100%;
+}
+
+.profile-chart-empty,
+.profile-table-empty {
+  min-height: 14rem;
+  display: grid;
+  place-items: center;
+  margin: 1rem 0 0;
+  border-radius: var(--roundness);
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.profile-chart-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3rem;
+  border-block: 2px solid var(--line-color);
+  padding-block: 3rem;
+}
+
+.profile-chart-legend {
+  display: flex;
+  gap: 1rem;
+  color: var(--sub-readable-color);
+  font-size: 0.56rem;
+}
+
+.profile-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-chart-legend i {
+  width: 0.8rem;
+  height: 2px;
+}
+
+.profile-chart-legend .is-attempts {
+  height: 0.55rem;
+  background: var(--main-color);
+}
+
+.profile-chart-legend .is-mean {
+  background: var(--text-color);
+}
+
+.profile-table-section {
+  padding-top: 3rem;
+}
+
+.profile-row-count {
+  color: var(--sub-readable-color);
+  font-size: 0.6rem;
+}
+
+.profile-table-scroll {
+  max-width: 100%;
+  margin-top: 1rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--sub-color) transparent;
+}
+
+.profile-solve-table {
+  width: 100%;
+  min-width: 70rem;
+  border-collapse: collapse;
+  color: var(--sub-readable-color);
+  font-size: 0.62rem;
+}
+
+.profile-solve-table th,
+.profile-solve-table td {
+  border-bottom: 2px solid var(--sub-alt-color);
+  padding: 0.75rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.profile-solve-table th {
+  color: var(--sub-readable-color);
+  font-size: 0.56rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.profile-solve-table th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.profile-solve-table th button:hover,
+.profile-solve-table th[aria-sort='ascending'] button,
+.profile-solve-table th[aria-sort='descending'] button {
+  color: var(--main-color);
+}
+
+.profile-solve-table th svg {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.profile-solve-table tbody tr {
+  scroll-margin-block: 5rem;
+  transition: background 125ms ease, box-shadow 125ms ease;
+}
+
+.profile-solve-table tbody tr:hover,
+.profile-solve-table tbody tr:focus,
+.profile-solve-table tbody tr.is-selected {
+  outline: 0;
+  background: var(--sub-alt-color);
+}
+
+.profile-solve-table tbody tr.is-selected {
+  box-shadow: inset 3px 0 var(--main-color);
+}
+
+.profile-pb-column {
+  width: 2.5rem;
+  text-align: center !important;
+}
+
+.profile-pb-column span {
+  border-radius: 0.2rem;
+  padding: 0.2rem 0.3rem;
+  color: var(--bg-color);
+  background: var(--main-color);
+  font-size: 0.5rem;
+}
+
+.profile-result-cell strong,
+.profile-result-cell small {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-result-cell strong {
+  color: var(--text-color);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.profile-solve-table tr.is-pb .profile-result-cell strong {
+  color: var(--main-color);
+}
+
+.profile-result-cell small {
+  margin-top: 0.2rem;
+  color: var(--sub-readable-color);
+  font-size: 0.52rem;
+}
+
+.profile-solve-table time {
+  white-space: nowrap;
+}
+
+.profile-scramble-cell {
+  width: 15rem;
+}
+
+.profile-scramble-cell details {
+  min-width: 4rem;
+}
+
+.profile-scramble-cell summary {
+  width: max-content;
+  color: var(--sub-readable-color);
+  cursor: pointer;
+  list-style: none;
+}
+
+.profile-scramble-cell summary::-webkit-details-marker {
+  display: none;
+}
+
+.profile-scramble-cell summary::before {
+  content: '+ ';
+  color: var(--main-color);
+}
+
+.profile-scramble-cell details[open] summary::before {
+  content: '− ';
+}
+
+.profile-scramble-cell details > span {
+  display: block;
+  width: 22rem;
+  margin-top: 0.55rem;
+  color: var(--text-color);
+  font-size: 0.6rem;
+  line-height: 1.55;
+  white-space: normal;
+}
+
+.profile-solve-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.18rem;
+  opacity: 0.62;
+  transition: opacity 125ms ease;
+}
+
+.profile-solve-table tr:hover .profile-solve-actions,
+.profile-solve-actions:focus-within {
+  opacity: 1;
+}
+
+.profile-solve-actions button {
+  min-width: 1.9rem;
+  height: 1.9rem;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+  font-size: 0.55rem;
+}
+
+.profile-solve-actions button:hover,
+.profile-solve-actions button.is-active {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.profile-solve-actions button.is-delete:hover {
+  color: var(--bg-color);
+  background: var(--error-readable-color);
+}
+
+.profile-solve-actions button:disabled {
+  cursor: wait;
+  opacity: 0.35;
+}
+
+.profile-solve-actions svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.profile-load-more {
+  width: 100%;
+  margin-top: 1rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-table-empty {
+  min-height: 10rem;
+}
+
+.profile-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-width: none;
+  border: 0;
+  border-radius: calc(var(--roundness) * 1.5);
+  padding: 0;
+  color: var(--text-color);
+  background: var(--bg-color);
+  box-shadow: 0 0 0 4px var(--sub-alt-color), 0 2rem 5rem rgb(0 0 0 / 0.35);
+}
+
+.profile-dialog::backdrop {
+  background: rgb(0 0 0 / 0.58);
+}
+
+.profile-editor {
+  padding: 2rem;
+}
+
+.profile-editor header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.profile-editor h2 {
+  margin: 0.3rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.profile-editor header button {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-editor header svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.profile-editor > label {
+  position: relative;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.profile-editor > label > span {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--sub-readable-color);
+  font-size: 0.65rem;
+}
+
+.profile-editor input,
+.profile-editor textarea {
+  width: 100%;
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0.8rem 0.9rem;
+  color: var(--text-color);
+  background: var(--sub-alt-color);
+  font: inherit;
+  font-size: 0.75rem;
+  resize: vertical;
+}
+
+.profile-editor label small {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.5rem;
+  color: var(--sub-readable-color);
+  font-size: 0.52rem;
+}
+
+.profile-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+}
+
+.profile-editor-actions button {
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0.7rem 0.9rem;
+  color: var(--text-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+
+.profile-editor-actions button.is-primary {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+@media (max-width: 1104px) {
+  .profile-filtered-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 848px) {
+  .profile-view {
+    padding-top: 0.5rem;
+  }
+
+  .profile-pb-band {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .profile-pb-title {
+    grid-column: 1 / -1;
+  }
+
+  .profile-pb-band > div + div {
+    border-top: 2px solid var(--bg-color);
+  }
+
+  .profile-pb-band > div:nth-child(2) {
+    border-left: 0;
+  }
+
+  .profile-activity .profile-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-filtered-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-identity-band {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 1rem;
+  }
+
+  .profile-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .profile-edit-button {
+    grid-column: auto;
+    width: 100%;
+  }
+
+  .profile-lifetime-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem 1rem;
+    padding: 2rem 1rem;
+  }
+
+  .profile-lifetime-metrics div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .profile-pb-band {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profile-pb-band > div:nth-child(4) {
+    grid-column: 1 / -1;
+    border-left: 0;
+  }
+
+  .profile-activity-totals {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .profile-filter-boundary {
+    padding: 1.5rem 1rem;
+  }
+
+  .profile-filter-heading,
+  .profile-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-export-button {
+    width: 100%;
+  }
+
+  .profile-series-toggles {
+    justify-content: flex-start;
+  }
+
+  .profile-filtered-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-chart {
+    height: 18rem;
+  }
+
+  .profile-small-chart {
+    height: 16rem;
+  }
+
+  .profile-chart-legend {
+    display: none;
+  }
+
+  .profile-row-count {
+    margin-top: -0.75rem;
+  }
+
+  .profile-editor {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .profile-pb-band {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-pb-band > div {
+    grid-column: 1 !important;
+    border-left: 0 !important;
+  }
+
+  .profile-activity-totals {
+    flex-wrap: wrap;
+  }
+
+  .profile-filtered-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (hover: none) {
+  .profile-solve-actions {
+    opacity: 1;
+  }
+}

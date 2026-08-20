@@ -4,6 +4,8 @@ import type {
   PracticeSession,
   Solve,
   SolveInput,
+  UserProfile,
+  UserProfileInput,
 } from './types'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -34,8 +36,20 @@ export function createSession(name: string): Promise<PracticeSession> {
   })
 }
 
-export function getSolves(sessionId: string): Promise<Solve[]> {
-  return request(`/api/solves?session_id=${encodeURIComponent(sessionId)}`)
+export function getProfile(): Promise<UserProfile> {
+  return request('/api/profile')
+}
+
+export function updateProfile(profile: UserProfileInput): Promise<UserProfile> {
+  return request('/api/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(profile),
+  })
+}
+
+export function getSolves(sessionId?: string): Promise<Solve[]> {
+  const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''
+  return request(`/api/solves${query}`)
 }
 
 export function createSolve(solve: SolveInput): Promise<Solve> {

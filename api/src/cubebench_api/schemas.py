@@ -7,6 +7,21 @@ from pydantic import BaseModel, Field, field_validator
 Penalty = Literal["none", "plus2", "dnf"]
 
 
+class ProfileUpdate(BaseModel):
+    display_name: str = Field(min_length=1, max_length=40)
+    bio: str = Field(max_length=160)
+
+    @field_validator("display_name", "bio", mode="before")
+    @classmethod
+    def trim_text(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+class Profile(ProfileUpdate):
+    id: int
+    created_at: datetime
+
+
 class PracticeSessionCreate(BaseModel):
     name: str = Field(min_length=1, max_length=60)
 
@@ -57,5 +72,6 @@ class Solve(SolveCreate):
 class ExportData(BaseModel):
     version: int
     exported_at: datetime
+    profile: Profile
     sessions: list[PracticeSession]
     solves: list[Solve]

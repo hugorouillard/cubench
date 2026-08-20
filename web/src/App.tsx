@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useRef,
   useState,
@@ -8,7 +10,6 @@ import {
 } from 'react'
 import { randomScrambleForEvent } from 'cubing/scramble'
 import {
-  BarChart3,
   Box,
   Database,
   Palette,
@@ -17,6 +18,7 @@ import {
   Settings2,
   Timer,
   Trash2,
+  UserRound,
   X,
 } from 'lucide-react'
 import {
@@ -28,13 +30,16 @@ import {
   getSolves,
   updateSolvePenalty,
 } from './api'
-import { ProgressView } from './ProgressView'
 import { summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatTime } from './timer'
 import type { Penalty, PracticeSession, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
+
+const ProfileView = lazy(() =>
+  import('./ProfileView').then((module) => ({ default: module.ProfileView })),
+)
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
@@ -117,7 +122,6 @@ function App({ initialTheme }: AppProps) {
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
-  const [historyLoading, setHistoryLoading] = useState(true)
   const [pendingSaveIds, setPendingSaveIds] = useState<string[]>([])
   const [saveFailed, setSaveFailed] = useState(false)
   const [latestResultId, setLatestResultId] = useState('')
@@ -125,7 +129,7 @@ function App({ initialTheme }: AppProps) {
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
-  const [view, setView] = useState<'timer' | 'progress'>('timer')
+  const [view, setView] = useState<'timer' | 'profile'>('timer')
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const activeSessionIdRef = useRef(activeSessionId)
   const latestResultIdRef = useRef(latestResultId)
@@ -155,13 +159,9 @@ function App({ initialTheme }: AppProps) {
   useEffect(() => {
     setLatestResultId('')
     setSaveFailed(false)
-    if (!activeSessionId) {
-      setHistoryLoading(false)
-      return
-    }
+    if (!activeSessionId) return
 
     let cancelled = false
-    setHistoryLoading(true)
     getSolves(activeSessionId)
       .then((loadedSolves) => {
         if (cancelled) return
@@ -179,9 +179,6 @@ function App({ initialTheme }: AppProps) {
       })
       .catch((loadError: unknown) => {
         if (!cancelled) setError(errorMessage(loadError))
-      })
-      .finally(() => {
-        if (!cancelled) setHistoryLoading(false)
       })
     return () => {
       cancelled = true
@@ -271,20 +268,25 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  async function handlePenalty(solve: Solve, selectedPenalty: Penalty) {
+  async function handlePenalty(
+    solve: Solve,
+    selectedPenalty: Penalty,
+  ): Promise<Solve | null> {
     const penalty = solve.penalty === selectedPenalty ? 'none' : selectedPenalty
     try {
       const updatedSolve = await updateSolvePenalty(solve.id, penalty)
       setSolves((current) =>
         current.map((item) => (item.id === solve.id ? updatedSolve : item)),
       )
+      return updatedSolve
     } catch (penaltyError) {
       setError(errorMessage(penaltyError))
+      return null
     }
   }
 
-  async function handleDelete(solve: Solve) {
-    if (!window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return
+  async function handleDelete(solve: Solve): Promise<boolean> {
+    if (!window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return false
     try {
       await deleteSolve(solve.id)
       deletedSolveIdsRef.current.add(solve.id)
@@ -293,8 +295,10 @@ function App({ initialTheme }: AppProps) {
         setLatestResultId('')
         latestResultIdRef.current = ''
       }
+      return true
     } catch (deleteError) {
       setError(errorMessage(deleteError))
+      return false
     }
   }
 
@@ -325,7 +329,6 @@ function App({ initialTheme }: AppProps) {
   const latestResult = solves.find((solve) => solve.id === latestResultId)
   const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
-  const activeSession = sessions.find((session) => session.id === activeSessionId)
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
   const displayedTime =
@@ -369,15 +372,15 @@ function App({ initialTheme }: AppProps) {
             <Timer aria-hidden="true" />
           </button>
           <button
-            className={view === 'progress' ? 'is-active' : ''}
+            className={view === 'profile' ? 'is-active' : ''}
             type="button"
-            onClick={() => setView('progress')}
+            onClick={() => setView('profile')}
             disabled={controlsDisabled}
-            aria-label="Progress"
-            aria-current={view === 'progress' ? 'page' : undefined}
-            title="Progress"
+            aria-label="Profile"
+            aria-current={view === 'profile' ? 'page' : undefined}
+            title="Profile"
           >
-            <BarChart3 aria-hidden="true" />
+            <UserRound aria-hidden="true" />
           </button>
         </nav>
 
@@ -534,18 +537,21 @@ function App({ initialTheme }: AppProps) {
           </section>
         </main>
       ) : (
-        <ProgressView
-          session={activeSession}
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          solves={solves}
-          loading={historyLoading}
-          onSessionChange={selectSession}
-          onCreateSession={() => setSessionFormOpen(true)}
-          onPenalty={handlePenalty}
-          onDelete={handleDelete}
-          onExport={() => void handleExport()}
-        />
+        <Suspense
+          fallback={(
+            <main className="profile-fallback page-width" aria-busy="true">
+              loading profile...
+            </main>
+          )}
+        >
+          <ProfileView
+            sessions={sessions}
+            onPenalty={handlePenalty}
+            onDelete={handleDelete}
+            onExport={() => void handleExport()}
+            onError={setError}
+          />
+        </Suspense>
       )}
 
       <footer className="site-footer page-width focus-chrome">

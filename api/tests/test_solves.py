@@ -54,7 +54,7 @@ def test_duplicate_solve_is_rejected(client: TestClient) -> None:
     assert response.status_code == 409
 
 
-def test_export_contains_sessions_and_solves(client: TestClient) -> None:
+def test_export_contains_profile_sessions_and_solves(client: TestClient) -> None:
     session_id = client.get("/api/sessions").json()[0]["id"]
     payload = solve_payload(session_id)
     client.post("/api/solves", json=payload)
@@ -62,6 +62,7 @@ def test_export_contains_sessions_and_solves(client: TestClient) -> None:
     response = client.get("/api/export")
 
     assert response.status_code == 200
-    assert response.json()["version"] == 1
+    assert response.json()["version"] == 2
+    assert response.json()["profile"]["display_name"] == "Cube Solver"
     assert response.json()["sessions"][0]["id"] == session_id
     assert response.json()["solves"][0]["id"] == payload["id"]

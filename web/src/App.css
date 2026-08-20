@@ -192,6 +192,14 @@ select:disabled {
   grid-template-rows: auto minmax(0, 1fr);
 }
 
+.profile-fallback {
+  min-height: min(36rem, 65vh);
+  display: grid;
+  place-items: center;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+}
+
 .practice-config-row {
   min-height: 2.5rem;
   display: flex;
