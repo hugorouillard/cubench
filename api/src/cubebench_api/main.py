@@ -12,6 +12,8 @@ from cubebench_api.schemas import (
     PracticeSession,
     PracticeSessionCreate,
     PracticeSessionUpdate,
+    Profile,
+    ProfileUpdate,
     Solve,
     SolveCreate,
     SolveUpdate,
@@ -30,6 +32,29 @@ app = FastAPI(title="Cubebench API", lifespan=lifespan)
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/profile", response_model=Profile)
+def get_profile() -> dict:
+    with connect() as connection:
+        row = connection.execute(
+            "SELECT id, display_name, bio, created_at FROM local_profile WHERE id = 1"
+        ).fetchone()
+    return dict(row)
+
+
+@app.patch("/api/profile", response_model=Profile)
+def update_profile(payload: ProfileUpdate) -> dict:
+    with connect() as connection:
+        connection.execute(
+            "UPDATE local_profile SET display_name = ?, bio = ? WHERE id = 1",
+            (payload.display_name, payload.bio),
+        )
+        connection.commit()
+        row = connection.execute(
+            "SELECT id, display_name, bio, created_at FROM local_profile WHERE id = 1"
+        ).fetchone()
+    return dict(row)
 
 
 @app.get("/api/sessions", response_model=list[PracticeSession])
@@ -177,6 +202,9 @@ def delete_solve(solve_id: UUID) -> Response:
 @app.get("/api/export", response_model=ExportData)
 def export_data() -> dict:
     with connect() as connection:
+        profile = connection.execute(
+            "SELECT id, display_name, bio, created_at FROM local_profile WHERE id = 1"
+        ).fetchone()
         sessions = connection.execute(
             "SELECT id, name, created_at FROM practice_sessions ORDER BY created_at"
         ).fetchall()
@@ -188,8 +216,9 @@ def export_data() -> dict:
             """
         ).fetchall()
     return {
-        "version": 1,
+        "version": 2,
         "exported_at": datetime.now(UTC).isoformat(),
+        "profile": dict(profile),
         "sessions": [dict(row) for row in sessions],
         "solves": [dict(row) for row in solves],
     }

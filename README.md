@@ -10,7 +10,9 @@ frontend, a FastAPI backend, and a SQLite database.
 - Named practice sessions and persistent solve history
 - `+2`, `DNF`, and solve deletion
 - Mean, best single, `ao5`, and `ao12` statistics
-- Daily progress chart and personal-best timeline
+- Local solver profile with lifetime records and activity streaks
+- Date/session filters, solve history, distribution, and daily activity charts
+- Sortable, editable cross-session solve log
 - Persistent theme selection with Catppuccin Mocha as the default
 - Complete JSON data export
 

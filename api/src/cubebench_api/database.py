@@ -50,6 +50,15 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS solves_session_recorded_at
                 ON solves(session_id, recorded_at DESC);
+
+            CREATE TABLE IF NOT EXISTS local_profile (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                display_name TEXT NOT NULL
+                    CHECK (length(trim(display_name)) BETWEEN 1 AND 40),
+                bio TEXT NOT NULL DEFAULT ''
+                    CHECK (length(trim(bio)) <= 160),
+                created_at TEXT NOT NULL
+            );
             """
         )
         session_count = connection.execute(
@@ -61,4 +70,10 @@ def initialize_database() -> None:
                 "VALUES (?, 'main', datetime('now'))",
                 (str(uuid4()),),
             )
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO local_profile (id, display_name, bio, created_at)
+            VALUES (1, 'Cube Solver', '', datetime('now'))
+            """
+        )
         connection.commit()
