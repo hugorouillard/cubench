@@ -8,18 +8,19 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react'
-import { randomScrambleForEvent } from 'cubing/scramble'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  Box,
-  EyeOff,
-  Palette,
-  Plus,
-  Settings2,
-  Timer,
-  Trash2,
-  UserRound,
-  X,
-} from 'lucide-react'
+  faCube,
+  faEyeSlash,
+  faPalette,
+  faPlus,
+  faSliders,
+  faStopwatch,
+  faTrashCan,
+  faUser,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
+import { randomScrambleForEvent } from 'cubing/scramble'
 import {
   createSession,
   createSolve,
@@ -356,14 +357,10 @@ function App({ initialTheme }: AppProps) {
           tabIndex={controlsDisabled ? -1 : 0}
         >
           <span className="brand-mark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
+            <FontAwesomeIcon className="app-icon" icon={faCube} />
           </span>
           <span className="brand-copy">
             <strong>cubebench</strong>
-            <small>solve better</small>
           </span>
         </a>
 
@@ -377,7 +374,7 @@ function App({ initialTheme }: AppProps) {
             aria-current={view === 'timer' ? 'page' : undefined}
             title="Timer"
           >
-            <Timer aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
           </button>
         </nav>
 
@@ -391,7 +388,7 @@ function App({ initialTheme }: AppProps) {
             aria-current={view === 'profile' ? 'page' : undefined}
             title="Profile"
           >
-            <UserRound aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth aria-hidden="true" />
             <span className="account-name">{profileName}</span>
           </button>
         </nav>
@@ -401,7 +398,7 @@ function App({ initialTheme }: AppProps) {
         <aside className="notification" role="alert">
           <span>{error}</span>
           <button type="button" onClick={() => setError('')} aria-label="Dismiss error">
-            <X aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </aside>
       )}
@@ -426,7 +423,7 @@ function App({ initialTheme }: AppProps) {
                   disabled={controlsDisabled}
                   aria-pressed={hideTimer}
                 >
-                  <EyeOff aria-hidden="true" />
+                  <FontAwesomeIcon className="app-icon" icon={faEyeSlash} fixedWidth aria-hidden="true" />
                   hide timer
                 </button>
                 <button type="button" disabled title="Inspection is not available yet">
@@ -440,11 +437,11 @@ function App({ initialTheme }: AppProps) {
                 aria-label="Practice mode"
               >
                 <span className="config-value is-active">
-                  <Timer aria-hidden="true" />
+                  <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
                   timer
                 </span>
                 <button type="button" disabled title="Trainer mode is not available yet">
-                  <Box aria-hidden="true" />
+                  <FontAwesomeIcon className="app-icon" icon={faCube} fixedWidth aria-hidden="true" />
                   trainer
                 </button>
               </div>
@@ -474,7 +471,7 @@ function App({ initialTheme }: AppProps) {
                   aria-label="Create session"
                   title="Create session"
                 >
-                  <Plus aria-hidden="true" />
+                  <FontAwesomeIcon className="app-icon" icon={faPlus} fixedWidth aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -485,7 +482,7 @@ function App({ initialTheme }: AppProps) {
               onClick={() => setPracticeSettingsOpen(true)}
               disabled={controlsDisabled}
             >
-              <Settings2 aria-hidden="true" />
+              <FontAwesomeIcon className="app-icon" icon={faSliders} fixedWidth aria-hidden="true" />
               practice settings
             </button>
           </div>
@@ -542,7 +539,7 @@ function App({ initialTheme }: AppProps) {
                     aria-label="Delete latest solve"
                     title="Delete latest solve"
                   >
-                    <Trash2 aria-hidden="true" />
+                    <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
                   </button>
                 </div>
               )}
@@ -594,7 +591,7 @@ function App({ initialTheme }: AppProps) {
       <footer className="site-footer page-width focus-chrome">
         <div className="footer-controls">
           <label className="footer-theme">
-            <Palette aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faPalette} fixedWidth aria-hidden="true" />
             <span className="sr-only">Theme</span>
             <select value={theme} onChange={handleThemeChange} disabled={controlsDisabled}>
               {THEME_OPTIONS.map((option) => (
@@ -619,7 +616,7 @@ function App({ initialTheme }: AppProps) {
             <h2 id="session-dialog-title">Create a session</h2>
           </div>
           <button type="button" onClick={() => setSessionFormOpen(false)} aria-label="Close">
-            <X aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </div>
         <form className="session-form" onSubmit={handleCreateSession}>
@@ -654,7 +651,7 @@ function App({ initialTheme }: AppProps) {
             <h2 id="practice-dialog-title">Practice settings</h2>
           </div>
           <button type="button" onClick={() => setPracticeSettingsOpen(false)} aria-label="Close">
-            <X aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </div>
         <div className="mobile-config-stack">
@@ -708,7 +705,7 @@ function App({ initialTheme }: AppProps) {
               setSessionFormOpen(true)
             }}
           >
-            <Plus aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faPlus} fixedWidth aria-hidden="true" />
             new session
           </button>
         </div>

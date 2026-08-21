@@ -1,19 +1,26 @@
 :root {
   --bg-color: #1e1e2e;
   --main-color: #cba6f7;
-  --caret-color: #cba6f7;
-  --sub-color: #6c7086;
-  --sub-readable-color: #a6adc8;
+  --caret-color: #f2cdcd;
+  --sub-color: #7f849c;
+  --sub-readable-color: #7f849c;
   --sub-alt-color: #181825;
   --text-color: #cdd6f4;
   --error-color: #f38ba8;
-  --error-readable-color: #f38ba8;
+  --error-readable-color: #eba0ac;
   --ready-color: #a6e3a1;
   --warning-color: #f9e2af;
   --line-color: #313244;
+  --timer-icon-color: #f38ba8;
+  --account-icon-color: #89dceb;
+  --settings-icon-color: #a6e3a1;
   --content-max: 1536px;
   --roundness: 0.5rem;
-  font-family: 'Roboto Mono', monospace;
+  --font: 'Roboto Mono', monospace;
+  --brand-font: 'Lexend Deca', sans-serif;
+  font-family: var(--font);
+  font-weight: 400;
+  line-height: 1.25;
   color: var(--text-color);
   background: var(--bg-color);
   color-scheme: dark;
@@ -35,6 +42,9 @@
   --ready-color: #87b26c;
   --warning-color: #d9b46d;
   --line-color: #292b25;
+  --timer-icon-color: var(--main-color);
+  --account-icon-color: var(--main-color);
+  --settings-icon-color: var(--main-color);
 }
 
 :root[data-theme='serika-dark'] {
@@ -50,6 +60,9 @@
   --ready-color: #78c490;
   --warning-color: #e2b714;
   --line-color: #3c3e41;
+  --timer-icon-color: var(--main-color);
+  --account-icon-color: var(--main-color);
+  --settings-icon-color: var(--main-color);
 }
 
 * {
@@ -67,6 +80,12 @@ body {
   min-height: 100vh;
   margin: 0;
   background: var(--bg-color);
+}
+
+.app-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  line-height: 1;
 }
 
 button,
