@@ -5,6 +5,7 @@ import {
   dailyAnalytics,
   filterSolves,
   lifetimeProfileSummary,
+  newestSolvesFirst,
   personalBestHistory,
   solveDurationHistogram,
   solveHistory,
@@ -42,6 +43,19 @@ function solveAt(
     created_at: recordedAt.toISOString(),
   }
 }
+
+describe('solve ordering', () => {
+  it('sorts newest first with a stable id tie-breaker without mutating its input', () => {
+    const timestamp = new Date(Date.UTC(2026, 7, 21, 12))
+    const older = solveAt('older', 10_000, new Date(Date.UTC(2026, 7, 20, 12)))
+    const tiedA = solveAt('a', 11_000, timestamp)
+    const tiedB = solveAt('b', 12_000, timestamp)
+    const input = [older, tiedA, tiedB]
+
+    expect(newestSolvesFirst(input).map(({ id }) => id)).toEqual(['b', 'a', 'older'])
+    expect(input.map(({ id }) => id)).toEqual(['older', 'a', 'b'])
+  })
+})
 
 describe('trimmedAverage', () => {
   it('drops the fastest and slowest results', () => {

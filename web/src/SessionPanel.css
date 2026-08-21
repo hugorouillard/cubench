@@ -1,0 +1,255 @@
+.session-panel {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-self: stretch;
+  margin-top: 4rem;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+  overflow: hidden;
+  text-align: left;
+  transition: opacity 125ms ease;
+}
+
+.session-panel-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.session-panel-header > div {
+  min-width: 0;
+}
+
+.session-panel-header span,
+.session-panel-header strong,
+.session-panel-header h2 {
+  display: block;
+}
+
+.session-panel-header span,
+.session-log-heading,
+.session-panel-header > strong {
+  color: var(--sub-readable-color);
+  font-size: 0.58rem;
+}
+
+.session-panel-header h2 {
+  margin: 0.25rem 0 0;
+  color: var(--text-color);
+  font-size: 0.82rem;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-panel-header > strong {
+  flex: 0 0 auto;
+  font-weight: 400;
+}
+
+.session-chart-region {
+  border-block: 2px solid var(--bg-color);
+  padding: 0.75rem 0.75rem 0.5rem;
+}
+
+.session-chart-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  min-height: 0.8rem;
+  color: var(--sub-readable-color);
+  font-size: 0.5rem;
+}
+
+.session-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.session-chart-legend i {
+  width: 0.8rem;
+  height: 2px;
+  background: var(--main-color);
+}
+
+.session-chart-legend i.is-average {
+  background: var(--text-color);
+}
+
+.session-chart {
+  position: relative;
+  height: 9.5rem;
+}
+
+.session-chart canvas {
+  max-width: 100%;
+}
+
+.session-chart-loading {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--sub-readable-color);
+  font-size: 0.55rem;
+}
+
+.session-log-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem 0.55rem;
+}
+
+.session-log-heading small {
+  font-size: inherit;
+}
+
+.session-solve-list {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior-block: contain;
+  scrollbar-color: var(--sub-color) transparent;
+}
+
+.session-solve-list li {
+  border-top: 2px solid var(--bg-color);
+}
+
+.session-solve-list button {
+  position: relative;
+  width: 100%;
+  min-height: 3.3rem;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  padding: 0.6rem 0.85rem;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: color 125ms ease, background 125ms ease, box-shadow 125ms ease;
+}
+
+.session-solve-list button:hover,
+.session-solve-list button:focus-visible {
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--bg-color) 60%, transparent);
+}
+
+.session-solve-list button.is-latest {
+  box-shadow: inset 2px 0 var(--main-color);
+}
+
+.session-solve-number,
+.session-solve-list time,
+.session-best-label {
+  font-size: 0.55rem;
+  white-space: nowrap;
+}
+
+.session-solve-result {
+  min-width: 0;
+}
+
+.session-solve-result strong,
+.session-solve-result small {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-solve-result strong {
+  color: var(--text-color);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.session-solve-result small {
+  margin-top: 0.15rem;
+  color: var(--sub-readable-color);
+  font-size: 0.48rem;
+}
+
+.session-solve-list button.is-best .session-solve-result strong {
+  color: var(--main-color);
+}
+
+.session-best-label {
+  border-radius: 0.2rem;
+  padding: 0.18rem 0.3rem;
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.session-solve-list time {
+  justify-self: end;
+}
+
+.session-panel-empty {
+  min-height: 18rem;
+  display: grid;
+  grid-row: 2 / -1;
+  align-content: center;
+  justify-items: center;
+  padding: 2rem;
+  color: var(--sub-readable-color);
+  text-align: center;
+}
+
+.session-panel-empty strong {
+  color: var(--line-color);
+  font-size: 2.25rem;
+  font-weight: 400;
+  letter-spacing: -0.07em;
+}
+
+.session-panel-empty p {
+  max-width: 15rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-color);
+  font-size: 0.65rem;
+  line-height: 1.6;
+}
+
+.session-panel-empty span {
+  font-size: 0.52rem;
+}
+
+@media (max-width: 848px) {
+  .session-panel {
+    margin-top: 0;
+  }
+
+  .session-chart {
+    height: 14rem;
+  }
+
+  .session-solve-list {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-chart {
+    height: 11rem;
+  }
+
+  .session-solve-list button {
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  }
+
+  .session-best-label {
+    display: none;
+  }
+}
