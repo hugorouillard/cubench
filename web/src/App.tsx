@@ -505,66 +505,63 @@ function App({ initialTheme }: AppProps) {
               {displayedTime}
             </div>
 
-            <div className="timer-status" aria-live="polite">
-              <span className="keycap">space</span>
-              <span>{phaseInstruction(phase)}</span>
-            </div>
+            <div className="timer-results">
+              <div className="post-solve" aria-live="polite">
+                {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
+                {phase === 'stopped' && saveFailed && (
+                  <span className="post-solve-error">solve not saved</span>
+                )}
+                {phase === 'stopped' && !latestResultPending && latestResult && (
+                  <div className="post-solve-actions" aria-label="Latest solve actions">
+                    <button
+                      className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
+                      type="button"
+                      onClick={() => void handlePenalty(latestResult, 'plus2')}
+                      aria-pressed={latestResult.penalty === 'plus2'}
+                    >
+                      +2
+                    </button>
+                    <button
+                      className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
+                      type="button"
+                      onClick={() => void handlePenalty(latestResult, 'dnf')}
+                      aria-pressed={latestResult.penalty === 'dnf'}
+                    >
+                      dnf
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(latestResult)}
+                      aria-label="Delete latest solve"
+                      title="Delete latest solve"
+                    >
+                      <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
 
-            <div className="post-solve" aria-live="polite">
-              {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
-              {phase === 'stopped' && saveFailed && (
-                <span className="post-solve-error">solve not saved</span>
-              )}
-              {phase === 'stopped' && !latestResultPending && latestResult && (
-                <div className="post-solve-actions" aria-label="Latest solve actions">
-                  <button
-                    className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
-                    type="button"
-                    onClick={() => void handlePenalty(latestResult, 'plus2')}
-                    aria-pressed={latestResult.penalty === 'plus2'}
-                  >
-                    +2
-                  </button>
-                  <button
-                    className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
-                    type="button"
-                    onClick={() => void handlePenalty(latestResult, 'dnf')}
-                    aria-pressed={latestResult.penalty === 'dnf'}
-                  >
-                    dnf
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(latestResult)}
-                    aria-label="Delete latest solve"
-                    title="Delete latest solve"
-                  >
-                    <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-                  </button>
+              <div className="session-stats focus-chrome" aria-label="Current statistics">
+                <div>
+                  <span>mean</span>
+                  <strong>{statTime(summary.mean)}</strong>
                 </div>
-              )}
-            </div>
-
-            <div className="session-stats focus-chrome" aria-label="Current statistics">
-              <div>
-                <span>mean</span>
-                <strong>{statTime(summary.mean)}</strong>
-              </div>
-              <div>
-                <span>ao5</span>
-                <strong>{statTime(summary.currentAo5)}</strong>
-              </div>
-              <div>
-                <span>best ao5</span>
-                <strong>{statTime(summary.bestAo5)}</strong>
-              </div>
-              <div>
-                <span>ao12</span>
-                <strong>{statTime(summary.currentAo12)}</strong>
-              </div>
-              <div>
-                <span>best</span>
-                <strong>{statTime(summary.bestSingle)}</strong>
+                <div>
+                  <span>ao5</span>
+                  <strong>{statTime(summary.currentAo5)}</strong>
+                </div>
+                <div>
+                  <span>best ao5</span>
+                  <strong>{statTime(summary.bestAo5)}</strong>
+                </div>
+                <div>
+                  <span>ao12</span>
+                  <strong>{statTime(summary.currentAo12)}</strong>
+                </div>
+                <div>
+                  <span>best</span>
+                  <strong>{statTime(summary.bestSingle)}</strong>
+                </div>
               </div>
             </div>
           </section>
@@ -589,6 +586,14 @@ function App({ initialTheme }: AppProps) {
       )}
 
       <footer className="site-footer page-width focus-chrome">
+        {view === 'timer' && (
+          <div className="timer-controls">
+            <div className="timer-status" aria-live="polite">
+              <span className="keycap">space</span>
+              <span>{phaseInstruction(phase)}</span>
+            </div>
+          </div>
+        )}
         <div className="footer-controls">
           <label className="footer-theme">
             <FontAwesomeIcon className="app-icon" icon={faPalette} fixedWidth aria-hidden="true" />
