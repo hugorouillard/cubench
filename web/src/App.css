@@ -35,14 +35,13 @@
   width: 2.25rem;
   height: 2.25rem;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.2rem;
-  transform: rotate(-3deg);
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--main-color);
 }
 
-.brand-mark i {
-  border-radius: 0.12rem;
-  background: var(--main-color);
+.brand-mark .app-icon {
+  font-size: 2.1rem;
 }
 
 .brand-copy {
@@ -54,7 +53,7 @@
 }
 
 .brand-copy strong {
-  font-family: 'Lexend Deca', sans-serif;
+  font-family: var(--brand-font);
   font-size: 1.85rem;
   font-weight: 400;
   letter-spacing: -0.07em;
@@ -88,20 +87,30 @@
   transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
 }
 
-.main-nav svg,
-.account-nav svg,
-.dialog-heading svg {
-  width: 1.15rem;
-  height: 1.15rem;
-  stroke-width: 2.25;
+.main-nav .app-icon,
+.account-nav .app-icon,
+.dialog-heading .app-icon {
+  font-size: 1.05rem;
 }
 
 .main-nav button:hover,
 .main-nav button.is-active,
-.account-nav button:hover,
-.account-nav button.is-active,
 .dialog-heading button:hover {
   color: var(--main-color);
+}
+
+.main-nav button {
+  color: var(--timer-icon-color);
+}
+
+.main-nav button:hover,
+.main-nav button.is-active {
+  color: color-mix(in srgb, var(--timer-icon-color) 75%, white);
+}
+
+.account-nav button:hover,
+.account-nav button.is-active {
+  color: color-mix(in srgb, var(--account-icon-color) 75%, white);
 }
 
 .main-nav button:disabled,
@@ -121,7 +130,7 @@ select:disabled {
   grid-auto-flow: column;
   gap: 0.5rem;
   padding-inline: 0.5rem;
-  color: var(--main-color);
+  color: var(--account-icon-color);
 }
 
 .account-name {
@@ -164,8 +173,8 @@ select:disabled {
   cursor: pointer;
 }
 
-.notification svg {
-  width: 1rem;
+.notification .app-icon {
+  font-size: 1rem;
 }
 
 @keyframes notification-in {
@@ -268,10 +277,9 @@ select:disabled {
   color: var(--main-color);
 }
 
-.config-panel button svg,
-.config-value svg {
-  width: 1em;
-  height: 1em;
+.config-panel button .app-icon,
+.config-value .app-icon {
+  font-size: 0.9em;
 }
 
 .config-value {
@@ -299,8 +307,8 @@ select:disabled {
   font-size: 0.75rem;
 }
 
-.practice-config-mobile svg {
-  width: 1rem;
+.practice-config-mobile .app-icon {
+  font-size: 1rem;
 }
 
 .timer-stage {
@@ -390,9 +398,8 @@ select:disabled {
   background: var(--main-color);
 }
 
-.post-solve-actions svg {
-  width: 0.9rem;
-  height: 0.9rem;
+.post-solve-actions .app-icon {
+  font-size: 0.9rem;
 }
 
 .session-stats {
@@ -470,9 +477,9 @@ select:disabled {
   gap: 0.35rem;
 }
 
-.footer-theme svg {
-  width: 0.9rem;
-  height: 0.9rem;
+.footer-theme .app-icon {
+  color: var(--settings-icon-color);
+  font-size: 0.9rem;
 }
 
 .footer-theme select {
@@ -593,9 +600,8 @@ select:disabled {
   background: var(--main-color);
 }
 
-.dialog-actions svg {
-  width: 1rem;
-  height: 1rem;
+.dialog-actions .app-icon {
+  font-size: 1rem;
 }
 
 .mobile-config-stack,

@@ -7,15 +7,16 @@ import {
   useTransition,
   type FormEvent,
 } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  ArrowDownUp,
-  CalendarDays,
-  Download,
-  Edit3,
-  Trash2,
-  Trophy,
-  X,
-} from 'lucide-react'
+  faCalendarDays,
+  faDownload,
+  faPen,
+  faSort,
+  faTrashCan,
+  faTrophy,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import {
   BarController,
   BarElement,
@@ -59,6 +60,7 @@ ChartJS.register(
   BarController,
   Tooltip,
 )
+ChartJS.defaults.font.family = "'Roboto Mono', monospace"
 
 export type ProfileViewProps = {
   sessions: PracticeSession[]
@@ -301,7 +303,7 @@ function ProfileEditor({ open, profile, onClose, onSaved, onError }: ProfileEdit
             <h2 id="profile-editor-title">Edit profile</h2>
           </div>
           <button type="button" onClick={onClose} disabled={saving} aria-label="Close profile editor">
-            <X aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </header>
 
@@ -922,7 +924,7 @@ export function ProfileView({
           <h1 id="profile-name">{profile.display_name}</h1>
           {profile.bio && <p>{profile.bio}</p>}
           <span className="profile-tracking">
-            <CalendarDays aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faCalendarDays} fixedWidth aria-hidden="true" />
             {lifetime.earliestSolveAt
               ? `tracking since ${formatLongDate(lifetime.earliestSolveAt)}`
               : 'tracking starts with your first solve'}
@@ -935,7 +937,7 @@ export function ProfileView({
           aria-haspopup="dialog"
           aria-controls="profile-editor-dialog"
         >
-          <Edit3 aria-hidden="true" />
+          <FontAwesomeIcon className="app-icon" icon={faPen} fixedWidth aria-hidden="true" />
           edit profile
         </button>
       </section>
@@ -958,7 +960,7 @@ export function ProfileView({
 
       <section className="profile-pb-band" aria-labelledby="profile-pb-title">
         <div className="profile-pb-title">
-          <Trophy aria-hidden="true" />
+          <FontAwesomeIcon className="app-icon" icon={faTrophy} fixedWidth aria-hidden="true" />
           <div>
             <span className="profile-kicker">lifetime</span>
             <h2 id="profile-pb-title">Personal bests</h2>
@@ -983,7 +985,7 @@ export function ProfileView({
             <h2 id="profile-filter-title">Filter history</h2>
           </div>
           <button className="profile-export-button" type="button" onClick={onExport}>
-            <Download aria-hidden="true" />
+            <FontAwesomeIcon className="app-icon" icon={faDownload} fixedWidth aria-hidden="true" />
             export all data (.json)
           </button>
         </div>
@@ -1158,22 +1160,22 @@ export function ProfileView({
                     <th className="profile-pb-column" scope="col">PB</th>
                     <th scope="col" aria-sort={sortAria('result')}>
                       <button type="button" onClick={() => selectSort('result')}>
-                        result <ArrowDownUp aria-hidden="true" />
+                        result <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
                       </button>
                     </th>
                     <th scope="col" aria-sort={sortAria('penalty')}>
                       <button type="button" onClick={() => selectSort('penalty')}>
-                        penalty <ArrowDownUp aria-hidden="true" />
+                        penalty <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
                       </button>
                     </th>
                     <th scope="col" aria-sort={sortAria('session')}>
                       <button type="button" onClick={() => selectSort('session')}>
-                        session <ArrowDownUp aria-hidden="true" />
+                        session <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
                       </button>
                     </th>
                     <th scope="col" aria-sort={sortAria('timestamp')}>
                       <button type="button" onClick={() => selectSort('timestamp')}>
-                        recorded <ArrowDownUp aria-hidden="true" />
+                        recorded <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
                       </button>
                     </th>
                     <th scope="col">scramble</th>
@@ -1240,7 +1242,7 @@ export function ProfileView({
                               aria-label={`Delete ${formatTime(solve.duration_ms)} solve`}
                               title="Delete solve"
                             >
-                              <Trash2 aria-hidden="true" />
+                              <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
                             </button>
                           </div>
                         </td>

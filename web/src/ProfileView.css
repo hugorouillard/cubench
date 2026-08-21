@@ -74,7 +74,7 @@
   border-radius: calc(var(--roundness) * 1.2);
   color: var(--bg-color);
   background: var(--main-color);
-  font-family: 'Lexend Deca', sans-serif;
+  font-family: var(--brand-font);
   font-size: 1.35rem;
   letter-spacing: -0.06em;
 }
@@ -110,9 +110,8 @@
   font-size: 0.62rem;
 }
 
-.profile-tracking svg {
-  width: 0.85rem;
-  height: 0.85rem;
+.profile-tracking .app-icon {
+  font-size: 0.85rem;
 }
 
 .profile-edit-button,
@@ -139,10 +138,9 @@
   background: var(--text-color);
 }
 
-.profile-edit-button svg,
-.profile-export-button svg {
-  width: 0.95rem;
-  height: 0.95rem;
+.profile-edit-button .app-icon,
+.profile-export-button .app-icon {
+  font-size: 0.9rem;
 }
 
 .profile-lifetime-metrics {
@@ -216,10 +214,9 @@
   gap: 0.75rem;
 }
 
-.profile-pb-title > svg {
-  width: 1rem;
-  height: 1rem;
+.profile-pb-title > .app-icon {
   color: var(--main-color);
+  font-size: 1rem;
 }
 
 .profile-pb-title h2,
@@ -647,9 +644,8 @@
   color: var(--main-color);
 }
 
-.profile-solve-table th svg {
-  width: 0.7rem;
-  height: 0.7rem;
+.profile-solve-table th .app-icon {
+  font-size: 0.65rem;
 }
 
 .profile-solve-table tbody tr {
@@ -788,9 +784,8 @@
   opacity: 0.35;
 }
 
-.profile-solve-actions svg {
-  width: 0.82rem;
-  height: 0.82rem;
+.profile-solve-actions .app-icon {
+  font-size: 0.78rem;
 }
 
 .profile-load-more {
@@ -848,9 +843,8 @@
   cursor: pointer;
 }
 
-.profile-editor header svg {
-  width: 1rem;
-  height: 1rem;
+.profile-editor header .app-icon {
+  font-size: 1rem;
 }
 
 .profile-editor > label {
