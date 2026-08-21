@@ -1,5 +1,3 @@
-# Agent Notes
-
 ## Monkeytype Inspiration
 
 Use Monkeytype as a design reference.
@@ -11,4 +9,3 @@ Use Monkeytype as a design reference.
 - Adapt those ideas to speedcubing: scrambles, timer state, solve history,
   cubing statistics, and practice sessions should remain the product's own
   visual language and workflow.
-
