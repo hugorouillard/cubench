@@ -97,6 +97,10 @@ function chronologicalSolves(solves: Solve[]): Solve[] {
   return [...solves].sort(compareSolveOrder)
 }
 
+export function newestSolvesFirst(solves: readonly Solve[]): Solve[] {
+  return [...solves].sort((left, right) => compareSolveOrder(right, left))
+}
+
 export function filterSolves(
   solves: Solve[],
   range: SolveDateRange,

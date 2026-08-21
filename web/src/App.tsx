@@ -31,7 +31,8 @@ import {
   getSolves,
   updateSolvePenalty,
 } from './api'
-import { summarizeSolves } from './stats'
+import { SessionPanel } from './SessionPanel'
+import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatTime } from './timer'
 import type { Penalty, PracticeSession, Solve } from './types'
@@ -54,11 +55,14 @@ function phaseInstruction(phase: TimerPhase): string {
   return 'hold space to start'
 }
 
-function newestSolvesFirst(solves: Solve[]): Solve[] {
-  return solves.sort(
-    (left, right) =>
-      new Date(right.recorded_at).getTime() - new Date(left.recorded_at).getTime(),
-  )
+function formatSolveDateTime(value: string): string {
+  return new Date(value).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 type ModalProps = {
@@ -124,8 +128,10 @@ function App({ initialTheme }: AppProps) {
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
   const [pendingSaveIds, setPendingSaveIds] = useState<string[]>([])
+  const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([])
   const [saveFailed, setSaveFailed] = useState(false)
   const [latestResultId, setLatestResultId] = useState('')
+  const [selectedSolveId, setSelectedSolveId] = useState('')
   const [error, setError] = useState('')
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
@@ -167,6 +173,7 @@ function App({ initialTheme }: AppProps) {
 
   useEffect(() => {
     setLatestResultId('')
+    setSelectedSolveId('')
     setSaveFailed(false)
     if (!activeSessionId) return
 
@@ -197,9 +204,11 @@ function App({ initialTheme }: AppProps) {
   function selectSession(sessionId: string) {
     setSolves([])
     setLatestResultId('')
+    setSelectedSolveId('')
     latestResultIdRef.current = ''
     setSaveFailed(false)
     setActiveSessionId(sessionId)
+    resetTimer()
   }
 
   async function generateScramble() {
@@ -235,7 +244,11 @@ function App({ initialTheme }: AppProps) {
         recorded_at: new Date().toISOString(),
       })
       if (sessionId === activeSessionIdRef.current) {
-        setSolves((current) => newestSolvesFirst([savedSolve, ...current]))
+        setSolves((current) => {
+          const next = new Map(current.map((solve) => [solve.id, solve]))
+          next.set(savedSolve.id, savedSolve)
+          return newestSolvesFirst([...next.values()])
+        })
       }
     } catch (saveError) {
       if (latestResultIdRef.current === solveId) {
@@ -249,14 +262,15 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  const { phase, elapsedMs } = useTimer(
+  const { phase, elapsedMs, reset: resetTimer } = useTimer(
     Boolean(
       view === 'timer' &&
       activeSessionId &&
       scramble &&
       !scrambleLoading &&
       !sessionFormOpen &&
-      !practiceSettingsOpen,
+      !practiceSettingsOpen &&
+      !selectedSolveId,
     ),
     handleTimerComplete,
   )
@@ -282,6 +296,9 @@ function App({ initialTheme }: AppProps) {
     selectedPenalty: Penalty,
   ): Promise<Solve | null> {
     const penalty = solve.penalty === selectedPenalty ? 'none' : selectedPenalty
+    setPendingMutationIds((current) =>
+      current.includes(solve.id) ? current : [...current, solve.id],
+    )
     try {
       const updatedSolve = await updateSolvePenalty(solve.id, penalty)
       setSolves((current) =>
@@ -291,11 +308,16 @@ function App({ initialTheme }: AppProps) {
     } catch (penaltyError) {
       setError(errorMessage(penaltyError))
       return null
+    } finally {
+      setPendingMutationIds((current) => current.filter((id) => id !== solve.id))
     }
   }
 
   async function handleDelete(solve: Solve): Promise<boolean> {
     if (!window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return false
+    setPendingMutationIds((current) =>
+      current.includes(solve.id) ? current : [...current, solve.id],
+    )
     try {
       await deleteSolve(solve.id)
       deletedSolveIdsRef.current.add(solve.id)
@@ -303,11 +325,15 @@ function App({ initialTheme }: AppProps) {
       if (solve.id === latestResultIdRef.current) {
         setLatestResultId('')
         latestResultIdRef.current = ''
+        resetTimer()
       }
+      setSelectedSolveId((current) => current === solve.id ? '' : current)
       return true
     } catch (deleteError) {
       setError(errorMessage(deleteError))
       return false
+    } finally {
+      setPendingMutationIds((current) => current.filter((id) => id !== solve.id))
     }
   }
 
@@ -336,13 +362,28 @@ function App({ initialTheme }: AppProps) {
 
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
+  const selectedSolve = solves.find((solve) => solve.id === selectedSolveId)
+  const selectedSolveIndex = selectedSolve
+    ? solves.findIndex((solve) => solve.id === selectedSolve.id)
+    : -1
+  const selectedSolveNumber = selectedSolveIndex < 0
+    ? 0
+    : solves.length - selectedSolveIndex
+  const selectedSolvePending = selectedSolve
+    ? pendingMutationIds.includes(selectedSolve.id)
+    : false
+  const activeSession = sessions.find((session) => session.id === activeSessionId)
   const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
   const displayedTime =
-    phase === 'running' || phase === 'stopped'
+    phase === 'running'
       ? formatTime(elapsedMs)
+      : phase === 'stopped'
+        ? latestResult
+          ? formatTime(latestResult.duration_ms, latestResult.penalty)
+          : formatTime(elapsedMs)
       : lastSolve
         ? formatTime(lastSolve.duration_ms, lastSolve.penalty)
         : '0.00'
@@ -487,84 +528,97 @@ function App({ initialTheme }: AppProps) {
             </button>
           </div>
 
-          <section className="timer-stage" aria-label="Timer">
-            <button
-              className="scramble"
-              type="button"
-              onClick={() => void generateScramble()}
-              disabled={controlsDisabled || scrambleLoading}
-              title="Generate another scramble"
-            >
-              {scrambleLoading ? 'preparing scramble...' : scramble}
-            </button>
+          <div className="practice-workspace">
+            <section className="timer-stage" aria-label="Timer">
+              <button
+                className="scramble"
+                type="button"
+                onClick={() => void generateScramble()}
+                disabled={controlsDisabled || scrambleLoading}
+                title="Generate another scramble"
+              >
+                {scrambleLoading ? 'preparing scramble...' : scramble}
+              </button>
 
-            <div
-              className={`timer-readout${hideTimer ? ' timer-readout--hidden' : ''}`}
-              aria-live="off"
-            >
-              {displayedTime}
-            </div>
+              <div
+                className={`timer-readout${hideTimer ? ' timer-readout--hidden' : ''}`}
+                aria-live="off"
+              >
+                {displayedTime}
+              </div>
 
-            <div className="timer-results">
-              <div className="post-solve" aria-live="polite">
-                {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
-                {phase === 'stopped' && saveFailed && (
-                  <span className="post-solve-error">solve not saved</span>
-                )}
-                {phase === 'stopped' && !latestResultPending && latestResult && (
-                  <div className="post-solve-actions" aria-label="Latest solve actions">
-                    <button
-                      className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
-                      type="button"
-                      onClick={() => void handlePenalty(latestResult, 'plus2')}
-                      aria-pressed={latestResult.penalty === 'plus2'}
-                    >
-                      +2
-                    </button>
-                    <button
-                      className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
-                      type="button"
-                      onClick={() => void handlePenalty(latestResult, 'dnf')}
-                      aria-pressed={latestResult.penalty === 'dnf'}
-                    >
-                      dnf
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(latestResult)}
-                      aria-label="Delete latest solve"
-                      title="Delete latest solve"
-                    >
-                      <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-                    </button>
+              <div className="timer-results">
+                <div className="post-solve" aria-live="polite">
+                  {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
+                  {phase === 'stopped' && saveFailed && (
+                    <span className="post-solve-error">solve not saved</span>
+                  )}
+                  {phase === 'stopped' && !latestResultPending && latestResult && (
+                    <div className="post-solve-actions" aria-label="Latest solve actions">
+                      <button
+                        className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
+                        type="button"
+                        disabled={pendingMutationIds.includes(latestResult.id)}
+                        onClick={() => void handlePenalty(latestResult, 'plus2')}
+                        aria-pressed={latestResult.penalty === 'plus2'}
+                      >
+                        +2
+                      </button>
+                      <button
+                        className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
+                        type="button"
+                        disabled={pendingMutationIds.includes(latestResult.id)}
+                        onClick={() => void handlePenalty(latestResult, 'dnf')}
+                        aria-pressed={latestResult.penalty === 'dnf'}
+                      >
+                        dnf
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pendingMutationIds.includes(latestResult.id)}
+                        onClick={() => void handleDelete(latestResult)}
+                        aria-label="Delete latest solve"
+                        title="Delete latest solve"
+                      >
+                        <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="session-stats focus-chrome" aria-label="Current statistics">
+                  <div>
+                    <span>mean</span>
+                    <strong>{statTime(summary.mean)}</strong>
                   </div>
-                )}
+                  <div>
+                    <span>ao5</span>
+                    <strong>{statTime(summary.currentAo5)}</strong>
+                  </div>
+                  <div>
+                    <span>best ao5</span>
+                    <strong>{statTime(summary.bestAo5)}</strong>
+                  </div>
+                  <div>
+                    <span>ao12</span>
+                    <strong>{statTime(summary.currentAo12)}</strong>
+                  </div>
+                  <div>
+                    <span>best</span>
+                    <strong>{statTime(summary.bestSingle)}</strong>
+                  </div>
+                </div>
               </div>
+            </section>
 
-              <div className="session-stats focus-chrome" aria-label="Current statistics">
-                <div>
-                  <span>mean</span>
-                  <strong>{statTime(summary.mean)}</strong>
-                </div>
-                <div>
-                  <span>ao5</span>
-                  <strong>{statTime(summary.currentAo5)}</strong>
-                </div>
-                <div>
-                  <span>best ao5</span>
-                  <strong>{statTime(summary.bestAo5)}</strong>
-                </div>
-                <div>
-                  <span>ao12</span>
-                  <strong>{statTime(summary.currentAo12)}</strong>
-                </div>
-                <div>
-                  <span>best</span>
-                  <strong>{statTime(summary.bestSingle)}</strong>
-                </div>
-              </div>
-            </div>
-          </section>
+            <SessionPanel
+              session={activeSession}
+              solves={solves}
+              disabled={controlsDisabled}
+              theme={theme}
+              onSelectSolve={setSelectedSolveId}
+            />
+          </div>
         </main>
       ) : (
         <Suspense
@@ -609,6 +663,79 @@ function App({ initialTheme }: AppProps) {
           <span>local / 001</span>
         </div>
       </footer>
+
+      <Modal
+        open={Boolean(selectedSolve)}
+        onClose={() => setSelectedSolveId('')}
+        labelledBy="solve-detail-title"
+      >
+        {selectedSolve && (
+          <div className="solve-detail">
+            <div className="dialog-heading">
+              <div>
+                <span>{activeSession?.name ?? 'current session'}</span>
+                <h2 id="solve-detail-title">Solve #{selectedSolveNumber}</h2>
+              </div>
+              <button type="button" onClick={() => setSelectedSolveId('')} aria-label="Close">
+                <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="solve-detail-result">
+              <span>result</span>
+              <strong>{formatTime(selectedSolve.duration_ms, selectedSolve.penalty)}</strong>
+              {selectedSolve.penalty !== 'none' && (
+                <small>raw {formatTime(selectedSolve.duration_ms)}</small>
+              )}
+            </div>
+
+            <dl className="solve-detail-meta">
+              <div>
+                <dt>recorded</dt>
+                <dd>
+                  <time dateTime={selectedSolve.recorded_at}>
+                    {formatSolveDateTime(selectedSolve.recorded_at)}
+                  </time>
+                </dd>
+              </div>
+              <div>
+                <dt>scramble</dt>
+                <dd>{selectedSolve.scramble}</dd>
+              </div>
+            </dl>
+
+            <div className="solve-detail-actions" aria-label="Solve actions">
+              <button
+                className={selectedSolve.penalty === 'plus2' ? 'is-active' : ''}
+                type="button"
+                disabled={selectedSolvePending}
+                onClick={() => void handlePenalty(selectedSolve, 'plus2')}
+                aria-pressed={selectedSolve.penalty === 'plus2'}
+              >
+                +2
+              </button>
+              <button
+                className={selectedSolve.penalty === 'dnf' ? 'is-active' : ''}
+                type="button"
+                disabled={selectedSolvePending}
+                onClick={() => void handlePenalty(selectedSolve, 'dnf')}
+                aria-pressed={selectedSolve.penalty === 'dnf'}
+              >
+                dnf
+              </button>
+              <button
+                className="is-delete"
+                type="button"
+                disabled={selectedSolvePending}
+                onClick={() => void handleDelete(selectedSolve)}
+              >
+                <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
+                delete
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         open={sessionFormOpen}

@@ -108,5 +108,16 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
     return () => cancelAnimationFrame(animationFrame)
   }, [phase])
 
-  return { phase, elapsedMs }
+  function reset() {
+    if (phaseRef.current === 'running') return
+    if (holdTimeoutRef.current !== null) {
+      clearTimeout(holdTimeoutRef.current)
+      holdTimeoutRef.current = null
+    }
+    phaseRef.current = 'idle'
+    setPhase('idle')
+    setElapsedMs(0)
+  }
+
+  return { phase, elapsedMs, reset }
 }
