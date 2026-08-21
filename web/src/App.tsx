@@ -11,10 +11,9 @@ import {
 import { randomScrambleForEvent } from 'cubing/scramble'
 import {
   Box,
-  Database,
+  EyeOff,
   Palette,
   Plus,
-  RefreshCw,
   Settings2,
   Timer,
   Trash2,
@@ -26,6 +25,7 @@ import {
   createSolve,
   deleteSolve,
   getExportData,
+  getProfile,
   getSessions,
   getSolves,
   updateSolvePenalty,
@@ -130,16 +130,24 @@ function App({ initialTheme }: AppProps) {
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
   const [view, setView] = useState<'timer' | 'profile'>('timer')
+  const [hideTimer, setHideTimer] = useState(false)
+  const [profileName, setProfileName] = useState('Cube Solver')
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const activeSessionIdRef = useRef(activeSessionId)
   const latestResultIdRef = useRef(latestResultId)
   const deletedSolveIdsRef = useRef(new Set<string>())
   activeSessionIdRef.current = activeSessionId
   latestResultIdRef.current = latestResultId
-  const saving = pendingSaveIds.length > 0
-
   useEffect(() => {
     let cancelled = false
+    void getProfile()
+      .then((profile) => {
+        if (!cancelled) setProfileName(profile.display_name)
+      })
+      .catch((profileError: unknown) => {
+        if (!cancelled) setError(`Could not load profile: ${errorMessage(profileError)}`)
+      })
+
     Promise.all([getSessions(), randomScrambleForEvent('333')])
       .then(([loadedSessions, nextScramble]) => {
         if (cancelled) return
@@ -371,6 +379,9 @@ function App({ initialTheme }: AppProps) {
           >
             <Timer aria-hidden="true" />
           </button>
+        </nav>
+
+        <nav className="account-nav" aria-label="Account">
           <button
             className={view === 'profile' ? 'is-active' : ''}
             type="button"
@@ -381,14 +392,9 @@ function App({ initialTheme }: AppProps) {
             title="Profile"
           >
             <UserRound aria-hidden="true" />
+            <span className="account-name">{profileName}</span>
           </button>
         </nav>
-
-        <div className={`app-status${error ? ' app-status--error' : ''}`} role="status">
-          <span />
-          <Database aria-hidden="true" />
-          <small>{error ? 'attention' : saving ? 'saving' : 'local'}</small>
-        </div>
       </header>
 
       {error && (
@@ -403,13 +409,52 @@ function App({ initialTheme }: AppProps) {
       {view === 'timer' ? (
         <main className="practice-view page-width">
           <div className="practice-config-row focus-chrome">
-            <div className="practice-config practice-config--desktop" aria-label="Practice settings">
-              <div className="config-group config-event">
-                <Box aria-hidden="true" />
-                <span className="config-active">3x3</span>
+            <div
+              className="practice-config practice-config--desktop"
+              role="group"
+              aria-label="Practice settings"
+            >
+              <div
+                className="config-panel config-panel--toggles"
+                role="group"
+                aria-label="Solve modifiers"
+              >
+                <button
+                  className={hideTimer ? 'is-active' : ''}
+                  type="button"
+                  onClick={() => setHideTimer((current) => !current)}
+                  disabled={controlsDisabled}
+                  aria-pressed={hideTimer}
+                >
+                  <EyeOff aria-hidden="true" />
+                  hide timer
+                </button>
+                <button type="button" disabled title="Inspection is not available yet">
+                  inspection
+                </button>
               </div>
-              <span className="config-separator" />
-              <div className="config-group config-session">
+
+              <div
+                className="config-panel config-panel--modes"
+                role="group"
+                aria-label="Practice mode"
+              >
+                <span className="config-value is-active">
+                  <Timer aria-hidden="true" />
+                  timer
+                </span>
+                <button type="button" disabled title="Trainer mode is not available yet">
+                  <Box aria-hidden="true" />
+                  trainer
+                </button>
+              </div>
+
+              <div
+                className="config-panel config-panel--values"
+                role="group"
+                aria-label="Timer settings"
+              >
+                <span className="config-value is-active">3x3</span>
                 <select
                   value={activeSessionId}
                   onChange={(event) => selectSession(event.target.value)}
@@ -430,18 +475,6 @@ function App({ initialTheme }: AppProps) {
                   title="Create session"
                 >
                   <Plus aria-hidden="true" />
-                </button>
-              </div>
-              <span className="config-separator" />
-              <div className="config-group">
-                <button
-                  type="button"
-                  onClick={() => void generateScramble()}
-                  disabled={controlsDisabled || scrambleLoading}
-                  aria-label="New scramble"
-                  title="New scramble"
-                >
-                  <RefreshCw aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -468,7 +501,10 @@ function App({ initialTheme }: AppProps) {
               {scrambleLoading ? 'preparing scramble...' : scramble}
             </button>
 
-            <div className="timer-readout" aria-live="off">
+            <div
+              className={`timer-readout${hideTimer ? ' timer-readout--hidden' : ''}`}
+              aria-live="off"
+            >
               {displayedTime}
             </div>
 
@@ -550,15 +586,12 @@ function App({ initialTheme }: AppProps) {
             onDelete={handleDelete}
             onExport={() => void handleExport()}
             onError={setError}
+            onProfileChange={(profile) => setProfileName(profile.display_name)}
           />
         </Suspense>
       )}
 
       <footer className="site-footer page-width focus-chrome">
-        <div className="footer-copy">
-          <span>space / hold / release / stop</span>
-          <span>browser performance clock</span>
-        </div>
         <div className="footer-controls">
           <label className="footer-theme">
             <Palette aria-hidden="true" />
@@ -624,46 +657,51 @@ function App({ initialTheme }: AppProps) {
             <X aria-hidden="true" />
           </button>
         </div>
-        <div className="setting-row">
-          <div>
-            <strong>event</strong>
-            <span>scramble type</span>
+        <div className="mobile-config-stack">
+          <div className="mobile-config-group" role="group" aria-label="Solve modifiers">
+            <button
+              className={hideTimer ? 'is-active' : ''}
+              type="button"
+              onClick={() => setHideTimer((current) => !current)}
+              aria-pressed={hideTimer}
+            >
+              hide timer
+            </button>
+            <button type="button" disabled title="Inspection is not available yet">
+              inspection
+            </button>
           </div>
-          <span className="setting-value is-active">
-            3x3
-          </span>
-        </div>
-        <div className="setting-row setting-row--session">
-          <div>
-            <strong>session</strong>
-            <span>where solves are saved</span>
+          <span className="mobile-config-separator" />
+          <div className="mobile-config-group" role="group" aria-label="Practice mode">
+            <span className="mobile-config-value is-active">timer</span>
+            <button type="button" disabled title="Trainer mode is not available yet">
+              trainer
+            </button>
           </div>
-          <select
-            value={activeSessionId}
-            onChange={(event) => selectSession(event.target.value)}
-            aria-label="Practice session"
-            data-autofocus
+          <span className="mobile-config-separator" />
+          <div
+            className="mobile-config-group mobile-config-group--values"
+            role="group"
+            aria-label="Timer settings"
           >
-            {sessions.map((session) => (
-              <option key={session.id} value={session.id}>
-                {session.name}
-              </option>
-            ))}
-          </select>
+            <span className="mobile-config-value is-active">3x3</span>
+            <select
+              value={activeSessionId}
+              onChange={(event) => selectSession(event.target.value)}
+              aria-label="Practice session"
+              data-autofocus
+            >
+              {sessions.map((session) => (
+                <option key={session.id} value={session.id}>
+                  {session.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="dialog-actions dialog-actions--stacked">
+        <div className="dialog-actions">
           <button
             className="button-primary"
-            type="button"
-            onClick={() => {
-              setPracticeSettingsOpen(false)
-              void generateScramble()
-            }}
-          >
-            <RefreshCw aria-hidden="true" />
-            new scramble
-          </button>
-          <button
             type="button"
             onClick={() => {
               setPracticeSettingsOpen(false)
