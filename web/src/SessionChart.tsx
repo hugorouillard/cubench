@@ -6,9 +6,7 @@ import {
   LinearScale,
   PointElement,
   Tooltip,
-  type ActiveElement,
   type ChartData,
-  type ChartEvent,
   type ChartOptions,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
@@ -37,9 +35,7 @@ type ChartColors = {
 
 type SessionChartProps = {
   solves: Solve[]
-  disabled: boolean
   theme: string
-  onSelectSolve: (solveId: string) => void
 }
 
 function getChartColors(): ChartColors {
@@ -58,9 +54,7 @@ function getChartColors(): ChartColors {
 
 export function SessionChart({
   solves,
-  disabled,
   theme: _theme,
-  onSelectSolve,
 }: SessionChartProps) {
   const history = solveHistory(solves)
   const solveById = new Map(solves.map((solve) => [solve.id, solve]))
@@ -111,11 +105,6 @@ export function SessionChart({
     animation: false,
     normalized: true,
     interaction: { mode: 'nearest', intersect: true },
-    onClick: (_event: ChartEvent, elements: ActiveElement[]) => {
-      if (disabled) return
-      const point = history[elements[0]?.index ?? -1]
-      if (point) onSelectSolve(point.solveId)
-    },
     plugins: {
       legend: { display: false },
       tooltip: {

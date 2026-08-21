@@ -55,16 +55,6 @@ function phaseInstruction(phase: TimerPhase): string {
   return 'hold space to start'
 }
 
-function formatSolveDateTime(value: string): string {
-  return new Date(value).toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 type ModalProps = {
   open: boolean
   onClose: () => void
@@ -131,7 +121,6 @@ function App({ initialTheme }: AppProps) {
   const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([])
   const [saveFailed, setSaveFailed] = useState(false)
   const [latestResultId, setLatestResultId] = useState('')
-  const [selectedSolveId, setSelectedSolveId] = useState('')
   const [error, setError] = useState('')
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
@@ -173,7 +162,6 @@ function App({ initialTheme }: AppProps) {
 
   useEffect(() => {
     setLatestResultId('')
-    setSelectedSolveId('')
     setSaveFailed(false)
     if (!activeSessionId) return
 
@@ -204,7 +192,6 @@ function App({ initialTheme }: AppProps) {
   function selectSession(sessionId: string) {
     setSolves([])
     setLatestResultId('')
-    setSelectedSolveId('')
     latestResultIdRef.current = ''
     setSaveFailed(false)
     setActiveSessionId(sessionId)
@@ -269,8 +256,7 @@ function App({ initialTheme }: AppProps) {
       scramble &&
       !scrambleLoading &&
       !sessionFormOpen &&
-      !practiceSettingsOpen &&
-      !selectedSolveId,
+      !practiceSettingsOpen,
     ),
     handleTimerComplete,
   )
@@ -327,7 +313,6 @@ function App({ initialTheme }: AppProps) {
         latestResultIdRef.current = ''
         resetTimer()
       }
-      setSelectedSolveId((current) => current === solve.id ? '' : current)
       return true
     } catch (deleteError) {
       setError(errorMessage(deleteError))
@@ -362,16 +347,6 @@ function App({ initialTheme }: AppProps) {
 
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
-  const selectedSolve = solves.find((solve) => solve.id === selectedSolveId)
-  const selectedSolveIndex = selectedSolve
-    ? solves.findIndex((solve) => solve.id === selectedSolve.id)
-    : -1
-  const selectedSolveNumber = selectedSolveIndex < 0
-    ? 0
-    : solves.length - selectedSolveIndex
-  const selectedSolvePending = selectedSolve
-    ? pendingMutationIds.includes(selectedSolve.id)
-    : false
   const activeSession = sessions.find((session) => session.id === activeSessionId)
   const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
@@ -615,8 +590,10 @@ function App({ initialTheme }: AppProps) {
               session={activeSession}
               solves={solves}
               disabled={controlsDisabled}
+              pendingSolveIds={pendingMutationIds}
               theme={theme}
-              onSelectSolve={setSelectedSolveId}
+              onPenalty={handlePenalty}
+              onDelete={handleDelete}
             />
           </div>
         </main>
@@ -663,79 +640,6 @@ function App({ initialTheme }: AppProps) {
           <span>local / 001</span>
         </div>
       </footer>
-
-      <Modal
-        open={Boolean(selectedSolve)}
-        onClose={() => setSelectedSolveId('')}
-        labelledBy="solve-detail-title"
-      >
-        {selectedSolve && (
-          <div className="solve-detail">
-            <div className="dialog-heading">
-              <div>
-                <span>{activeSession?.name ?? 'current session'}</span>
-                <h2 id="solve-detail-title">Solve #{selectedSolveNumber}</h2>
-              </div>
-              <button type="button" onClick={() => setSelectedSolveId('')} aria-label="Close">
-                <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="solve-detail-result">
-              <span>result</span>
-              <strong>{formatTime(selectedSolve.duration_ms, selectedSolve.penalty)}</strong>
-              {selectedSolve.penalty !== 'none' && (
-                <small>raw {formatTime(selectedSolve.duration_ms)}</small>
-              )}
-            </div>
-
-            <dl className="solve-detail-meta">
-              <div>
-                <dt>recorded</dt>
-                <dd>
-                  <time dateTime={selectedSolve.recorded_at}>
-                    {formatSolveDateTime(selectedSolve.recorded_at)}
-                  </time>
-                </dd>
-              </div>
-              <div>
-                <dt>scramble</dt>
-                <dd>{selectedSolve.scramble}</dd>
-              </div>
-            </dl>
-
-            <div className="solve-detail-actions" aria-label="Solve actions">
-              <button
-                className={selectedSolve.penalty === 'plus2' ? 'is-active' : ''}
-                type="button"
-                disabled={selectedSolvePending}
-                onClick={() => void handlePenalty(selectedSolve, 'plus2')}
-                aria-pressed={selectedSolve.penalty === 'plus2'}
-              >
-                +2
-              </button>
-              <button
-                className={selectedSolve.penalty === 'dnf' ? 'is-active' : ''}
-                type="button"
-                disabled={selectedSolvePending}
-                onClick={() => void handlePenalty(selectedSolve, 'dnf')}
-                aria-pressed={selectedSolve.penalty === 'dnf'}
-              >
-                dnf
-              </button>
-              <button
-                className="is-delete"
-                type="button"
-                disabled={selectedSolvePending}
-                onClick={() => void handleDelete(selectedSolve)}
-              >
-                <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-                delete
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       <Modal
         open={sessionFormOpen}

@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { completedDuration } from './stats'
 import { formatTime } from './timer'
-import type { PracticeSession, Solve } from './types'
+import type { Penalty, PracticeSession, Solve } from './types'
 import './SessionPanel.css'
 
 const SessionChart = lazy(() =>
@@ -12,8 +14,10 @@ type SessionPanelProps = {
   session: PracticeSession | undefined
   solves: Solve[]
   disabled: boolean
+  pendingSolveIds: string[]
   theme: string
-  onSelectSolve: (solveId: string) => void
+  onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
+  onDelete: (solve: Solve) => Promise<boolean>
 }
 
 function formatSolveDate(value: string): string {
@@ -29,8 +33,10 @@ export function SessionPanel({
   session,
   solves,
   disabled,
+  pendingSolveIds,
   theme,
-  onSelectSolve,
+  onPenalty,
+  onDelete,
 }: SessionPanelProps) {
   const successful = solves
     .map((solve) => ({ solve, duration: completedDuration(solve) }))
@@ -66,9 +72,7 @@ export function SessionPanel({
               <Suspense fallback={<div className="session-chart-loading">loading graph...</div>}>
                 <SessionChart
                   solves={solves}
-                  disabled={disabled}
                   theme={theme}
-                  onSelectSolve={onSelectSolve}
                 />
               </Suspense>
             </div>
@@ -82,17 +86,15 @@ export function SessionPanel({
             {solves.map((solve, index) => {
               const solveNumber = solves.length - index
               const isBest = solve.id === bestSolveId
+              const pending = pendingSolveIds.includes(solve.id)
               const rawTime = formatTime(solve.duration_ms)
               const result = formatTime(solve.duration_ms, solve.penalty)
               return (
-                <li key={solve.id}>
-                  <button
-                    className={`${index === 0 ? 'is-latest ' : ''}${isBest ? 'is-best' : ''}`.trim()}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => onSelectSolve(solve.id)}
-                    aria-label={`Open solve ${solveNumber}, result ${result}`}
-                  >
+                <li
+                  className={`${index === 0 ? 'is-latest ' : ''}${isBest ? 'is-best' : ''}`.trim()}
+                  key={solve.id}
+                >
+                  <div className="session-solve-summary">
                     <span className="session-solve-number">#{solveNumber}</span>
                     <span className="session-solve-result">
                       <strong>{result}</strong>
@@ -102,7 +104,39 @@ export function SessionPanel({
                     </span>
                     {isBest && <span className="session-best-label">best</span>}
                     <time dateTime={solve.recorded_at}>{formatSolveDate(solve.recorded_at)}</time>
-                  </button>
+                  </div>
+                  <div className="session-solve-actions" aria-label={`Actions for solve ${solveNumber}`}>
+                    <button
+                      className={solve.penalty === 'plus2' ? 'is-active' : ''}
+                      type="button"
+                      disabled={disabled || pending}
+                      onClick={() => void onPenalty(solve, 'plus2')}
+                      aria-pressed={solve.penalty === 'plus2'}
+                      aria-label={`Toggle +2 penalty for solve ${solveNumber}`}
+                    >
+                      +2
+                    </button>
+                    <button
+                      className={solve.penalty === 'dnf' ? 'is-active' : ''}
+                      type="button"
+                      disabled={disabled || pending}
+                      onClick={() => void onPenalty(solve, 'dnf')}
+                      aria-pressed={solve.penalty === 'dnf'}
+                      aria-label={`Toggle DNF penalty for solve ${solveNumber}`}
+                    >
+                      dnf
+                    </button>
+                    <button
+                      className="is-delete"
+                      type="button"
+                      disabled={disabled || pending}
+                      onClick={() => void onDelete(solve)}
+                      aria-label={`Delete solve ${solveNumber}`}
+                      title="Delete solve"
+                    >
+                      <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
+                    </button>
+                  </div>
                 </li>
               )
             })}
