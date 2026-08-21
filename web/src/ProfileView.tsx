@@ -66,6 +66,7 @@ export type ProfileViewProps = {
   onDelete: (solve: Solve) => Promise<boolean>
   onExport: () => void
   onError: (message: string) => void
+  onProfileChange: (profile: UserProfile) => void
 }
 
 type HistorySeries = {
@@ -421,6 +422,7 @@ export function ProfileView({
   onDelete,
   onExport,
   onError,
+  onProfileChange,
 }: ProfileViewProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [solves, setSolves] = useState<Solve[]>([])
@@ -1265,7 +1267,10 @@ export function ProfileView({
         open={editorOpen}
         profile={profile}
         onClose={() => setEditorOpen(false)}
-        onSaved={setProfile}
+        onSaved={(updatedProfile) => {
+          setProfile(updatedProfile)
+          onProfileChange(updatedProfile)
+        }}
         onError={onError}
       />
     </main>
