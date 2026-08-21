@@ -123,10 +123,17 @@
 }
 
 .session-solve-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
   border-top: 2px solid var(--bg-color);
 }
 
-.session-solve-list button {
+.session-solve-list li.is-latest {
+  box-shadow: inset 2px 0 var(--main-color);
+}
+
+.session-solve-summary {
   position: relative;
   width: 100%;
   min-height: 3.3rem;
@@ -134,23 +141,9 @@
   grid-template-columns: 2.5rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.55rem;
-  border: 0;
-  padding: 0.6rem 0.85rem;
+  padding: 0.6rem 0.35rem 0.6rem 0.85rem;
   color: var(--sub-readable-color);
-  background: transparent;
-  cursor: pointer;
   text-align: left;
-  transition: color 125ms ease, background 125ms ease, box-shadow 125ms ease;
-}
-
-.session-solve-list button:hover,
-.session-solve-list button:focus-visible {
-  color: var(--text-color);
-  background: color-mix(in srgb, var(--bg-color) 60%, transparent);
-}
-
-.session-solve-list button.is-latest {
-  box-shadow: inset 2px 0 var(--main-color);
 }
 
 .session-solve-number,
@@ -182,7 +175,7 @@
   font-size: 0.48rem;
 }
 
-.session-solve-list button.is-best .session-solve-result strong {
+.session-solve-list li.is-best .session-solve-result strong {
   color: var(--main-color);
 }
 
@@ -195,6 +188,47 @@
 
 .session-solve-list time {
   justify-self: end;
+}
+
+.session-solve-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding-right: 0.55rem;
+}
+
+.session-solve-actions button {
+  width: 1.7rem;
+  height: 1.7rem;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0.25rem;
+  padding: 0;
+  color: var(--sub-readable-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  font-size: 0.48rem;
+  transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
+}
+
+.session-solve-actions button:hover,
+.session-solve-actions button.is-active {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.session-solve-actions button.is-delete:hover {
+  background: var(--error-readable-color);
+}
+
+.session-solve-actions button:disabled {
+  cursor: wait;
+  opacity: 0.35;
+}
+
+.session-solve-actions .app-icon {
+  font-size: 0.68rem;
 }
 
 .session-panel-empty {
@@ -243,7 +277,7 @@
     height: 11rem;
   }
 
-  .session-solve-list button {
+  .session-solve-summary {
     grid-template-columns: 2.25rem minmax(0, 1fr) auto;
   }
 
