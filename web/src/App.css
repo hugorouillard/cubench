@@ -1,9 +1,14 @@
 .app {
+  --app-padding: 2rem;
+  --footer-height: 3.6875rem;
+  --session-panel-width: clamp(17.5rem, 22vw, 21rem);
+  --workspace-height: clamp(29rem, calc(100svh - 14rem), 45rem);
+  --workspace-gap: clamp(1.25rem, 3vw, 3rem);
   min-height: 100svh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 2rem;
-  padding: 2rem;
+  padding: var(--app-padding);
   overflow-x: hidden;
 }
 
@@ -18,6 +23,16 @@
 
 .site-header {
   z-index: 10;
+  min-height: 2.25rem;
+}
+
+.site-header--timer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--session-panel-width);
+  gap: var(--workspace-gap);
+}
+
+.site-header-main {
   display: flex;
   align-items: center;
   min-height: 2.25rem;
@@ -187,15 +202,24 @@ select:disabled {
 .practice-view {
   position: relative;
   min-height: 0;
+  display: grid;
+  align-items: center;
 }
 
 .practice-workspace {
-  height: 100%;
-  min-height: clamp(29rem, 64vh, 43rem);
+  position: relative;
+  height: var(--workspace-height);
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(17.5rem, 22vw, 21rem);
+  grid-template-columns: minmax(0, 1fr) var(--session-panel-width);
   align-items: stretch;
-  gap: clamp(1.25rem, 3vw, 3rem);
+  gap: var(--workspace-gap);
+}
+
+.practice-workspace .session-panel {
+  height: 100%;
+  max-height: none;
+  align-self: start;
 }
 
 .profile-fallback {
@@ -211,8 +235,9 @@ select:disabled {
   z-index: 1;
   inset: 0 0 auto;
   min-height: 2.5rem;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--session-panel-width);
+  gap: var(--workspace-gap);
 }
 
 .practice-config {
@@ -319,6 +344,7 @@ select:disabled {
 }
 
 .timer-stage {
+  position: relative;
   height: 100%;
   min-width: 0;
   min-height: 0;
@@ -457,17 +483,24 @@ select:disabled {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: end;
   gap: 2rem;
-  min-height: 5.6875rem;
+  min-height: var(--footer-height);
   color: var(--sub-readable-color);
   font-size: 0.68rem;
 }
 
+.site-footer--timer {
+  grid-template-columns: minmax(0, 1fr) var(--session-panel-width);
+}
+
 .timer-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: grid;
-  grid-column: 2;
   min-height: 2rem;
   place-items: center;
-  align-self: start;
+  transform: translateY(0.3125rem);
 }
 
 .footer-controls {
@@ -476,6 +509,10 @@ select:disabled {
   align-items: center;
   justify-self: end;
   gap: 1.25rem;
+}
+
+.site-footer--timer > .footer-controls {
+  grid-column: 2;
 }
 
 .footer-theme {
@@ -711,6 +748,11 @@ select:disabled {
 }
 
 @media (max-width: 848px) {
+  .site-header--timer,
+  .practice-config-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .practice-config--desktop {
     display: none;
   }
@@ -731,6 +773,20 @@ select:disabled {
     gap: 3rem;
   }
 
+  .practice-workspace .session-panel {
+    height: min(36rem, calc(100svh - 8rem));
+    max-height: min(36rem, calc(100svh - 8rem));
+    align-self: center;
+  }
+
+  .site-footer--timer {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .site-footer--timer > .footer-controls {
+    grid-column: 3;
+  }
+
   .timer-stage {
     min-height: clamp(27rem, 62vh, 38rem);
   }
@@ -738,8 +794,9 @@ select:disabled {
 
 @media (max-width: 720px) {
   .app {
+    --app-padding: 1rem;
     gap: 1.25rem;
-    padding: 1rem;
+    padding: var(--app-padding);
   }
 
   .brand-copy {
@@ -779,8 +836,8 @@ select:disabled {
     min-height: auto;
   }
 
-  .timer-controls,
-  .footer-controls {
+  .footer-controls,
+  .site-footer--timer > .footer-controls {
     grid-column: 1;
   }
 
