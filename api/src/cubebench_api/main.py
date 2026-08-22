@@ -10,8 +10,6 @@ from cubebench_api.database import connect, initialize_database
 from cubebench_api.schemas import (
     ExportData,
     PracticeSession,
-    PracticeSessionCreate,
-    PracticeSessionUpdate,
     Profile,
     ProfileUpdate,
     Solve,
@@ -66,60 +64,6 @@ def list_sessions() -> list[dict]:
     return [dict(row) for row in rows]
 
 
-@app.post(
-    "/api/sessions",
-    response_model=PracticeSession,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_session(payload: PracticeSessionCreate) -> dict:
-    session = {
-        "id": str(uuid4()),
-        "name": payload.name,
-        "created_at": datetime.now(UTC).isoformat(),
-    }
-    with connect() as connection:
-        connection.execute(
-            "INSERT INTO practice_sessions (id, name, created_at) VALUES (?, ?, ?)",
-            tuple(session.values()),
-        )
-        connection.commit()
-    return session
-
-
-@app.patch("/api/sessions/{session_id}", response_model=PracticeSession)
-def update_session(session_id: UUID, payload: PracticeSessionUpdate) -> dict:
-    with connect() as connection:
-        cursor = connection.execute(
-            "UPDATE practice_sessions SET name = ? WHERE id = ?",
-            (payload.name, str(session_id)),
-        )
-        connection.commit()
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Session not found")
-        row = connection.execute(
-            "SELECT id, name, created_at FROM practice_sessions WHERE id = ?",
-            (str(session_id),),
-        ).fetchone()
-    return dict(row)
-
-
-@app.delete("/api/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: UUID) -> Response:
-    with connect() as connection:
-        session_count = connection.execute(
-            "SELECT count(*) FROM practice_sessions"
-        ).fetchone()[0]
-        if session_count == 1:
-            raise HTTPException(status_code=409, detail="Cannot delete the only session")
-        cursor = connection.execute(
-            "DELETE FROM practice_sessions WHERE id = ?", (str(session_id),)
-        )
-        connection.commit()
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Session not found")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 @app.get("/api/solves", response_model=list[Solve])
 def list_solves(
     session_id: Annotated[UUID | None, Query()] = None,
@@ -136,6 +80,14 @@ def list_solves(
     with connect() as connection:
         rows = connection.execute(query, parameters).fetchall()
     return [dict(row) for row in rows]
+
+
+@app.delete("/api/solves", status_code=status.HTTP_204_NO_CONTENT)
+def clear_solves() -> Response:
+    with connect() as connection:
+        connection.execute("DELETE FROM solves")
+        connection.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.post(

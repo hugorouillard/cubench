@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { completedDuration } from './stats'
 import { formatTime } from './timer'
-import type { Penalty, PracticeSession, Solve } from './types'
+import type { Penalty, Solve } from './types'
 import './SessionPanel.css'
 
 const SessionChart = lazy(() =>
@@ -11,13 +11,14 @@ const SessionChart = lazy(() =>
 )
 
 type SessionPanelProps = {
-  session: PracticeSession | undefined
   solves: Solve[]
   disabled: boolean
   pendingSolveIds: string[]
   theme: string
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
   onDelete: (solve: Solve) => Promise<boolean>
+  onClear: () => Promise<void>
+  clearing: boolean
 }
 
 function formatSolveDate(value: string): string {
@@ -30,13 +31,14 @@ function formatSolveDate(value: string): string {
 }
 
 export function SessionPanel({
-  session,
   solves,
   disabled,
   pendingSolveIds,
   theme,
   onPenalty,
   onDelete,
+  onClear,
+  clearing,
 }: SessionPanelProps) {
   const successful = solves
     .map((solve) => ({ solve, duration: completedDuration(solve) }))
@@ -49,10 +51,20 @@ export function SessionPanel({
     <aside className="session-panel focus-chrome" aria-labelledby="session-panel-title">
       <header className="session-panel-header">
         <div>
-          <span>current session</span>
-          <h2 id="session-panel-title">{session?.name ?? 'session'}</h2>
+          <span>current solves</span>
+          <h2 id="session-panel-title">solve history</h2>
         </div>
-        <strong>{solves.length} {solves.length === 1 ? 'solve' : 'solves'}</strong>
+        <div className="session-panel-summary">
+          <strong>{solves.length} {solves.length === 1 ? 'solve' : 'solves'}</strong>
+          <button
+            type="button"
+            disabled={disabled || solves.length === 0}
+            onClick={() => void onClear()}
+          >
+            <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
+            {clearing ? 'clearing...' : 'clear times'}
+          </button>
+        </div>
       </header>
 
       {solves.length === 0 ? (

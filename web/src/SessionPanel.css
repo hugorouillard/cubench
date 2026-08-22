@@ -34,7 +34,7 @@
 
 .session-panel-header span,
 .session-log-heading,
-.session-panel-header > strong {
+.session-panel-summary > strong {
   color: var(--sub-readable-color);
   font-size: 0.58rem;
 }
@@ -49,9 +49,41 @@
   white-space: nowrap;
 }
 
-.session-panel-header > strong {
+.session-panel-summary > strong {
   flex: 0 0 auto;
   font-weight: 400;
+}
+
+.session-panel-summary {
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.session-panel-summary button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  border-radius: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  color: var(--sub-readable-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.55rem;
+  transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
+}
+
+.session-panel-summary button:hover:not(:disabled) {
+  color: var(--bg-color);
+  background: var(--error-readable-color);
+}
+
+.session-panel-summary button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .session-chart-region {

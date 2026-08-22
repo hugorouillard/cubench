@@ -28,13 +28,6 @@ export function getSessions(): Promise<PracticeSession[]> {
   return request('/api/sessions')
 }
 
-export function createSession(name: string): Promise<PracticeSession> {
-  return request('/api/sessions', {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  })
-}
-
 export function getProfile(): Promise<UserProfile> {
   return request('/api/profile')
 }
@@ -70,6 +63,10 @@ export function updateSolve(
 
 export function deleteSolve(solveId: string): Promise<void> {
   return request(`/api/solves/${solveId}`, { method: 'DELETE' })
+}
+
+export function clearSolves(): Promise<void> {
+  return request('/api/solves', { method: 'DELETE' })
 }
 
 export function getExportData(): Promise<ExportData> {

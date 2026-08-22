@@ -70,6 +70,21 @@ def initialize_database() -> None:
                 "VALUES (?, 'main', datetime('now'))",
                 (str(uuid4()),),
             )
+        else:
+            primary_session_id = connection.execute(
+                "SELECT id FROM practice_sessions ORDER BY created_at, id LIMIT 1"
+            ).fetchone()[0]
+            connection.execute(
+                "UPDATE solves SET session_id = ? WHERE session_id != ?",
+                (primary_session_id, primary_session_id),
+            )
+            connection.execute(
+                "DELETE FROM practice_sessions WHERE id != ?", (primary_session_id,)
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET name = 'main' WHERE id = ?",
+                (primary_session_id,),
+            )
         connection.execute(
             """
             INSERT OR IGNORE INTO local_profile (id, display_name, bio, created_at)

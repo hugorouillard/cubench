@@ -47,7 +47,7 @@ import {
   type SolveDateRange,
 } from './stats'
 import { formatTime } from './timer'
-import type { Penalty, PracticeSession, Solve, UserProfile, UserProfileInput } from './types'
+import type { Penalty, Solve, UserProfile, UserProfileInput } from './types'
 import './ProfileView.css'
 
 ChartJS.register(
@@ -63,7 +63,6 @@ ChartJS.register(
 ChartJS.defaults.font.family = "'Roboto Mono', monospace"
 
 export type ProfileViewProps = {
-  sessions: PracticeSession[]
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
   onDelete: (solve: Solve) => Promise<boolean>
   onExport: () => void
@@ -78,7 +77,7 @@ type HistorySeries = {
   ao12: boolean
 }
 
-type SortKey = 'result' | 'penalty' | 'session' | 'timestamp'
+type SortKey = 'result' | 'penalty' | 'timestamp'
 type SortDirection = 'ascending' | 'descending'
 
 type ActivityCell = {
@@ -419,7 +418,6 @@ function EmptyChart({ children }: { children: string }) {
 }
 
 export function ProfileView({
-  sessions,
   onPenalty,
   onDelete,
   onExport,
@@ -432,7 +430,6 @@ export function ProfileView({
   const [loadFailed, setLoadFailed] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [range, setRange] = useState<SolveDateRange>('all')
-  const [selectedSessionIds, setSelectedSessionIds] = useState<string[] | null>(null)
   const [historySeries, setHistorySeries] = useState<HistorySeries>({
     single: true,
     pb: true,
@@ -482,8 +479,8 @@ export function ProfileView({
     [solves],
   )
   const filteredSolves = useMemo(
-    () => filterSolves(solves, range, selectedSessionIds),
-    [range, selectedSessionIds, solves],
+    () => filterSolves(solves, range),
+    [range, solves],
   )
   const analytics = useMemo(() => {
     const history = solveHistory(filteredSolves)
@@ -498,7 +495,6 @@ export function ProfileView({
   }, [filteredSolves])
 
   const sortedSolves = useMemo(() => {
-    const sessionNames = new Map(sessions.map((session) => [session.id, session.name]))
     const penaltyOrder: Record<Penalty, number> = { none: 0, plus2: 1, dnf: 2 }
     const direction = sortDirection === 'ascending' ? 1 : -1
 
@@ -509,10 +505,6 @@ export function ProfileView({
           (completedDuration(right) ?? Number.POSITIVE_INFINITY)
       } else if (sortKey === 'penalty') {
         comparison = penaltyOrder[left.penalty] - penaltyOrder[right.penalty]
-      } else if (sortKey === 'session') {
-        comparison = (sessionNames.get(left.session_id) ?? '').localeCompare(
-          sessionNames.get(right.session_id) ?? '',
-        )
       } else {
         comparison = new Date(left.recorded_at).getTime() - new Date(right.recorded_at).getTime()
       }
@@ -520,7 +512,7 @@ export function ProfileView({
       if (comparison === 0) comparison = left.id.localeCompare(right.id)
       return comparison * direction
     })
-  }, [filteredSolves, sessions, sortDirection, sortKey])
+  }, [filteredSolves, sortDirection, sortKey])
 
   const colors = getChartColors()
   const historyChartData = useMemo<ChartData<'line', (number | null)[], string>>(() => ({
@@ -645,32 +637,6 @@ export function ProfileView({
     })
   }
 
-  function updateAllSessions(checked: boolean) {
-    startFilterTransition(() => {
-      setSelectedSessionIds(checked ? null : [])
-      setVisibleCount(25)
-      setSelectedSolveId(null)
-    })
-  }
-
-  function updateSession(sessionId: string, checked: boolean) {
-    startFilterTransition(() => {
-      setSelectedSessionIds((current) => {
-        if (current === null) {
-          if (checked) return null
-          return sessions.map((session) => session.id).filter((id) => id !== sessionId)
-        }
-
-        const next = checked
-          ? [...new Set([...current, sessionId])]
-          : current.filter((id) => id !== sessionId)
-        return next.length === sessions.length ? null : next
-      })
-      setVisibleCount(25)
-      setSelectedSolveId(null)
-    })
-  }
-
   function selectSort(nextSortKey: SortKey) {
     if (sortKey === nextSortKey) {
       setSortDirection((current) => current === 'ascending' ? 'descending' : 'ascending')
@@ -760,13 +726,6 @@ export function ProfileView({
     : Math.round((filteredSuccessful / analytics.summary.count) * 100)
   const plus2Count = filteredSolves.filter((solve) => solve.penalty === 'plus2').length
   const activeRange = RANGE_OPTIONS.find((option) => option.value === range)?.summary ?? 'all time'
-  const sessionSummary = selectedSessionIds === null
-    ? 'all sessions'
-    : selectedSessionIds.length === 0
-      ? 'no sessions'
-      : selectedSessionIds.length === 1
-        ? sessions.find((session) => session.id === selectedSessionIds[0])?.name ?? '1 session'
-        : `${selectedSessionIds.length} sessions`
   const visibleSolves = sortedSolves.slice(0, visibleCount)
   const historyOptions: ChartOptions<'line'> = {
     responsive: true,
@@ -1007,33 +966,8 @@ export function ProfileView({
           </div>
         </fieldset>
 
-        <fieldset className="profile-filter-group profile-session-filter">
-          <legend>sessions</legend>
-          <div className="profile-filter-options">
-            <label>
-              <input
-                type="checkbox"
-                checked={selectedSessionIds === null}
-                onChange={(event) => updateAllSessions(event.target.checked)}
-              />
-              <span>all</span>
-            </label>
-            {sessions.map((session, index) => (
-              <label key={session.id}>
-                <input
-                  type="checkbox"
-                  checked={selectedSessionIds === null || selectedSessionIds.includes(session.id)}
-                  onChange={(event) => updateSession(session.id, event.target.checked)}
-                  aria-describedby={`profile-session-name-${index}`}
-                />
-                <span id={`profile-session-name-${index}`}>{session.name}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
         <p className="profile-filter-summary" aria-live="polite">
-          {activeRange} · {sessionSummary} · {filteredSolves.length.toLocaleString()} {filteredSolves.length === 1 ? 'solve' : 'solves'}
+          {activeRange} · {filteredSolves.length.toLocaleString()} {filteredSolves.length === 1 ? 'solve' : 'solves'}
           {filtersPending && <span> · updating charts...</span>}
         </p>
       </section>
@@ -1168,11 +1102,6 @@ export function ProfileView({
                         penalty <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
                       </button>
                     </th>
-                    <th scope="col" aria-sort={sortAria('session')}>
-                      <button type="button" onClick={() => selectSort('session')}>
-                        session <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
-                      </button>
-                    </th>
                     <th scope="col" aria-sort={sortAria('timestamp')}>
                       <button type="button" onClick={() => selectSort('timestamp')}>
                         recorded <FontAwesomeIcon className="app-icon" icon={faSort} fixedWidth aria-hidden="true" />
@@ -1202,7 +1131,6 @@ export function ProfileView({
                           {solve.penalty !== 'none' && <small>raw {formatTime(solve.duration_ms)}</small>}
                         </td>
                         <td>{solve.penalty === 'none' ? 'none' : solve.penalty === 'plus2' ? '+2' : 'DNF'}</td>
-                        <td>{sessions.find((session) => session.id === solve.session_id)?.name ?? 'unknown session'}</td>
                         <td>
                           <time dateTime={solve.recorded_at}>{formatDateTime(solve.recorded_at)}</time>
                         </td>

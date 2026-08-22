@@ -5,7 +5,6 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type FormEvent,
   type ReactNode,
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -13,7 +12,6 @@ import {
   faCube,
   faEyeSlash,
   faPalette,
-  faPlus,
   faSliders,
   faStopwatch,
   faUser,
@@ -21,7 +19,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
 import {
-  createSession,
+  clearSolves,
   createSolve,
   deleteSolve,
   getExportData,
@@ -34,7 +32,7 @@ import { SessionPanel } from './SessionPanel'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime } from './timer'
-import type { Penalty, PracticeSession, Solve } from './types'
+import type { Penalty, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
 
@@ -115,8 +113,7 @@ type AppProps = {
 }
 
 function App({ initialTheme }: AppProps) {
-  const [sessions, setSessions] = useState<PracticeSession[]>([])
-  const [activeSessionId, setActiveSessionId] = useState('')
+  const [sessionId, setSessionId] = useState('')
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
@@ -125,18 +122,17 @@ function App({ initialTheme }: AppProps) {
   const [saveFailed, setSaveFailed] = useState(false)
   const [latestResultId, setLatestResultId] = useState('')
   const [error, setError] = useState('')
-  const [sessionFormOpen, setSessionFormOpen] = useState(false)
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
-  const [newSessionName, setNewSessionName] = useState('')
+  const [clearingSolves, setClearingSolves] = useState(false)
   const [view, setView] = useState<'timer' | 'profile'>('timer')
   const [hideTimer, setHideTimer] = useState(false)
   const [inspectionEnabled, setInspectionEnabled] = useState(false)
   const [profileName, setProfileName] = useState('Cube Solver')
   const [theme, setTheme] = useState<Theme>(initialTheme)
-  const activeSessionIdRef = useRef(activeSessionId)
+  const sessionIdRef = useRef(sessionId)
   const latestResultIdRef = useRef(latestResultId)
   const deletedSolveIdsRef = useRef(new Set<string>())
-  activeSessionIdRef.current = activeSessionId
+  sessionIdRef.current = sessionId
   latestResultIdRef.current = latestResultId
   useEffect(() => {
     let cancelled = false
@@ -151,8 +147,7 @@ function App({ initialTheme }: AppProps) {
     Promise.all([getSessions(), randomScrambleForEvent('333')])
       .then(([loadedSessions, nextScramble]) => {
         if (cancelled) return
-        setSessions(loadedSessions)
-        setActiveSessionId(loadedSessions[0]?.id ?? '')
+        setSessionId(loadedSessions[0]?.id ?? '')
         setScramble(nextScramble.toString())
         setScrambleLoading(false)
       })
@@ -167,10 +162,10 @@ function App({ initialTheme }: AppProps) {
   useEffect(() => {
     setLatestResultId('')
     setSaveFailed(false)
-    if (!activeSessionId) return
+    if (!sessionId) return
 
     let cancelled = false
-    getSolves(activeSessionId)
+    getSolves(sessionId)
       .then((loadedSolves) => {
         if (cancelled) return
         setSolves((current) => {
@@ -180,7 +175,7 @@ function App({ initialTheme }: AppProps) {
               .map((solve) => [solve.id, solve]),
           )
           for (const solve of current) {
-            if (solve.session_id === activeSessionId) merged.set(solve.id, solve)
+            if (solve.session_id === sessionId) merged.set(solve.id, solve)
           }
           return newestSolvesFirst([...merged.values()])
         })
@@ -191,16 +186,7 @@ function App({ initialTheme }: AppProps) {
     return () => {
       cancelled = true
     }
-  }, [activeSessionId])
-
-  function selectSession(sessionId: string) {
-    setSolves([])
-    setLatestResultId('')
-    latestResultIdRef.current = ''
-    setSaveFailed(false)
-    setActiveSessionId(sessionId)
-    resetTimer()
-  }
+  }, [sessionId])
 
   async function generateScramble() {
     setScrambleLoading(true)
@@ -215,9 +201,9 @@ function App({ initialTheme }: AppProps) {
   }
 
   async function handleTimerComplete(durationMs: number, penalty: Penalty) {
-    const sessionId = activeSessionId
+    const activeSessionId = sessionId
     const completedScramble = scramble
-    if (!sessionId || !completedScramble) return
+    if (!activeSessionId || !completedScramble) return
 
     const solveId = crypto.randomUUID()
     setPendingSaveIds((current) => [...current, solveId])
@@ -228,13 +214,13 @@ function App({ initialTheme }: AppProps) {
     try {
       const savedSolve = await createSolve({
         id: solveId,
-        session_id: sessionId,
+        session_id: activeSessionId,
         duration_ms: durationMs,
         penalty,
         scramble: completedScramble,
         recorded_at: new Date().toISOString(),
       })
-      if (sessionId === activeSessionIdRef.current) {
+      if (activeSessionId === sessionIdRef.current) {
         setSolves((current) => {
           const next = new Map(current.map((solve) => [solve.id, solve]))
           next.set(savedSolve.id, savedSolve)
@@ -256,37 +242,23 @@ function App({ initialTheme }: AppProps) {
   const { phase, elapsedMs, reset: resetTimer } = useTimer(
     Boolean(
       view === 'timer' &&
-      activeSessionId &&
+      sessionId &&
       scramble &&
       !scrambleLoading &&
-      !sessionFormOpen &&
+      !clearingSolves &&
       !practiceSettingsOpen,
     ),
     inspectionEnabled,
     handleTimerComplete,
   )
   const controlsDisabled =
+    clearingSolves ||
     phase === 'holding' ||
     phase === 'ready' ||
     phase === 'inspection' ||
     phase === 'inspection-holding' ||
     phase === 'inspection-ready' ||
     phase === 'running'
-
-  async function handleCreateSession(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!newSessionName.trim()) return
-
-    try {
-      const session = await createSession(newSessionName)
-      setSessions((current) => [...current, session])
-      selectSession(session.id)
-      setNewSessionName('')
-      setSessionFormOpen(false)
-    } catch (sessionError) {
-      setError(errorMessage(sessionError))
-    }
-  }
 
   async function handlePenalty(
     solve: Solve,
@@ -335,6 +307,26 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
+  async function handleClearSolves(): Promise<void> {
+    if (solves.length === 0 || pendingSaveIds.length || pendingMutationIds.length) return
+    const label = solves.length === 1 ? 'solve' : 'solves'
+    if (!window.confirm(`Clear all ${solves.length} ${label}? This cannot be undone.`)) return
+
+    setClearingSolves(true)
+    try {
+      await clearSolves()
+      setSolves([])
+      setLatestResultId('')
+      latestResultIdRef.current = ''
+      setSaveFailed(false)
+      resetTimer()
+    } catch (clearError) {
+      setError(`Times could not be cleared: ${errorMessage(clearError)}`)
+    } finally {
+      setClearingSolves(false)
+    }
+  }
+
   async function handleExport() {
     try {
       const data = await getExportData()
@@ -360,7 +352,6 @@ function App({ initialTheme }: AppProps) {
 
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
-  const activeSession = sessions.find((session) => session.id === activeSessionId)
   const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
   const statTime = (duration: number | null) =>
@@ -504,27 +495,6 @@ function App({ initialTheme }: AppProps) {
                 aria-label="Timer settings"
               >
                 <span className="config-value is-active">3x3</span>
-                <select
-                  value={activeSessionId}
-                  onChange={(event) => selectSession(event.target.value)}
-                  disabled={controlsDisabled}
-                  aria-label="Practice session"
-                >
-                  {sessions.map((session) => (
-                    <option key={session.id} value={session.id}>
-                      {session.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setSessionFormOpen(true)}
-                  disabled={controlsDisabled}
-                  aria-label="Create session"
-                  title="Create session"
-                >
-                  <FontAwesomeIcon className="app-icon" icon={faPlus} fixedWidth aria-hidden="true" />
-                </button>
               </div>
             </div>
 
@@ -598,13 +568,14 @@ function App({ initialTheme }: AppProps) {
             </section>
 
             <SessionPanel
-              session={activeSession}
               solves={solves}
-              disabled={controlsDisabled}
+              disabled={controlsDisabled || pendingSaveIds.length > 0 || pendingMutationIds.length > 0}
               pendingSolveIds={pendingMutationIds}
               theme={theme}
               onPenalty={handlePenalty}
               onDelete={(solve) => handleDelete(solve, false)}
+              onClear={handleClearSolves}
+              clearing={clearingSolves}
             />
           </div>
         </main>
@@ -617,7 +588,6 @@ function App({ initialTheme }: AppProps) {
           )}
         >
           <ProfileView
-            sessions={sessions}
             onPenalty={handlePenalty}
             onDelete={handleDelete}
             onExport={() => void handleExport()}
@@ -643,41 +613,6 @@ function App({ initialTheme }: AppProps) {
           <span>local / 001</span>
         </div>
       </footer>
-
-      <Modal
-        open={sessionFormOpen}
-        onClose={() => setSessionFormOpen(false)}
-        labelledBy="session-dialog-title"
-      >
-        <div className="dialog-heading">
-          <div>
-            <span>practice sessions</span>
-            <h2 id="session-dialog-title">Create a session</h2>
-          </div>
-          <button type="button" onClick={() => setSessionFormOpen(false)} aria-label="Close">
-            <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
-          </button>
-        </div>
-        <form className="session-form" onSubmit={handleCreateSession}>
-          <label htmlFor="session-name">session name</label>
-          <input
-            id="session-name"
-            value={newSessionName}
-            onChange={(event) => setNewSessionName(event.target.value)}
-            maxLength={60}
-            placeholder="e.g. slow solves"
-            data-autofocus
-          />
-          <div className="dialog-actions">
-            <button className="button-primary" type="submit">
-              create
-            </button>
-            <button type="button" onClick={() => setSessionFormOpen(false)}>
-              cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       <Modal
         open={practiceSettingsOpen}
@@ -726,31 +661,15 @@ function App({ initialTheme }: AppProps) {
             aria-label="Timer settings"
           >
             <span className="mobile-config-value is-active">3x3</span>
-            <select
-              value={activeSessionId}
-              onChange={(event) => selectSession(event.target.value)}
-              aria-label="Practice session"
-              data-autofocus
-            >
-              {sessions.map((session) => (
-                <option key={session.id} value={session.id}>
-                  {session.name}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
         <div className="dialog-actions">
           <button
             className="button-primary"
             type="button"
-            onClick={() => {
-              setPracticeSettingsOpen(false)
-              setSessionFormOpen(true)
-            }}
+            onClick={() => setPracticeSettingsOpen(false)}
           >
-            <FontAwesomeIcon className="app-icon" icon={faPlus} fixedWidth aria-hidden="true" />
-            new session
+            close
           </button>
         </div>
       </Modal>
