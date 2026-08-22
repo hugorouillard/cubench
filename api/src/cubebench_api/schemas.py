@@ -22,22 +22,6 @@ class Profile(ProfileUpdate):
     created_at: datetime
 
 
-class PracticeSessionCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=60)
-
-    @field_validator("name")
-    @classmethod
-    def clean_name(cls, value: str) -> str:
-        name = value.strip()
-        if not name:
-            raise ValueError("name cannot be blank")
-        return name
-
-
-class PracticeSessionUpdate(PracticeSessionCreate):
-    pass
-
-
 class PracticeSession(BaseModel):
     id: UUID
     name: str

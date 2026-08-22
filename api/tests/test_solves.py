@@ -67,6 +67,18 @@ def test_duplicate_solve_is_rejected(client: TestClient) -> None:
     assert response.status_code == 409
 
 
+def test_all_solves_can_be_cleared(client: TestClient) -> None:
+    session_id = client.get("/api/sessions").json()[0]["id"]
+    client.post("/api/solves", json=solve_payload(session_id))
+    client.post("/api/solves", json=solve_payload(session_id))
+
+    response = client.delete("/api/solves")
+
+    assert response.status_code == 204
+    assert client.get("/api/solves").json() == []
+    assert client.delete("/api/solves").status_code == 204
+
+
 def test_export_contains_profile_sessions_and_solves(client: TestClient) -> None:
     session_id = client.get("/api/sessions").json()[0]["id"]
     payload = solve_payload(session_id)
