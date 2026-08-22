@@ -364,49 +364,51 @@ function App({ initialTheme }: AppProps) {
 
   return (
     <div className={`app app--${phase}`}>
-      <header className="site-header page-width focus-chrome">
-        <a
-          className="brand"
-          href="/"
-          aria-label="Cubebench home"
-          tabIndex={controlsDisabled ? -1 : 0}
-        >
-          <span className="brand-mark" aria-hidden="true">
-            <FontAwesomeIcon className="app-icon" icon={faCube} />
-          </span>
-          <span className="brand-copy">
-            <strong>cubebench</strong>
-          </span>
-        </a>
-
-        <nav className="main-nav" aria-label="Main views">
-          <button
-            className={view === 'timer' ? 'is-active' : ''}
-            type="button"
-            onClick={() => setView('timer')}
-            disabled={controlsDisabled}
-            aria-label="Timer"
-            aria-current={view === 'timer' ? 'page' : undefined}
-            title="Timer"
+      <header className={`site-header page-width focus-chrome${view === 'timer' ? ' site-header--timer' : ''}`}>
+        <div className="site-header-main">
+          <a
+            className="brand"
+            href="/"
+            aria-label="Cubebench home"
+            tabIndex={controlsDisabled ? -1 : 0}
           >
-            <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
-          </button>
-        </nav>
+            <span className="brand-mark" aria-hidden="true">
+              <FontAwesomeIcon className="app-icon" icon={faCube} />
+            </span>
+            <span className="brand-copy">
+              <strong>cubebench</strong>
+            </span>
+          </a>
 
-        <nav className="account-nav" aria-label="Account">
-          <button
-            className={view === 'profile' ? 'is-active' : ''}
-            type="button"
-            onClick={() => setView('profile')}
-            disabled={controlsDisabled}
-            aria-label="Profile"
-            aria-current={view === 'profile' ? 'page' : undefined}
-            title="Profile"
-          >
-            <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth aria-hidden="true" />
-            <span className="account-name">{profileName}</span>
-          </button>
-        </nav>
+          <nav className="main-nav" aria-label="Main views">
+            <button
+              className={view === 'timer' ? 'is-active' : ''}
+              type="button"
+              onClick={() => setView('timer')}
+              disabled={controlsDisabled}
+              aria-label="Timer"
+              aria-current={view === 'timer' ? 'page' : undefined}
+              title="Timer"
+            >
+              <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
+            </button>
+          </nav>
+
+          <nav className="account-nav" aria-label="Account">
+            <button
+              className={view === 'profile' ? 'is-active' : ''}
+              type="button"
+              onClick={() => setView('profile')}
+              disabled={controlsDisabled}
+              aria-label="Profile"
+              aria-current={view === 'profile' ? 'page' : undefined}
+              title="Profile"
+            >
+              <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth aria-hidden="true" />
+              <span className="account-name">{profileName}</span>
+            </button>
+          </nav>
+        </div>
       </header>
 
       {error && (
@@ -420,7 +422,8 @@ function App({ initialTheme }: AppProps) {
 
       {view === 'timer' ? (
         <main className="practice-view page-width">
-          <div className="practice-config-row focus-chrome">
+          <div className="practice-workspace">
+            <div className="practice-config-row focus-chrome">
             <div
               className="practice-config practice-config--desktop"
               role="group"
@@ -500,9 +503,8 @@ function App({ initialTheme }: AppProps) {
               <FontAwesomeIcon className="app-icon" icon={faSliders} fixedWidth aria-hidden="true" />
               practice settings
             </button>
-          </div>
+            </div>
 
-          <div className="practice-workspace">
             <section className="timer-stage" aria-label="Timer">
               <button
                 className="scramble"
@@ -552,6 +554,13 @@ function App({ initialTheme }: AppProps) {
                   </div>
                 </div>
               </div>
+
+              <div className="timer-controls">
+                <div className="timer-status" aria-live="polite">
+                  <span className="keycap">space</span>
+                  <span>{phaseInstruction(phase)}</span>
+                </div>
+              </div>
             </section>
 
             <SessionPanel
@@ -584,15 +593,7 @@ function App({ initialTheme }: AppProps) {
         </Suspense>
       )}
 
-      <footer className="site-footer page-width focus-chrome">
-        {view === 'timer' && (
-          <div className="timer-controls">
-            <div className="timer-status" aria-live="polite">
-              <span className="keycap">space</span>
-              <span>{phaseInstruction(phase)}</span>
-            </div>
-          </div>
-        )}
+      <footer className={`site-footer page-width focus-chrome${view === 'timer' ? ' site-footer--timer' : ''}`}>
         <div className="footer-controls">
           <label className="footer-theme">
             <FontAwesomeIcon className="app-icon" icon={faPalette} fixedWidth aria-hidden="true" />
