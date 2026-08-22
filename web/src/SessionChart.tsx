@@ -145,7 +145,6 @@ export function SessionChart({
         },
       },
       y: {
-        reverse: true,
         grid: { color: colors.line },
         border: { display: false },
         ticks: {
