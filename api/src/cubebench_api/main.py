@@ -170,8 +170,13 @@ def create_solve(payload: SolveCreate) -> dict:
 def update_solve(solve_id: UUID, payload: SolveUpdate) -> dict:
     with connect() as connection:
         cursor = connection.execute(
-            "UPDATE solves SET penalty = ? WHERE id = ?",
-            (payload.penalty, str(solve_id)),
+            """
+            UPDATE solves
+            SET duration_ms = COALESCE(?, duration_ms),
+                penalty = COALESCE(?, penalty)
+            WHERE id = ?
+            """,
+            (payload.duration_ms, payload.penalty, str(solve_id)),
         )
         connection.commit()
         if cursor.rowcount == 0:

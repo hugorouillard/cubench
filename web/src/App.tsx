@@ -28,12 +28,12 @@ import {
   getProfile,
   getSessions,
   getSolves,
-  updateSolvePenalty,
+  updateSolve,
 } from './api'
 import { SessionPanel } from './SessionPanel'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
-import { formatTime } from './timer'
+import { formatInspectionTime, formatTime } from './timer'
 import type { Penalty, PracticeSession, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
@@ -46,10 +46,14 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
 }
 
-function phaseInstruction(phase: TimerPhase): string {
+function phaseInstruction(phase: TimerPhase, inspectionEnabled: boolean): string {
   if (phase === 'holding') return 'keep holding'
   if (phase === 'ready') return 'release to start'
+  if (phase === 'inspection') return 'space to start'
+  if (phase === 'inspection-holding') return 'keep holding'
+  if (phase === 'inspection-ready') return 'release to start'
   if (phase === 'running') return 'space to stop'
+  if (inspectionEnabled) return 'space to inspect'
   if (phase === 'stopped') return 'hold space for next solve'
   return 'hold space to start'
 }
@@ -126,6 +130,7 @@ function App({ initialTheme }: AppProps) {
   const [newSessionName, setNewSessionName] = useState('')
   const [view, setView] = useState<'timer' | 'profile'>('timer')
   const [hideTimer, setHideTimer] = useState(false)
+  const [inspectionEnabled, setInspectionEnabled] = useState(false)
   const [profileName, setProfileName] = useState('Cube Solver')
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const activeSessionIdRef = useRef(activeSessionId)
@@ -209,7 +214,7 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  async function handleTimerComplete(durationMs: number) {
+  async function handleTimerComplete(durationMs: number, penalty: Penalty) {
     const sessionId = activeSessionId
     const completedScramble = scramble
     if (!sessionId || !completedScramble) return
@@ -225,7 +230,7 @@ function App({ initialTheme }: AppProps) {
         id: solveId,
         session_id: sessionId,
         duration_ms: durationMs,
-        penalty: 'none',
+        penalty,
         scramble: completedScramble,
         recorded_at: new Date().toISOString(),
       })
@@ -257,9 +262,16 @@ function App({ initialTheme }: AppProps) {
       !sessionFormOpen &&
       !practiceSettingsOpen,
     ),
+    inspectionEnabled,
     handleTimerComplete,
   )
-  const controlsDisabled = phase === 'holding' || phase === 'ready' || phase === 'running'
+  const controlsDisabled =
+    phase === 'holding' ||
+    phase === 'ready' ||
+    phase === 'inspection' ||
+    phase === 'inspection-holding' ||
+    phase === 'inspection-ready' ||
+    phase === 'running'
 
   async function handleCreateSession(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -280,12 +292,14 @@ function App({ initialTheme }: AppProps) {
     solve: Solve,
     selectedPenalty: Penalty,
   ): Promise<Solve | null> {
-    const penalty = solve.penalty === selectedPenalty ? 'none' : selectedPenalty
+    const update = selectedPenalty === 'plus2'
+      ? { duration_ms: solve.duration_ms + 2000 }
+      : { penalty: solve.penalty === selectedPenalty ? 'none' as const : selectedPenalty }
     setPendingMutationIds((current) =>
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      const updatedSolve = await updateSolvePenalty(solve.id, penalty)
+      const updatedSolve = await updateSolve(solve.id, update)
       setSolves((current) =>
         current.map((item) => (item.id === solve.id ? updatedSolve : item)),
       )
@@ -298,8 +312,8 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  async function handleDelete(solve: Solve): Promise<boolean> {
-    if (!window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return false
+  async function handleDelete(solve: Solve, confirm = true): Promise<boolean> {
+    if (confirm && !window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return false
     setPendingMutationIds((current) =>
       current.includes(solve.id) ? current : [...current, solve.id],
     )
@@ -351,8 +365,14 @@ function App({ initialTheme }: AppProps) {
   const summary = summarizeSolves(solves)
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
+  const inspectionActive =
+    phase === 'inspection' ||
+    phase === 'inspection-holding' ||
+    phase === 'inspection-ready'
   const displayedTime =
-    phase === 'running'
+    inspectionActive
+      ? formatInspectionTime(elapsedMs)
+      : phase === 'running'
       ? formatTime(elapsedMs)
       : phase === 'stopped'
         ? latestResult
@@ -363,7 +383,15 @@ function App({ initialTheme }: AppProps) {
         : '0.00'
 
   return (
-    <div className={`app app--${phase}`}>
+    <div
+      className={`app app--${
+        phase === 'inspection-holding'
+          ? 'holding'
+          : phase === 'inspection-ready'
+            ? 'ready'
+            : phase
+      }${inspectionActive ? ' app--inspecting' : ''}`}
+    >
       <header className={`site-header page-width focus-chrome${view === 'timer' ? ' site-header--timer' : ''}`}>
         <div className="site-header-main">
           <a
@@ -444,7 +472,13 @@ function App({ initialTheme }: AppProps) {
                   <FontAwesomeIcon className="app-icon" icon={faEyeSlash} fixedWidth aria-hidden="true" />
                   hide timer
                 </button>
-                <button type="button" disabled title="Inspection is not available yet">
+                <button
+                  className={inspectionEnabled ? 'is-active' : ''}
+                  type="button"
+                  onClick={() => setInspectionEnabled((current) => !current)}
+                  disabled={controlsDisabled}
+                  aria-pressed={inspectionEnabled}
+                >
                   inspection
                 </button>
               </div>
@@ -558,7 +592,7 @@ function App({ initialTheme }: AppProps) {
               <div className="timer-controls">
                 <div className="timer-status" aria-live="polite">
                   <span className="keycap">space</span>
-                  <span>{phaseInstruction(phase)}</span>
+                  <span>{phaseInstruction(phase, inspectionEnabled)}</span>
                 </div>
               </div>
             </section>
@@ -570,7 +604,7 @@ function App({ initialTheme }: AppProps) {
               pendingSolveIds={pendingMutationIds}
               theme={theme}
               onPenalty={handlePenalty}
-              onDelete={handleDelete}
+              onDelete={(solve) => handleDelete(solve, false)}
             />
           </div>
         </main>
@@ -669,7 +703,12 @@ function App({ initialTheme }: AppProps) {
             >
               hide timer
             </button>
-            <button type="button" disabled title="Inspection is not available yet">
+            <button
+              className={inspectionEnabled ? 'is-active' : ''}
+              type="button"
+              onClick={() => setInspectionEnabled((current) => !current)}
+              aria-pressed={inspectionEnabled}
+            >
               inspection
             </button>
           </div>

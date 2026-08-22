@@ -4,6 +4,19 @@ export function effectiveDuration(durationMs: number, penalty: Penalty): number 
   return durationMs + (penalty === 'plus2' ? 2000 : 0)
 }
 
+export function inspectionPenalty(elapsedMs: number): Penalty {
+  if (elapsedMs > 17_000) return 'dnf'
+  if (elapsedMs > 15_000) return 'plus2'
+  return 'none'
+}
+
+export function formatInspectionTime(elapsedMs: number): string {
+  const penalty = inspectionPenalty(elapsedMs)
+  if (penalty === 'dnf') return 'DNF'
+  if (penalty === 'plus2') return '+2'
+  return String(Math.ceil(Math.max(0, 15_000 - elapsedMs) / 1000))
+}
+
 export function formatTime(durationMs: number, penalty: Penalty = 'none'): string {
   if (penalty === 'dnf') return 'DNF'
 

@@ -1215,12 +1215,10 @@ export function ProfileView({
                         <td>
                           <div className="profile-solve-actions">
                             <button
-                              className={solve.penalty === 'plus2' ? 'is-active' : ''}
                               type="button"
                               disabled={pending}
                               onClick={() => void changePenalty(solve, 'plus2')}
-                              aria-pressed={solve.penalty === 'plus2'}
-                              aria-label={`Toggle +2 penalty for ${formatTime(solve.duration_ms)} solve`}
+                              aria-label={`Add +2 penalty to ${formatTime(solve.duration_ms)} solve`}
                             >
                               +2
                             </button>

@@ -1,6 +1,5 @@
 import type {
   ExportData,
-  Penalty,
   PracticeSession,
   Solve,
   SolveInput,
@@ -59,13 +58,13 @@ export function createSolve(solve: SolveInput): Promise<Solve> {
   })
 }
 
-export function updateSolvePenalty(
+export function updateSolve(
   solveId: string,
-  penalty: Penalty,
+  update: Partial<Pick<Solve, 'duration_ms' | 'penalty'>>,
 ): Promise<Solve> {
   return request(`/api/solves/${solveId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ penalty }),
+    body: JSON.stringify(update),
   })
 }
 

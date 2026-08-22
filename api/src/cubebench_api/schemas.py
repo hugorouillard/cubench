@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 Penalty = Literal["none", "plus2", "dnf"]
 
@@ -62,7 +62,14 @@ class SolveCreate(BaseModel):
 
 
 class SolveUpdate(BaseModel):
-    penalty: Penalty
+    duration_ms: int | None = Field(default=None, ge=0, le=86_400_000)
+    penalty: Penalty | None = None
+
+    @model_validator(mode="after")
+    def require_update(self) -> "SolveUpdate":
+        if self.duration_ms is None and self.penalty is None:
+            raise ValueError("an updated duration or penalty is required")
+        return self
 
 
 class Solve(SolveCreate):
