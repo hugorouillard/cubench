@@ -16,7 +16,6 @@ import {
   faPlus,
   faSliders,
   faStopwatch,
-  faTrashCan,
   faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -527,37 +526,6 @@ function App({ initialTheme }: AppProps) {
                   {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
                   {phase === 'stopped' && saveFailed && (
                     <span className="post-solve-error">solve not saved</span>
-                  )}
-                  {phase === 'stopped' && !latestResultPending && latestResult && (
-                    <div className="post-solve-actions" aria-label="Latest solve actions">
-                      <button
-                        className={latestResult.penalty === 'plus2' ? 'is-active' : ''}
-                        type="button"
-                        disabled={pendingMutationIds.includes(latestResult.id)}
-                        onClick={() => void handlePenalty(latestResult, 'plus2')}
-                        aria-pressed={latestResult.penalty === 'plus2'}
-                      >
-                        +2
-                      </button>
-                      <button
-                        className={latestResult.penalty === 'dnf' ? 'is-active' : ''}
-                        type="button"
-                        disabled={pendingMutationIds.includes(latestResult.id)}
-                        onClick={() => void handlePenalty(latestResult, 'dnf')}
-                        aria-pressed={latestResult.penalty === 'dnf'}
-                      >
-                        dnf
-                      </button>
-                      <button
-                        type="button"
-                        disabled={pendingMutationIds.includes(latestResult.id)}
-                        onClick={() => void handleDelete(latestResult)}
-                        aria-label="Delete latest solve"
-                        title="Delete latest solve"
-                      >
-                        <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-                      </button>
-                    </div>
                   )}
                 </div>
 

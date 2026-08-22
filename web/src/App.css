@@ -249,7 +249,6 @@ select:disabled {
 
 .config-panel button,
 .config-value,
-.post-solve-actions button,
 .practice-config-mobile {
   min-width: 2rem;
   height: 2rem;
@@ -276,8 +275,7 @@ select:disabled {
   line-height: 1.25;
 }
 
-.config-panel button:hover:not(:disabled),
-.post-solve-actions button:hover {
+.config-panel button:hover:not(:disabled) {
   color: var(--text-color);
 }
 
@@ -390,28 +388,6 @@ select:disabled {
 
 .post-solve-error {
   color: var(--error-readable-color);
-}
-
-.post-solve-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.post-solve-actions button {
-  width: auto;
-  min-width: 2.25rem;
-  color: var(--sub-readable-color);
-  font-size: 0.68rem;
-}
-
-.post-solve-actions button.is-active {
-  color: var(--bg-color);
-  background: var(--main-color);
-}
-
-.post-solve-actions .app-icon {
-  font-size: 0.9rem;
 }
 
 .timer-results {
