@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import { inspectionPenalty } from './timer'
+import type { Penalty } from './types'
 
-export type TimerPhase = 'idle' | 'holding' | 'ready' | 'running' | 'stopped'
+export type TimerPhase =
+  | 'idle'
+  | 'holding'
+  | 'ready'
+  | 'inspection'
+  | 'inspection-holding'
+  | 'inspection-ready'
+  | 'running'
+  | 'stopped'
 
 const HOLD_DELAY_MS = 350
 
@@ -11,16 +21,23 @@ function isTypingTarget(target: EventTarget | null): boolean {
   )
 }
 
-export function useTimer(enabled: boolean, onComplete: (durationMs: number) => void) {
+export function useTimer(
+  enabled: boolean,
+  inspectionEnabled: boolean,
+  onComplete: (durationMs: number, penalty: Penalty) => void,
+) {
   const [phase, setPhase] = useState<TimerPhase>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
   const phaseRef = useRef<TimerPhase>('idle')
   const enabledRef = useRef(enabled)
+  const inspectionEnabledRef = useRef(inspectionEnabled)
   const startedAtRef = useRef(0)
+  const solvePenaltyRef = useRef<Penalty>('none')
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const onCompleteRef = useRef(onComplete)
 
   enabledRef.current = enabled
+  inspectionEnabledRef.current = inspectionEnabled
   onCompleteRef.current = onComplete
 
   useEffect(() => {
@@ -47,7 +64,18 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
         )
         setElapsedMs(durationMs)
         transition('stopped')
-        onCompleteRef.current(durationMs)
+        onCompleteRef.current(durationMs, solvePenaltyRef.current)
+        return
+      }
+
+      if (phaseRef.current === 'inspection') {
+        transition('inspection-holding')
+        clearHoldTimeout()
+        holdTimeoutRef.current = setTimeout(() => {
+          if (phaseRef.current === 'inspection-holding') {
+            transition('inspection-ready')
+          }
+        }, HOLD_DELAY_MS)
         return
       }
 
@@ -55,6 +83,13 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
         enabledRef.current &&
         (phaseRef.current === 'idle' || phaseRef.current === 'stopped')
       ) {
+        if (inspectionEnabledRef.current) {
+          startedAtRef.current = performance.now()
+          setElapsedMs(0)
+          transition('inspection')
+          return
+        }
+
         transition('holding')
         clearHoldTimeout()
         holdTimeoutRef.current = setTimeout(() => {
@@ -70,8 +105,20 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
       if (phaseRef.current === 'holding') {
         clearHoldTimeout()
         transition('idle')
+      } else if (phaseRef.current === 'inspection-holding') {
+        clearHoldTimeout()
+        transition('inspection')
       } else if (phaseRef.current === 'ready') {
         clearHoldTimeout()
+        solvePenaltyRef.current = 'none'
+        startedAtRef.current = performance.now()
+        setElapsedMs(0)
+        transition('running')
+      } else if (phaseRef.current === 'inspection-ready') {
+        clearHoldTimeout()
+        solvePenaltyRef.current = inspectionPenalty(
+          performance.now() - startedAtRef.current,
+        )
         startedAtRef.current = performance.now()
         setElapsedMs(0)
         transition('running')
@@ -82,6 +129,12 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
       if (phaseRef.current === 'holding' || phaseRef.current === 'ready') {
         clearHoldTimeout()
         transition('idle')
+      } else if (
+        phaseRef.current === 'inspection-holding' ||
+        phaseRef.current === 'inspection-ready'
+      ) {
+        clearHoldTimeout()
+        transition('inspection')
       }
     }
 
@@ -97,7 +150,14 @@ export function useTimer(enabled: boolean, onComplete: (durationMs: number) => v
   }, [])
 
   useEffect(() => {
-    if (phase !== 'running') return
+    if (
+      phase !== 'inspection' &&
+      phase !== 'inspection-holding' &&
+      phase !== 'inspection-ready' &&
+      phase !== 'running'
+    ) {
+      return
+    }
 
     let animationFrame = 0
     function updateDisplay() {

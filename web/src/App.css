@@ -469,11 +469,20 @@ select:disabled {
   color: var(--main-color);
 }
 
+.app--inspection .timer-readout {
+  color: var(--main-color);
+}
+
 .app--running .focus-chrome,
 .app--running .practice-config-row,
 .app--running .scramble,
 .app--running .timer-status,
-.app--running .post-solve {
+.app--running .post-solve,
+.app--inspecting .focus-chrome,
+.app--inspecting .practice-config-row,
+.app--inspecting .scramble,
+.app--inspecting .timer-status,
+.app--inspecting .post-solve {
   opacity: 0;
   pointer-events: none;
 }

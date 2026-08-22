@@ -33,9 +33,22 @@ def test_solve_lifecycle(client: TestClient) -> None:
     assert updated.status_code == 200
     assert updated.json()["penalty"] == "plus2"
 
+    updated = client.patch(
+        f"/api/solves/{payload['id']}", json={"duration_ms": 14340}
+    )
+    assert updated.status_code == 200
+    assert updated.json()["duration_ms"] == 14340
+    assert updated.json()["penalty"] == "plus2"
+
     deleted = client.delete(f"/api/solves/{payload['id']}")
     assert deleted.status_code == 204
     assert client.get("/api/solves").json() == []
+
+
+def test_solve_update_requires_a_change(client: TestClient) -> None:
+    response = client.patch(f"/api/solves/{uuid4()}", json={})
+
+    assert response.status_code == 422
 
 
 def test_solve_requires_an_existing_session(client: TestClient) -> None:

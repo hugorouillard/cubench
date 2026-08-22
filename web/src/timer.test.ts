@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { effectiveDuration, formatTime } from './timer'
+import {
+  effectiveDuration,
+  formatInspectionTime,
+  formatTime,
+  inspectionPenalty,
+} from './timer'
 
 describe('formatTime', () => {
   it('truncates to centiseconds', () => {
@@ -13,5 +18,23 @@ describe('formatTime', () => {
 
   it('formats a DNF', () => {
     expect(formatTime(9_000, 'dnf')).toBe('DNF')
+  })
+})
+
+describe('inspectionPenalty', () => {
+  it('applies penalties after the 15 and 17 second limits', () => {
+    expect(inspectionPenalty(15_000)).toBe('none')
+    expect(inspectionPenalty(15_001)).toBe('plus2')
+    expect(inspectionPenalty(17_000)).toBe('plus2')
+    expect(inspectionPenalty(17_001)).toBe('dnf')
+  })
+
+  it('formats the countdown using whole seconds', () => {
+    expect(formatInspectionTime(0)).toBe('15')
+    expect(formatInspectionTime(1)).toBe('15')
+    expect(formatInspectionTime(1_000)).toBe('14')
+    expect(formatInspectionTime(15_000)).toBe('0')
+    expect(formatInspectionTime(15_001)).toBe('+2')
+    expect(formatInspectionTime(17_001)).toBe('DNF')
   })
 })
