@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from cubebench_api.database import connect, initialize_database
+from cubench_api.database import connect, initialize_database
 
 
 def test_default_session_is_created(client: TestClient) -> None:

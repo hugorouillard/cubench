@@ -1,7 +1,7 @@
 [project]
-name = "cubebench-api"
+name = "cubench-api"
 version = "0.1.0"
-description = "Local API for the Cubebench MVP"
+description = "Local API for the Cubench MVP"
 authors = [
     { name = "hugo rouillard", email = "rouillard.hugo1@gmail.com" }
 ]

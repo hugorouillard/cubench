@@ -711,7 +711,7 @@ export function ProfileView({
       <main className="profile-view profile-load-state page-width">
         <div role="status" aria-live="polite">
           <span className="profile-kicker">profile unavailable</span>
-          <p>CubeBench could not load the complete profile. Try opening this page again.</p>
+          <p>Cubench could not load the complete profile. Try opening this page again.</p>
         </div>
       </main>
     )

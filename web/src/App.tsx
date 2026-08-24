@@ -335,7 +335,7 @@ function App({ initialTheme }: AppProps) {
       )
       const link = document.createElement('a')
       link.href = url
-      link.download = `cubebench-${new Date().toISOString().slice(0, 10)}.json`
+      link.download = `cubench-${new Date().toISOString().slice(0, 10)}.json`
       link.click()
       URL.revokeObjectURL(url)
     } catch (exportError) {
@@ -388,14 +388,14 @@ function App({ initialTheme }: AppProps) {
           <a
             className="brand"
             href="/"
-            aria-label="Cubebench home"
+            aria-label="Cubench home"
             tabIndex={controlsDisabled ? -1 : 0}
           >
             <span className="brand-mark" aria-hidden="true">
               <FontAwesomeIcon className="app-icon" icon={faCube} />
             </span>
             <span className="brand-copy">
-              <strong>cubebench</strong>
+              <strong>cubench</strong>
             </span>
           </a>
 
