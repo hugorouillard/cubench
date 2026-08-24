@@ -53,18 +53,32 @@ export function useTimer(
       }
     }
 
+    function stopTimer(penalty: Penalty) {
+      const durationMs = Math.max(
+        0,
+        Math.round(performance.now() - startedAtRef.current),
+      )
+      setElapsedMs(durationMs)
+      transition('stopped')
+      onCompleteRef.current(durationMs, penalty)
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
+      if (
+        event.code === 'Escape' &&
+        !event.repeat &&
+        phaseRef.current === 'running'
+      ) {
+        event.preventDefault()
+        stopTimer('dnf')
+        return
+      }
+
       if (event.code !== 'Space' || event.repeat || isTypingTarget(event.target)) return
       event.preventDefault()
 
       if (phaseRef.current === 'running') {
-        const durationMs = Math.max(
-          0,
-          Math.round(performance.now() - startedAtRef.current),
-        )
-        setElapsedMs(durationMs)
-        transition('stopped')
-        onCompleteRef.current(durationMs, solvePenaltyRef.current)
+        stopTimer(solvePenaltyRef.current)
         return
       }
 
