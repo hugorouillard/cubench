@@ -1,4 +1,4 @@
-# Cubebench
+# Cubench
 
 A focused, keyboard-first 3x3 speedcubing timer. The local MVP uses a React
 frontend, a FastAPI backend, and a SQLite database.
@@ -31,7 +31,7 @@ FastAPI at http://localhost:8000.
 
 Hold the spacebar until the timer turns green, release it to start, and press
 space again to stop. FastAPI creates the SQLite database automatically at
-`api/data/cubebench.db` the first time it starts.
+`api/data/cubench.db` the first time it starts.
 
 Run checks:
 

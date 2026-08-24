@@ -7,10 +7,10 @@ from uuid import uuid4
 
 
 def database_path() -> Path:
-    configured_path = os.getenv("CUBEBENCH_DB_PATH")
+    configured_path = os.getenv("CUBENCH_DB_PATH")
     if configured_path:
         return Path(configured_path)
-    return Path(__file__).resolve().parents[2] / "data" / "cubebench.db"
+    return Path(__file__).resolve().parents[2] / "data" / "cubench.db"
 
 
 @contextmanager
