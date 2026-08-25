@@ -439,12 +439,12 @@ select:disabled {
 .session-stats span {
   margin-bottom: 0.4rem;
   color: var(--sub-readable-color);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
 }
 
 .session-stats strong {
   color: var(--text-color);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   font-weight: 400;
   white-space: nowrap;
