@@ -8,10 +8,24 @@ import {
   type ReactNode,
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import {
+  faDiscord as legacyDiscord,
+  faTwitter as legacyTwitter,
+} from 'free-brands-svg-icons-v5'
+import {
+  faCode as legacyCode,
+  faCodeBranch as legacyCodeBranch,
+  faDonate as legacyDonate,
+  faEnvelope as legacyEnvelope,
+  faFileContract as legacyFileContract,
+  faLock as legacyLock,
+  faPalette as legacyPalette,
+  faShieldAlt as legacyShield,
+} from 'free-solid-svg-icons-v5'
 import {
   faCube,
   faEyeSlash,
-  faPalette,
   faSliders,
   faStopwatch,
   faUser,
@@ -39,6 +53,19 @@ import './App.css'
 const ProfileView = lazy(() =>
   import('./ProfileView').then((module) => ({ default: module.ProfileView })),
 )
+
+const footerIcons = {
+  code: legacyCode,
+  codeBranch: legacyCodeBranch,
+  discord: legacyDiscord,
+  donate: legacyDonate,
+  envelope: legacyEnvelope,
+  fileContract: legacyFileContract,
+  lock: legacyLock,
+  palette: legacyPalette,
+  shield: legacyShield,
+  twitter: legacyTwitter,
+} as unknown as Record<string, IconDefinition>
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
@@ -598,9 +625,56 @@ function App({ initialTheme }: AppProps) {
       )}
 
       <footer className={`site-footer page-width focus-chrome${view === 'timer' ? ' site-footer--timer' : ''}`}>
+        <nav className="footer-links" aria-label="Footer">
+          <a className="footer-link" href="mailto:rouillard.hugo1@gmail.com">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.envelope} fixedWidth aria-hidden="true" />
+            <span>contact</span>
+          </a>
+          <a
+            className="footer-link"
+            href="https://github.com/hugorouillard/cubebench/issues"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.donate} fixedWidth aria-hidden="true" />
+            <span>support</span>
+          </a>
+          <a
+            className="footer-link"
+            href="https://github.com/hugorouillard/cubebench"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.code} fixedWidth aria-hidden="true" />
+            <span>github</span>
+          </a>
+          <span className="footer-link" aria-disabled="true" title="Coming soon">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.discord} fixedWidth aria-hidden="true" />
+            <span>discord</span>
+          </span>
+          <span className="footer-link" aria-disabled="true" title="Coming soon">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.twitter} fixedWidth aria-hidden="true" />
+            <span>twitter</span>
+          </span>
+          <span className="footer-link" aria-disabled="true" title="Coming soon">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.fileContract} fixedWidth aria-hidden="true" />
+            <span>terms</span>
+          </span>
+          <a
+            className="footer-link"
+            href="mailto:rouillard.hugo1@gmail.com?subject=Cubench%20security"
+          >
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.shield} fixedWidth aria-hidden="true" />
+            <span>security</span>
+          </a>
+          <span className="footer-link" aria-disabled="true" title="Coming soon">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.lock} fixedWidth aria-hidden="true" />
+            <span>privacy</span>
+          </span>
+        </nav>
         <div className="footer-controls">
-          <label className="footer-theme">
-            <FontAwesomeIcon className="app-icon" icon={faPalette} fixedWidth aria-hidden="true" />
+          <label className="footer-theme" title="Theme">
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.palette} fixedWidth aria-hidden="true" />
             <span className="sr-only">Theme</span>
             <select value={theme} onChange={handleThemeChange} disabled={controlsDisabled}>
               {THEME_OPTIONS.map((option) => (
@@ -610,7 +684,16 @@ function App({ initialTheme }: AppProps) {
               ))}
             </select>
           </label>
-          <span>local / 001</span>
+          <a
+            className="footer-version"
+            href="https://github.com/hugorouillard/cubebench/commits/master"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Cubench version 0.0.0"
+          >
+            <FontAwesomeIcon className="app-icon" icon={footerIcons.codeBranch} fixedWidth aria-hidden="true" />
+            <span>v0.0.0</span>
+          </a>
         </div>
       </footer>
 
