@@ -22,13 +22,13 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
+  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
   faCube,
   faEyeSlash,
   faSliders,
   faStopwatch,
-  faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
@@ -53,6 +53,8 @@ import './App.css'
 const ProfileView = lazy(() =>
   import('./ProfileView').then((module) => ({ default: module.ProfileView })),
 )
+
+const accountIcon = legacyUser as unknown as IconDefinition
 
 const footerIcons = {
   code: legacyCode,
@@ -450,8 +452,14 @@ function App({ initialTheme }: AppProps) {
               aria-current={view === 'profile' ? 'page' : undefined}
               title="Profile"
             >
-              <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth aria-hidden="true" />
+              <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
               <span className="account-name">{profileName}</span>
+              <span
+                className="account-solve-count"
+                title={`${solves.length} ${solves.length === 1 ? 'solve' : 'solves'}`}
+              >
+                {solves.length}
+              </span>
             </button>
           </nav>
         </div>
