@@ -1,6 +1,6 @@
 ## Monkeytype Inspiration
 
-Use Monkeytype as a design reference.
+Use Monkeytype as a design reference, with the catppuccin theme.
 
 - Product UI: https://monkeytype.com/
 - Source repository: https://github.com/monkeytypegame/monkeytype
