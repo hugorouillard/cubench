@@ -146,14 +146,38 @@ select:disabled {
 
 .account-nav button {
   width: auto;
-  grid-auto-flow: column;
-  gap: 0.5rem;
-  padding-inline: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.5em;
   color: var(--account-icon-color);
+  line-height: 1.25;
+}
+
+.account-nav .app-icon {
+  width: 1.25rem;
+  font-size: 0.875rem;
 }
 
 .account-name {
-  font-size: 0.68rem;
+  font-size: 0.75em;
+  line-height: 1rem;
+}
+
+.account-solve-count {
+  padding: 0.1em 0.5em;
+  border-radius: calc(var(--roundness) / 2);
+  color: var(--bg-color);
+  background: var(--account-icon-color);
+  font-size: 0.7em;
+  line-height: 1.25;
+  transition: background-color 125ms ease;
+}
+
+.account-nav button:hover .account-solve-count,
+.account-nav button.is-active .account-solve-count {
+  background: color-mix(in srgb, var(--account-icon-color) 75%, white);
 }
 
 .notification {
@@ -866,8 +890,8 @@ select:disabled {
   }
 
   .account-nav button {
-    width: 2.25rem;
-    padding: 0;
+    width: auto;
+    padding-inline: 0.5rem;
   }
 
   .timer-stage {
