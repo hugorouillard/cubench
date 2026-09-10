@@ -57,11 +57,24 @@ def test_solve_requires_an_existing_session(client: TestClient) -> None:
     assert response.status_code == 404
 
 
-def test_duplicate_solve_is_rejected(client: TestClient) -> None:
+def test_identical_duplicate_solve_is_idempotent(client: TestClient) -> None:
+    session_id = client.get("/api/sessions").json()[0]["id"]
+    payload = solve_payload(session_id)
+
+    created = client.post("/api/solves", json=payload)
+    response = client.post("/api/solves", json=payload)
+
+    assert created.status_code == 201
+    assert response.status_code == 201
+    assert response.json() == created.json()
+
+
+def test_conflicting_duplicate_solve_is_rejected(client: TestClient) -> None:
     session_id = client.get("/api/sessions").json()[0]["id"]
     payload = solve_payload(session_id)
 
     assert client.post("/api/solves", json=payload).status_code == 201
+    payload["duration_ms"] += 1
     response = client.post("/api/solves", json=payload)
 
     assert response.status_code == 409
