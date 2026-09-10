@@ -45,7 +45,7 @@ import {
 import { SessionPanel } from './SessionPanel'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
-import { formatInspectionTime, formatTime } from './timer'
+import { formatInspectionTime, formatTime, togglePenalty } from './timer'
 import type { Penalty, Solve } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
@@ -293,9 +293,7 @@ function App({ initialTheme }: AppProps) {
     solve: Solve,
     selectedPenalty: Penalty,
   ): Promise<Solve | null> {
-    const update = selectedPenalty === 'plus2'
-      ? { duration_ms: solve.duration_ms + 2000 }
-      : { penalty: solve.penalty === selectedPenalty ? 'none' as const : selectedPenalty }
+    const update = { penalty: togglePenalty(solve.penalty, selectedPenalty) }
     setPendingMutationIds((current) =>
       current.includes(solve.id) ? current : [...current, solve.id],
     )

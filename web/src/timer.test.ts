@@ -4,6 +4,7 @@ import {
   formatInspectionTime,
   formatTime,
   inspectionPenalty,
+  togglePenalty,
 } from './timer'
 
 describe('formatTime', () => {
@@ -18,6 +19,18 @@ describe('formatTime', () => {
 
   it('formats a DNF', () => {
     expect(formatTime(9_000, 'dnf')).toBe('DNF')
+  })
+})
+
+describe('togglePenalty', () => {
+  it('toggles a selected penalty without changing the raw duration', () => {
+    expect(togglePenalty('none', 'plus2')).toBe('plus2')
+    expect(togglePenalty('plus2', 'plus2')).toBe('none')
+  })
+
+  it('replaces the existing penalty', () => {
+    expect(togglePenalty('dnf', 'plus2')).toBe('plus2')
+    expect(togglePenalty('plus2', 'dnf')).toBe('dnf')
   })
 })
 
