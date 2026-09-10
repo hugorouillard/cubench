@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
@@ -14,7 +14,7 @@ def database_path() -> Path:
 
 
 @contextmanager
-def connect() -> Iterator[sqlite3.Connection]:
+def connect() -> Generator[sqlite3.Connection]:
     path = database_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
