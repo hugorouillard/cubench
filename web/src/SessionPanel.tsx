@@ -119,10 +119,12 @@ export function SessionPanel({
                   </div>
                   <div className="session-solve-actions" aria-label={`Actions for solve ${solveNumber}`}>
                     <button
+                      className={solve.penalty === 'plus2' ? 'is-active' : ''}
                       type="button"
                       disabled={disabled || pending}
                       onClick={() => void onPenalty(solve, 'plus2')}
-                      aria-label={`Add +2 penalty to solve ${solveNumber}`}
+                      aria-pressed={solve.penalty === 'plus2'}
+                      aria-label={`Toggle +2 penalty for solve ${solveNumber}`}
                     >
                       +2
                     </button>
