@@ -114,6 +114,19 @@ def create_solve(payload: SolveCreate) -> dict:
         message = str(error)
         if "FOREIGN KEY" in message:
             raise HTTPException(status_code=404, detail="Session not found") from error
+        if "UNIQUE constraint failed: solves.id" in message:
+            with connect() as connection:
+                row = connection.execute(
+                    """
+                    SELECT id, session_id, duration_ms, penalty, scramble,
+                           recorded_at, created_at
+                    FROM solves WHERE id = ?
+                    """,
+                    (str(payload.id),),
+                ).fetchone()
+            expected = payload.model_dump(mode="json")
+            if row and all(row[key] == value for key, value in expected.items()):
+                return dict(row)
         raise HTTPException(status_code=409, detail="Solve already exists") from error
     return solve
 
