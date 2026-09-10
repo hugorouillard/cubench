@@ -25,8 +25,10 @@ import {
   faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
+  faCircleExclamation,
   faCube,
   faEyeSlash,
+  faRotateRight,
   faSliders,
   faStopwatch,
   faXmark,
@@ -46,7 +48,7 @@ import { SessionPanel } from './SessionPanel'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from './timer'
-import type { Penalty, Solve } from './types'
+import type { Penalty, Solve, SolveInput } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
 
@@ -141,14 +143,16 @@ type AppProps = {
   initialTheme: Theme
 }
 
+type SaveState = 'idle' | 'saving' | 'failed'
+
 function App({ initialTheme }: AppProps) {
   const [sessionId, setSessionId] = useState('')
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
-  const [pendingSaveIds, setPendingSaveIds] = useState<string[]>([])
+  const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
   const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([])
-  const [saveFailed, setSaveFailed] = useState(false)
   const [latestResultId, setLatestResultId] = useState('')
   const [error, setError] = useState('')
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
@@ -190,7 +194,6 @@ function App({ initialTheme }: AppProps) {
 
   useEffect(() => {
     setLatestResultId('')
-    setSaveFailed(false)
     if (!sessionId) return
 
     let cancelled = false
@@ -218,6 +221,7 @@ function App({ initialTheme }: AppProps) {
   }, [sessionId])
 
   async function generateScramble() {
+    setScramble('')
     setScrambleLoading(true)
     try {
       const nextScramble = await randomScrambleForEvent('333')
@@ -229,43 +233,44 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  async function handleTimerComplete(durationMs: number, penalty: Penalty) {
-    const activeSessionId = sessionId
-    const completedScramble = scramble
-    if (!activeSessionId || !completedScramble) return
-
-    const solveId = crypto.randomUUID()
-    setPendingSaveIds((current) => [...current, solveId])
-    setSaveFailed(false)
-    setLatestResultId(solveId)
-    latestResultIdRef.current = solveId
-    void generateScramble()
+  async function persistSolve(solve: SolveInput) {
+    setSaveState('saving')
+    setError('')
     try {
-      const savedSolve = await createSolve({
-        id: solveId,
-        session_id: activeSessionId,
-        duration_ms: durationMs,
-        penalty,
-        scramble: completedScramble,
-        recorded_at: new Date().toISOString(),
-      })
-      if (activeSessionId === sessionIdRef.current) {
+      const savedSolve = await createSolve(solve)
+      if (solve.session_id === sessionIdRef.current) {
         setSolves((current) => {
-          const next = new Map(current.map((solve) => [solve.id, solve]))
+          const next = new Map(current.map((item) => [item.id, item]))
           next.set(savedSolve.id, savedSolve)
           return newestSolvesFirst([...next.values()])
         })
       }
+      setPendingSolve(null)
+      setSaveState('idle')
+      await generateScramble()
     } catch (saveError) {
-      if (latestResultIdRef.current === solveId) {
-        setLatestResultId('')
-        latestResultIdRef.current = ''
-        setSaveFailed(true)
-      }
-      setError(`Solve was not saved: ${errorMessage(saveError)}`)
-    } finally {
-      setPendingSaveIds((current) => current.filter((id) => id !== solveId))
+      setSaveState('failed')
+      setError(`Failed to save result: ${errorMessage(saveError)}`)
     }
+  }
+
+  function handleTimerComplete(durationMs: number, penalty: Penalty) {
+    const activeSessionId = sessionId
+    const completedScramble = scramble
+    if (!activeSessionId || !completedScramble || pendingSolve) return
+
+    const solve: SolveInput = {
+      id: crypto.randomUUID(),
+      session_id: activeSessionId,
+      duration_ms: durationMs,
+      penalty,
+      scramble: completedScramble,
+      recorded_at: new Date().toISOString(),
+    }
+    setPendingSolve(solve)
+    setLatestResultId(solve.id)
+    latestResultIdRef.current = solve.id
+    void persistSolve(solve)
   }
 
   const { phase, elapsedMs, reset: resetTimer } = useTimer(
@@ -274,6 +279,7 @@ function App({ initialTheme }: AppProps) {
       sessionId &&
       scramble &&
       !scrambleLoading &&
+      !pendingSolve &&
       !clearingSolves &&
       !practiceSettingsOpen,
     ),
@@ -282,6 +288,7 @@ function App({ initialTheme }: AppProps) {
   )
   const controlsDisabled =
     clearingSolves ||
+    Boolean(pendingSolve) ||
     phase === 'holding' ||
     phase === 'ready' ||
     phase === 'inspection' ||
@@ -335,7 +342,7 @@ function App({ initialTheme }: AppProps) {
   }
 
   async function handleClearSolves(): Promise<void> {
-    if (solves.length === 0 || pendingSaveIds.length || pendingMutationIds.length) return
+    if (solves.length === 0 || pendingSolve || pendingMutationIds.length) return
     const label = solves.length === 1 ? 'solve' : 'solves'
     if (!window.confirm(`Clear all ${solves.length} ${label}? This cannot be undone.`)) return
 
@@ -345,7 +352,6 @@ function App({ initialTheme }: AppProps) {
       setSolves([])
       setLatestResultId('')
       latestResultIdRef.current = ''
-      setSaveFailed(false)
       resetTimer()
     } catch (clearError) {
       setError(`Times could not be cleared: ${errorMessage(clearError)}`)
@@ -379,7 +385,6 @@ function App({ initialTheme }: AppProps) {
 
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
-  const latestResultPending = pendingSaveIds.includes(latestResultId)
   const summary = summarizeSolves(solves)
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
@@ -465,7 +470,13 @@ function App({ initialTheme }: AppProps) {
 
       {error && (
         <aside className="notification" role="alert">
-          <span>{error}</span>
+          <div className="notification-copy">
+            <strong>
+              <FontAwesomeIcon className="app-icon" icon={faCircleExclamation} aria-hidden="true" />
+              Error
+            </strong>
+            <span>{error}</span>
+          </div>
           <button type="button" onClick={() => setError('')} aria-label="Dismiss error">
             <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
@@ -561,13 +572,6 @@ function App({ initialTheme }: AppProps) {
               </div>
 
               <div className="timer-results">
-                <div className="post-solve" aria-live="polite">
-                  {phase === 'stopped' && latestResultPending && <span>saving solve...</span>}
-                  {phase === 'stopped' && saveFailed && (
-                    <span className="post-solve-error">solve not saved</span>
-                  )}
-                </div>
-
                 <div className="session-stats focus-chrome" aria-label="Current statistics">
                   <div>
                     <span>mean</span>
@@ -590,6 +594,20 @@ function App({ initialTheme }: AppProps) {
                     <strong>{statTime(summary.bestSingle)}</strong>
                   </div>
                 </div>
+
+                <div className="post-solve" aria-live="polite">
+                  {phase === 'stopped' && saveState === 'saving' && <span>saving solve...</span>}
+                  {phase === 'stopped' && saveState === 'failed' && pendingSolve && (
+                    <button
+                      className="post-solve-retry"
+                      type="button"
+                      onClick={() => void persistSolve(pendingSolve)}
+                    >
+                      <FontAwesomeIcon className="app-icon" icon={faRotateRight} aria-hidden="true" />
+                      Retry saving result
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="timer-controls">
@@ -602,7 +620,7 @@ function App({ initialTheme }: AppProps) {
 
             <SessionPanel
               solves={solves}
-              disabled={controlsDisabled || pendingSaveIds.length > 0 || pendingMutationIds.length > 0}
+              disabled={controlsDisabled || pendingMutationIds.length > 0}
               pendingSolveIds={pendingMutationIds}
               theme={theme}
               onPenalty={handlePenalty}

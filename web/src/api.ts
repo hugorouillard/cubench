@@ -48,6 +48,7 @@ export function createSolve(solve: SolveInput): Promise<Solve> {
   return request('/api/solves', {
     method: 'POST',
     body: JSON.stringify(solve),
+    signal: AbortSignal.timeout(10_000),
   })
 }
 
