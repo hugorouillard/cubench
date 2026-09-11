@@ -13,3 +13,17 @@ def client(tmp_path, monkeypatch) -> Iterator[TestClient]:
     monkeypatch.setenv("CUBENCH_COOKIE_SECURE", "false")
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def account_client(client: TestClient) -> TestClient:
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "user-a",
+            "password": "test-password",
+            "invite_code": "test-invite",
+        },
+    )
+    assert response.status_code == 201
+    return client
