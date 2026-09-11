@@ -33,14 +33,15 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import { ApiError, getAuthSession, logout } from './api'
+import { ApiError, getAuthSession, getExportData, logout } from './api'
 import { AuthPanel } from './AuthPanel'
+import { ProfileView } from './ProfileView'
 import { SessionPanel } from './SessionPanel'
 import { accountSolveStore, guestSolveStore, type SolveStore } from './solveStore'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from './timer'
-import type { Account, Penalty, Solve, SolveInput } from './types'
+import type { Account, Penalty, Solve, SolveInput, UserProfile } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
 
@@ -134,8 +135,10 @@ type AppProps = {
 }
 
 type SaveState = 'idle' | 'saving' | 'failed'
+type AppView = 'timer' | 'profile'
 
 function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
+  const [view, setView] = useState<AppView>('timer')
   const [account, setAccount] = useState<Account | null>(null)
   const [authChecking, setAuthChecking] = useState(true)
   const [authOpen, setAuthOpen] = useState(false)
@@ -156,6 +159,16 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const latestResultIdRef = useRef(latestResultId)
   latestResultIdRef.current = latestResultId
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
+
+  function navigate(nextView: AppView, replace = false) {
+    const target = nextView === 'profile'
+      ? `${location.pathname}${location.search}#profile`
+      : `${location.pathname}${location.search}`
+    if (`${location.pathname}${location.search}${location.hash}` !== target) {
+      window.history[replace ? 'replaceState' : 'pushState'](null, '', target)
+    }
+    setView(nextView)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -243,6 +256,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
   const { phase, elapsedMs, reset: resetTimer } = useTimer(
     Boolean(
+      view === 'timer' &&
       scramble &&
       !scrambleLoading &&
       !pendingSolve &&
@@ -265,6 +279,26 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     phase === 'inspection-ready' ||
     phase === 'running'
 
+  useEffect(() => {
+    if (!account) setView('timer')
+    else if (location.hash === '#profile') setView('profile')
+  }, [account])
+
+  useEffect(() => {
+    function handlePopState() {
+      const requestedView = account && location.hash === '#profile' ? 'profile' : 'timer'
+      if (requestedView !== view && controlsDisabled) {
+        const hash = view === 'profile' ? '#profile' : ''
+        window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
+        return
+      }
+      setView(requestedView)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [account, controlsDisabled, view])
+
   function resetCurrentSession() {
     setSolves([])
     setPendingSolve(null)
@@ -277,6 +311,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
   function handleAuthenticated(authenticatedAccount: Account) {
     setAccount(authenticatedAccount)
+    navigate('timer', true)
     setAuthOpen(false)
     resetCurrentSession()
   }
@@ -287,6 +322,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     try {
       await logout()
       setAccount(null)
+      navigate('timer', true)
       resetCurrentSession()
     } catch (logoutError) {
       setError(`Could not sign out: ${errorMessage(logoutError)}`)
@@ -360,6 +396,28 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     applyTheme(nextTheme)
   }
 
+  async function handleExport() {
+    try {
+      const data = await getExportData()
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      )
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'cubench-export.json'
+      document.body.append(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } catch (exportError) {
+      setError(`Could not export account data: ${errorMessage(exportError)}`)
+    }
+  }
+
+  function handleProfileChange(profile: UserProfile) {
+    setAccount((current) => current ? { ...current, ...profile } : current)
+  }
+
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
   const summary = summarizeSolves(solves)
@@ -398,6 +456,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           <a
             className="brand"
             href="/"
+            onClick={(event) => {
+              event.preventDefault()
+              if (!controlsDisabled) navigate('timer')
+            }}
             aria-label="Cubench home"
             tabIndex={controlsDisabled ? -1 : 0}
           >
@@ -411,11 +473,12 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
           <nav className="main-nav" aria-label="Main views">
             <button
-              className="is-active"
+              className={view === 'timer' ? 'is-active' : ''}
               type="button"
+              onClick={() => navigate('timer')}
               disabled={controlsDisabled}
               aria-label="Timer"
-              aria-current="page"
+              aria-current={view === 'timer' ? 'page' : undefined}
               title="Timer"
             >
               <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
@@ -425,10 +488,14 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           <nav className="account-nav" aria-label="Account">
             {account ? (
               <>
-                <span
-                  className="account-identity"
-                  role="group"
-                  aria-label={`Signed in as ${account.display_name}`}
+                <button
+                  className={`account-identity${view === 'profile' ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => navigate('profile')}
+                  disabled={controlsDisabled}
+                  aria-label={`Open profile for ${account.display_name}`}
+                  aria-current={view === 'profile' ? 'page' : undefined}
+                  title="Profile"
                 >
                   <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
                   <span className="account-name">{account.display_name}</span>
@@ -438,7 +505,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                   >
                     {solves.length}
                   </span>
-                </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => void handleLogout()}
@@ -485,7 +552,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         </aside>
       )}
 
-      <main className="practice-view page-width">
+      {view === 'timer' ? (
+        <main className="practice-view page-width">
           <div className="practice-workspace">
             <div className="practice-config-row focus-chrome">
             <div
@@ -630,7 +698,16 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
               onClear={handleClearSolves}
             />
           </div>
-      </main>
+        </main>
+      ) : account ? (
+        <ProfileView
+          onPenalty={handlePenalty}
+          onDelete={handleDelete}
+          onExport={() => void handleExport()}
+          onError={setError}
+          onProfileChange={handleProfileChange}
+        />
+      ) : null}
 
       <footer className="site-footer site-footer--timer page-width focus-chrome">
         <nav className="footer-links" aria-label="Footer">
