@@ -18,6 +18,18 @@ export type UserProfile = {
   created_at: string
 }
 
+export type Account = UserProfile & {
+  username: string
+}
+
+export type RegistrationInput = {
+  username: string
+  password: string
+  invite_code: string
+}
+
+export type LoginInput = Pick<RegistrationInput, 'username' | 'password'>
+
 export type UserProfileInput = Pick<UserProfile, 'display_name' | 'bio'>
 
 export type ExportData = {
