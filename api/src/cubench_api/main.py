@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Response, status
 
+from cubench_api.auth import router as auth_router
 from cubench_api.database import connect, initialize_database
 from cubench_api.schemas import (
     ExportData,
@@ -25,6 +26,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Cubench API", lifespan=lifespan)
+app.include_router(auth_router)
 
 
 @app.get("/api/health")
