@@ -1,3 +1,4 @@
+import { createSolve, deleteSolve, updateSolve } from './api'
 import type { Solve, SolveInput } from './types'
 
 export type SolveUpdate = Partial<Pick<Solve, 'duration_ms' | 'penalty'>>
@@ -16,4 +17,14 @@ export const guestSolveStore: SolveStore = {
     return { ...solve, ...update }
   },
   async delete() {},
+}
+
+export const accountSolveStore: SolveStore = {
+  create: createSolve,
+  update(solve, update) {
+    return updateSolve(solve.id, update)
+  },
+  delete(solve) {
+    return deleteSolve(solve.id)
+  },
 }
