@@ -22,15 +22,8 @@ class Profile(ProfileUpdate):
     created_at: datetime
 
 
-class PracticeSession(BaseModel):
-    id: UUID
-    name: str
-    created_at: datetime
-
-
 class SolveCreate(BaseModel):
     id: UUID
-    session_id: UUID
     duration_ms: int = Field(ge=0, le=86_400_000)
     penalty: Penalty = "none"
     scramble: str = Field(min_length=1, max_length=500)
@@ -64,5 +57,4 @@ class ExportData(BaseModel):
     version: int
     exported_at: datetime
     profile: Profile
-    sessions: list[PracticeSession]
     solves: list[Solve]
