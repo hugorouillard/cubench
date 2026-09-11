@@ -1,6 +1,5 @@
 import type {
   ExportData,
-  PracticeSession,
   Solve,
   SolveInput,
   UserProfile,
@@ -10,6 +9,7 @@ import type {
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     ...options,
   })
 
@@ -24,10 +24,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export function getSessions(): Promise<PracticeSession[]> {
-  return request('/api/sessions')
-}
-
 export function getProfile(): Promise<UserProfile> {
   return request('/api/profile')
 }
@@ -39,9 +35,8 @@ export function updateProfile(profile: UserProfileInput): Promise<UserProfile> {
   })
 }
 
-export function getSolves(sessionId?: string): Promise<Solve[]> {
-  const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''
-  return request(`/api/solves${query}`)
+export function getSolves(): Promise<Solve[]> {
+  return request('/api/solves')
 }
 
 export function createSolve(solve: SolveInput): Promise<Solve> {
@@ -64,10 +59,6 @@ export function updateSolve(
 
 export function deleteSolve(solveId: string): Promise<void> {
   return request(`/api/solves/${solveId}`, { method: 'DELETE' })
-}
-
-export function clearSolves(): Promise<void> {
-  return request('/api/solves', { method: 'DELETE' })
 }
 
 export function getExportData(): Promise<ExportData> {

@@ -104,12 +104,8 @@ export function newestSolvesFirst(solves: readonly Solve[]): Solve[] {
 export function filterSolves(
   solves: Solve[],
   range: SolveDateRange,
-  selectedSessionIds: readonly string[] | null = null,
   now: Date = new Date(),
 ): Solve[] {
-  const selectedSessions = selectedSessionIds === null
-    ? null
-    : new Set(selectedSessionIds)
   const nowTimestamp = now.getTime()
   const earliestTimestamp = range === 'all'
     ? Number.NEGATIVE_INFINITY
@@ -117,7 +113,6 @@ export function filterSolves(
 
   return solves
     .filter((solve) => {
-      if (selectedSessions !== null && !selectedSessions.has(solve.session_id)) return false
       if (range === 'all') return true
       const timestamp = new Date(solve.recorded_at).getTime()
       return timestamp >= earliestTimestamp && timestamp <= nowTimestamp

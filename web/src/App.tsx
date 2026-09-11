@@ -1,6 +1,4 @@
 import {
-  lazy,
-  Suspense,
   useEffect,
   useRef,
   useState,
@@ -22,7 +20,6 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
-  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
   faCircleExclamation,
@@ -34,29 +31,14 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import {
-  clearSolves,
-  createSolve,
-  deleteSolve,
-  getExportData,
-  getProfile,
-  getSessions,
-  getSolves,
-  updateSolve,
-} from './api'
 import { SessionPanel } from './SessionPanel'
+import { guestSolveStore, type SolveStore } from './solveStore'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from './timer'
 import type { Penalty, Solve, SolveInput } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
-
-const ProfileView = lazy(() =>
-  import('./ProfileView').then((module) => ({ default: module.ProfileView })),
-)
-
-const accountIcon = legacyUser as unknown as IconDefinition
 
 const footerIcons = {
   code: legacyCode,
@@ -141,12 +123,12 @@ function Modal({ open, onClose, labelledBy, children }: ModalProps) {
 
 type AppProps = {
   initialTheme: Theme
+  solveStore?: SolveStore
 }
 
 type SaveState = 'idle' | 'saving' | 'failed'
 
-function App({ initialTheme }: AppProps) {
-  const [sessionId, setSessionId] = useState('')
+function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
@@ -156,31 +138,17 @@ function App({ initialTheme }: AppProps) {
   const [latestResultId, setLatestResultId] = useState('')
   const [error, setError] = useState('')
   const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
-  const [clearingSolves, setClearingSolves] = useState(false)
-  const [view, setView] = useState<'timer' | 'profile'>('timer')
   const [hideTimer, setHideTimer] = useState(false)
   const [inspectionEnabled, setInspectionEnabled] = useState(false)
-  const [profileName, setProfileName] = useState('Cube Solver')
   const [theme, setTheme] = useState<Theme>(initialTheme)
-  const sessionIdRef = useRef(sessionId)
   const latestResultIdRef = useRef(latestResultId)
-  const deletedSolveIdsRef = useRef(new Set<string>())
-  sessionIdRef.current = sessionId
   latestResultIdRef.current = latestResultId
+
   useEffect(() => {
     let cancelled = false
-    void getProfile()
-      .then((profile) => {
-        if (!cancelled) setProfileName(profile.display_name)
-      })
-      .catch((profileError: unknown) => {
-        if (!cancelled) setError(`Could not load profile: ${errorMessage(profileError)}`)
-      })
-
-    Promise.all([getSessions(), randomScrambleForEvent('333')])
-      .then(([loadedSessions, nextScramble]) => {
+    randomScrambleForEvent('333')
+      .then((nextScramble) => {
         if (cancelled) return
-        setSessionId(loadedSessions[0]?.id ?? '')
         setScramble(nextScramble.toString())
         setScrambleLoading(false)
       })
@@ -191,34 +159,6 @@ function App({ initialTheme }: AppProps) {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    setLatestResultId('')
-    if (!sessionId) return
-
-    let cancelled = false
-    getSolves(sessionId)
-      .then((loadedSolves) => {
-        if (cancelled) return
-        setSolves((current) => {
-          const merged = new Map(
-            loadedSolves
-              .filter((solve) => !deletedSolveIdsRef.current.has(solve.id))
-              .map((solve) => [solve.id, solve]),
-          )
-          for (const solve of current) {
-            if (solve.session_id === sessionId) merged.set(solve.id, solve)
-          }
-          return newestSolvesFirst([...merged.values()])
-        })
-      })
-      .catch((loadError: unknown) => {
-        if (!cancelled) setError(errorMessage(loadError))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [sessionId])
 
   async function generateScramble() {
     setScramble('')
@@ -237,14 +177,12 @@ function App({ initialTheme }: AppProps) {
     setSaveState('saving')
     setError('')
     try {
-      const savedSolve = await createSolve(solve)
-      if (solve.session_id === sessionIdRef.current) {
-        setSolves((current) => {
-          const next = new Map(current.map((item) => [item.id, item]))
-          next.set(savedSolve.id, savedSolve)
-          return newestSolvesFirst([...next.values()])
-        })
-      }
+      const savedSolve = await solveStore.create(solve)
+      setSolves((current) => {
+        const next = new Map(current.map((item) => [item.id, item]))
+        next.set(savedSolve.id, savedSolve)
+        return newestSolvesFirst([...next.values()])
+      })
       setPendingSolve(null)
       setSaveState('idle')
       await generateScramble()
@@ -255,13 +193,11 @@ function App({ initialTheme }: AppProps) {
   }
 
   function handleTimerComplete(durationMs: number, penalty: Penalty) {
-    const activeSessionId = sessionId
     const completedScramble = scramble
-    if (!activeSessionId || !completedScramble || pendingSolve) return
+    if (!completedScramble || pendingSolve) return
 
     const solve: SolveInput = {
       id: crypto.randomUUID(),
-      session_id: activeSessionId,
       duration_ms: durationMs,
       penalty,
       scramble: completedScramble,
@@ -275,19 +211,15 @@ function App({ initialTheme }: AppProps) {
 
   const { phase, elapsedMs, reset: resetTimer } = useTimer(
     Boolean(
-      view === 'timer' &&
-      sessionId &&
       scramble &&
       !scrambleLoading &&
       !pendingSolve &&
-      !clearingSolves &&
       !practiceSettingsOpen,
     ),
     inspectionEnabled,
     handleTimerComplete,
   )
   const controlsDisabled =
-    clearingSolves ||
     Boolean(pendingSolve) ||
     phase === 'holding' ||
     phase === 'ready' ||
@@ -305,7 +237,7 @@ function App({ initialTheme }: AppProps) {
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      const updatedSolve = await updateSolve(solve.id, update)
+      const updatedSolve = await solveStore.update(solve, update)
       setSolves((current) =>
         current.map((item) => (item.id === solve.id ? updatedSolve : item)),
       )
@@ -324,8 +256,7 @@ function App({ initialTheme }: AppProps) {
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      await deleteSolve(solve.id)
-      deletedSolveIdsRef.current.add(solve.id)
+      await solveStore.delete(solve)
       setSolves((current) => current.filter((item) => item.id !== solve.id))
       if (solve.id === latestResultIdRef.current) {
         setLatestResultId('')
@@ -341,39 +272,15 @@ function App({ initialTheme }: AppProps) {
     }
   }
 
-  async function handleClearSolves(): Promise<void> {
+  function handleClearSolves(): void {
     if (solves.length === 0 || pendingSolve || pendingMutationIds.length) return
     const label = solves.length === 1 ? 'solve' : 'solves'
     if (!window.confirm(`Clear all ${solves.length} ${label}? This cannot be undone.`)) return
 
-    setClearingSolves(true)
-    try {
-      await clearSolves()
-      setSolves([])
-      setLatestResultId('')
-      latestResultIdRef.current = ''
-      resetTimer()
-    } catch (clearError) {
-      setError(`Times could not be cleared: ${errorMessage(clearError)}`)
-    } finally {
-      setClearingSolves(false)
-    }
-  }
-
-  async function handleExport() {
-    try {
-      const data = await getExportData()
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      )
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `cubench-${new Date().toISOString().slice(0, 10)}.json`
-      link.click()
-      URL.revokeObjectURL(url)
-    } catch (exportError) {
-      setError(errorMessage(exportError))
-    }
+    setSolves([])
+    setLatestResultId('')
+    latestResultIdRef.current = ''
+    resetTimer()
   }
 
   function handleThemeChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -415,7 +322,7 @@ function App({ initialTheme }: AppProps) {
             : phase
       }${inspectionActive ? ' app--inspecting' : ''}`}
     >
-      <header className={`site-header page-width focus-chrome${view === 'timer' ? ' site-header--timer' : ''}`}>
+      <header className="site-header site-header--timer page-width focus-chrome">
         <div className="site-header-main">
           <a
             className="brand"
@@ -433,36 +340,14 @@ function App({ initialTheme }: AppProps) {
 
           <nav className="main-nav" aria-label="Main views">
             <button
-              className={view === 'timer' ? 'is-active' : ''}
+              className="is-active"
               type="button"
-              onClick={() => setView('timer')}
               disabled={controlsDisabled}
               aria-label="Timer"
-              aria-current={view === 'timer' ? 'page' : undefined}
+              aria-current="page"
               title="Timer"
             >
               <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
-            </button>
-          </nav>
-
-          <nav className="account-nav" aria-label="Account">
-            <button
-              className={view === 'profile' ? 'is-active' : ''}
-              type="button"
-              onClick={() => setView('profile')}
-              disabled={controlsDisabled}
-              aria-label="Profile"
-              aria-current={view === 'profile' ? 'page' : undefined}
-              title="Profile"
-            >
-              <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
-              <span className="account-name">{profileName}</span>
-              <span
-                className="account-solve-count"
-                title={`${solves.length} ${solves.length === 1 ? 'solve' : 'solves'}`}
-              >
-                {solves.length}
-              </span>
             </button>
           </nav>
         </div>
@@ -483,8 +368,7 @@ function App({ initialTheme }: AppProps) {
         </aside>
       )}
 
-      {view === 'timer' ? (
-        <main className="practice-view page-width">
+      <main className="practice-view page-width">
           <div className="practice-workspace">
             <div className="practice-config-row focus-chrome">
             <div
@@ -626,29 +510,11 @@ function App({ initialTheme }: AppProps) {
               onPenalty={handlePenalty}
               onDelete={(solve) => handleDelete(solve, false)}
               onClear={handleClearSolves}
-              clearing={clearingSolves}
             />
           </div>
-        </main>
-      ) : (
-        <Suspense
-          fallback={(
-            <main className="profile-fallback page-width" aria-busy="true">
-              loading profile...
-            </main>
-          )}
-        >
-          <ProfileView
-            onPenalty={handlePenalty}
-            onDelete={handleDelete}
-            onExport={() => void handleExport()}
-            onError={setError}
-            onProfileChange={(profile) => setProfileName(profile.display_name)}
-          />
-        </Suspense>
-      )}
+      </main>
 
-      <footer className={`site-footer page-width focus-chrome${view === 'timer' ? ' site-footer--timer' : ''}`}>
+      <footer className="site-footer site-footer--timer page-width focus-chrome">
         <nav className="footer-links" aria-label="Footer">
           <a className="footer-link" href="mailto:rouillard.hugo1@gmail.com">
             <FontAwesomeIcon className="app-icon" icon={footerIcons.envelope} fixedWidth aria-hidden="true" />

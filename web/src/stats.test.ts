@@ -17,7 +17,6 @@ import type { Penalty, Solve } from './types'
 function solve(durationMs: number, penalty: Penalty = 'none', index = 0): Solve {
   return {
     id: String(index),
-    session_id: 'session',
     duration_ms: durationMs,
     penalty,
     scramble: 'R U',
@@ -30,12 +29,10 @@ function solveAt(
   id: string,
   durationMs: number,
   recordedAt: Date,
-  sessionId = 'session',
   penalty: Penalty = 'none',
 ): Solve {
   return {
     id,
-    session_id: sessionId,
     duration_ms: durationMs,
     penalty,
     scramble: 'R U',
@@ -108,44 +105,40 @@ describe('session statistics', () => {
 describe('profile solve filters', () => {
   const now = new Date('2026-04-01T12:00:00.000Z')
   const solves = [
-    solveAt('new-b', 10_000, new Date('2026-04-01T11:00:00.000Z'), 'b'),
-    solveAt('new-a', 10_000, new Date('2026-04-01T11:00:00.000Z'), 'a'),
-    solveAt('day-edge', 10_000, new Date('2026-03-31T12:00:00.000Z'), 'a'),
-    solveAt('outside-day', 10_000, new Date('2026-03-31T11:59:59.999Z'), 'a'),
-    solveAt('week-edge', 10_000, new Date('2026-03-25T12:00:00.000Z'), 'b'),
-    solveAt('month-edge', 10_000, new Date('2026-03-02T12:00:00.000Z'), 'a'),
-    solveAt('three-month-edge', 10_000, new Date('2026-01-01T12:00:00.000Z'), 'b'),
-    solveAt('old', 10_000, new Date('2025-12-31T12:00:00.000Z'), 'a'),
+    solveAt('new-b', 10_000, new Date('2026-04-01T11:00:00.000Z')),
+    solveAt('new-a', 10_000, new Date('2026-04-01T11:00:00.000Z')),
+    solveAt('day-edge', 10_000, new Date('2026-03-31T12:00:00.000Z')),
+    solveAt('outside-day', 10_000, new Date('2026-03-31T11:59:59.999Z')),
+    solveAt('week-edge', 10_000, new Date('2026-03-25T12:00:00.000Z')),
+    solveAt('month-edge', 10_000, new Date('2026-03-02T12:00:00.000Z')),
+    solveAt('three-month-edge', 10_000, new Date('2026-01-01T12:00:00.000Z')),
+    solveAt('old', 10_000, new Date('2025-12-31T12:00:00.000Z')),
   ]
 
   it('uses rolling inclusive date ranges and deterministic newest-first order', () => {
-    expect(filterSolves(solves, 'day', null, now).map(({ id }) => id)).toEqual([
+    expect(filterSolves(solves, 'day', now).map(({ id }) => id)).toEqual([
       'new-b',
       'new-a',
       'day-edge',
     ])
-    expect(filterSolves(solves, 'week', null, now).map(({ id }) => id)).toContain(
+    expect(filterSolves(solves, 'week', now).map(({ id }) => id)).toContain(
       'week-edge',
     )
-    expect(filterSolves(solves, 'month', null, now).map(({ id }) => id)).toContain(
+    expect(filterSolves(solves, 'month', now).map(({ id }) => id)).toContain(
       'month-edge',
     )
-    expect(filterSolves(solves, 'threeMonths', null, now).map(({ id }) => id)).toContain(
+    expect(filterSolves(solves, 'threeMonths', now).map(({ id }) => id)).toContain(
       'three-month-edge',
     )
   })
 
-  it('treats null as all sessions and filters selected sessions', () => {
-    expect(filterSolves(solves, 'all', ['b'], now).every(
-      ({ session_id }) => session_id === 'b',
-    )).toBe(true)
-    expect(filterSolves(solves, 'all', [], now)).toEqual([])
-    expect(filterSolves(solves, 'all', null, now)).toHaveLength(solves.length)
+  it('returns every solve for the all-time range', () => {
+    expect(filterSolves(solves, 'all', now)).toHaveLength(solves.length)
   })
 })
 
 describe('lifetime profile summary', () => {
-  it('uses one cross-session stream with adjusted WCA averages and earliest ties', () => {
+  it('uses one solve stream with adjusted WCA averages and earliest ties', () => {
     const solves = Array.from({ length: 12 }, (_, index) => {
       const penalty: Penalty = index === 0 ? 'plus2' : index === 4 ? 'dnf' : 'none'
       const rawDuration = index === 0 ? 8_000 : index === 4 ? 50_000 : 10_000
@@ -153,7 +146,6 @@ describe('lifetime profile summary', () => {
         `solve-${index}`,
         rawDuration,
         new Date(Date.UTC(2026, 0, index + 1, 12)),
-        index % 2 === 0 ? 'session-a' : 'session-b',
         penalty,
       )
     })
@@ -192,7 +184,7 @@ describe('lifetime profile summary', () => {
   it('calculates gap-aware streaks active through today or yesterday', () => {
     const solves = [
       solveAt('one', 10_000, new Date(2026, 7, 1, 12)),
-      solveAt('two', 10_000, new Date(2026, 7, 2, 12), 'session', 'dnf'),
+      solveAt('two', 10_000, new Date(2026, 7, 2, 12), 'dnf'),
       solveAt('four', 10_000, new Date(2026, 7, 4, 12)),
       solveAt('five', 10_000, new Date(2026, 7, 5, 12)),
     ]
@@ -213,7 +205,6 @@ describe('profile history', () => {
       `solve-${String(index).padStart(2, '0')}`,
       index === 0 ? 10_000 : index === 1 ? 9_000 : 11_000,
       new Date(Date.UTC(2026, 1, index + 1)),
-      index % 2 === 0 ? 'a' : 'b',
       index === 0 ? 'plus2' : index === 4 ? 'dnf' : 'none',
     ))
 
@@ -233,9 +224,9 @@ describe('daily analytics', () => {
     const secondDay = new Date(2026, 5, 11, 12)
     const analytics = dailyAnalytics([
       solveAt('one', 10_000, firstDay),
-      solveAt('two', 9_000, firstDay, 'session', 'plus2'),
-      solveAt('three', 8_000, firstDay, 'session', 'dnf'),
-      solveAt('four', 7_000, secondDay, 'session', 'dnf'),
+      solveAt('two', 9_000, firstDay, 'plus2'),
+      solveAt('three', 8_000, firstDay, 'dnf'),
+      solveAt('four', 7_000, secondDay, 'dnf'),
     ])
 
     expect(analytics[0]).toMatchObject({
@@ -257,8 +248,8 @@ describe('solve duration histogram', () => {
   it('uses dynamic whole-second buckets for adjusted non-DNF durations', () => {
     const solves = [
       solveAt('one', 10_200, new Date(2026, 0, 1)),
-      solveAt('two', 11_000, new Date(2026, 0, 2), 'session', 'plus2'),
-      solveAt('dnf', 20_000, new Date(2026, 0, 3), 'session', 'dnf'),
+      solveAt('two', 11_000, new Date(2026, 0, 2), 'plus2'),
+      solveAt('dnf', 20_000, new Date(2026, 0, 3), 'dnf'),
       solveAt('three', 31_200, new Date(2026, 0, 4)),
     ]
 
@@ -277,7 +268,7 @@ describe('solve duration histogram', () => {
       { startMs: 30_000, endMs: 35_000, label: '30-35s', count: 1 },
     ])
     expect(solveDurationHistogram([
-      solveAt('dnf', 10_000, new Date(2026, 0, 1), 'session', 'dnf'),
+      solveAt('dnf', 10_000, new Date(2026, 0, 1), 'dnf'),
     ])).toEqual([])
   })
 })

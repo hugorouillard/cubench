@@ -17,8 +17,7 @@ type SessionPanelProps = {
   theme: string
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
   onDelete: (solve: Solve) => Promise<boolean>
-  onClear: () => Promise<void>
-  clearing: boolean
+  onClear: () => void
 }
 
 function formatSolveDate(value: string): string {
@@ -38,7 +37,6 @@ export function SessionPanel({
   onPenalty,
   onDelete,
   onClear,
-  clearing,
 }: SessionPanelProps) {
   const successful = solves
     .map((solve) => ({ solve, duration: completedDuration(solve) }))
@@ -59,10 +57,10 @@ export function SessionPanel({
           <button
             type="button"
             disabled={disabled || solves.length === 0}
-            onClick={() => void onClear()}
+            onClick={onClear}
           >
             <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-            {clearing ? 'clearing...' : 'clear times'}
+            clear times
           </button>
         </div>
       </header>
