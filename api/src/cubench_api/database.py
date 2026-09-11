@@ -59,6 +59,25 @@ def initialize_database() -> None:
                     CHECK (length(trim(bio)) <= 160),
                 created_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS accounts (
+                id INTEGER PRIMARY KEY,
+                username TEXT NOT NULL UNIQUE COLLATE NOCASE
+                    CHECK (length(username) BETWEEN 3 AND 32),
+                password_hash TEXT NOT NULL,
+                display_name TEXT NOT NULL
+                    CHECK (length(trim(display_name)) BETWEEN 1 AND 40),
+                bio TEXT NOT NULL DEFAULT ''
+                    CHECK (length(trim(bio)) <= 160),
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS auth_sessions (
+                token_hash TEXT PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES accounts(id)
+                    ON DELETE CASCADE,
+                expires_at INTEGER NOT NULL
+            );
             """
         )
         session_count = connection.execute(
