@@ -3,7 +3,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SolveStore } from './solveStore'
-import type { Penalty, Solve } from './types'
+import type { Penalty, Solve, UserProfile } from './types'
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }))
 const timer = vi.hoisted(() => ({
@@ -65,6 +65,28 @@ vi.mock('./useTimer', () => ({
     return { phase: 'stopped', elapsedMs: 12_340, reset: timer.reset }
   },
 }))
+vi.mock('./ProfileView', () => ({
+  ProfileView: ({
+    onProfileChange,
+  }: {
+    onProfileChange: (profile: UserProfile) => void
+  }) => (
+    <main>
+      <h1>Lifetime profile</h1>
+      <button
+        type="button"
+        onClick={() => onProfileChange({
+          id: 1,
+          display_name: 'Updated Cuber',
+          bio: '',
+          created_at: '2026-01-01T00:00:00Z',
+        })}
+      >
+        update profile
+      </button>
+    </main>
+  ),
+}))
 
 import App from './App'
 
@@ -74,6 +96,7 @@ describe('current session', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    window.history.replaceState(null, '', '/')
     timer.onComplete = null
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse({ detail: 'Not authenticated' }, 401),
@@ -175,13 +198,19 @@ describe('current session', () => {
     fireEvent.click(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!)
 
     await screen.findByText('Speed Cuber')
-    expect(screen.getByLabelText('Signed in as Speed Cuber')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open profile for Speed Cuber' })).toBeTruthy()
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
     await act(async () => {
       timer.onComplete?.(11_000, 'none')
     })
     await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
     expect(fetch.mock.calls.map(([path]) => String(path))).toContain('/api/solves')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open profile for Speed Cuber' }))
+    await screen.findByRole('heading', { name: 'Lifetime profile' })
+    fireEvent.click(screen.getByRole('link', { name: 'Cubench home' }))
+    expect(screen.getByTestId('solve-count').textContent).toBe('1')
+
     fireEvent.click(screen.getByRole('button', { name: 'clear times' }))
     expect(confirm).toHaveBeenCalledWith(
       'Clear 1 current solve? Saved solves remain in your profile.',
@@ -193,6 +222,11 @@ describe('current session', () => {
       timer.onComplete?.(10_000, 'none')
     })
     await screen.findByRole('button', { name: 'Retry saving result' })
+    window.history.pushState(null, '', '#profile')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(location.hash).toBe('')
+    expect(screen.queryByRole('heading', { name: 'Lifetime profile' })).toBeNull()
+
     confirm.mockReturnValueOnce(false)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(screen.getByRole('button', { name: 'Retry saving result' })).toBeTruthy()
@@ -240,6 +274,29 @@ describe('current session', () => {
     await screen.findByText('Speed Cuber')
     expect(fetch).toHaveBeenCalledWith('/api/auth/session', expect.anything())
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
+  })
+
+  it('switches between the timer and account profile', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
+    render(<App initialTheme="catppuccin-mocha" />)
+
+    const profileButton = await screen.findByRole('button', {
+      name: 'Open profile for Speed Cuber',
+    })
+    fireEvent.click(profileButton)
+
+    await screen.findByRole('heading', { name: 'Lifetime profile' })
+    expect(location.hash).toBe('#profile')
+    expect(profileButton.getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Timer' }).getAttribute('aria-current')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'update profile' }))
+    expect(screen.getByRole('button', { name: 'Open profile for Updated Cuber' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
+    expect(location.hash).toBe('')
+    expect(screen.queryByRole('heading', { name: 'Lifetime profile' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Timer' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('retains a failed solve and retries it before advancing the scramble', async () => {
