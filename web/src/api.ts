@@ -49,7 +49,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export function getAuthSession(): Promise<Account> {
-  return request('/api/auth/session')
+  return request('/api/auth/session', { signal: AbortSignal.timeout(5_000) })
 }
 
 export function register(input: RegistrationInput): Promise<Account> {

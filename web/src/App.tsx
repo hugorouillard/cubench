@@ -20,8 +20,10 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
+  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
+  faArrowRightFromBracket,
   faCircleExclamation,
   faCube,
   faEyeSlash,
@@ -31,14 +33,18 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
+import { ApiError, getAuthSession, logout } from './api'
+import { AuthPanel } from './AuthPanel'
 import { SessionPanel } from './SessionPanel'
-import { guestSolveStore, type SolveStore } from './solveStore'
+import { accountSolveStore, guestSolveStore, type SolveStore } from './solveStore'
 import { newestSolvesFirst, summarizeSolves } from './stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from './timer'
-import type { Penalty, Solve, SolveInput } from './types'
+import type { Account, Penalty, Solve, SolveInput } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
+
+const accountIcon = legacyUser as unknown as IconDefinition
 
 const footerIcons = {
   code: legacyCode,
@@ -73,10 +79,11 @@ type ModalProps = {
   open: boolean
   onClose: () => void
   labelledBy: string
+  closeDisabled?: boolean
   children: ReactNode
 }
 
-function Modal({ open, onClose, labelledBy, children }: ModalProps) {
+function Modal({ open, onClose, labelledBy, closeDisabled = false, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -110,10 +117,10 @@ function Modal({ open, onClose, labelledBy, children }: ModalProps) {
       }}
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (!closeDisabled) onClose()
       }}
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (event.target === event.currentTarget && !closeDisabled) onClose()
       }}
     >
       <div className="dialog-panel">{children}</div>
@@ -128,7 +135,12 @@ type AppProps = {
 
 type SaveState = 'idle' | 'saving' | 'failed'
 
-function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
+function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
+  const [account, setAccount] = useState<Account | null>(null)
+  const [authChecking, setAuthChecking] = useState(true)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authSubmitting, setAuthSubmitting] = useState(false)
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
@@ -143,6 +155,26 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const latestResultIdRef = useRef(latestResultId)
   latestResultIdRef.current = latestResultId
+  const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
+
+  useEffect(() => {
+    let cancelled = false
+    void getAuthSession()
+      .then((restoredAccount) => {
+        if (!cancelled) setAccount(restoredAccount)
+      })
+      .catch((sessionError: unknown) => {
+        if (!cancelled && !(sessionError instanceof ApiError && sessionError.status === 401)) {
+          setError(`Could not restore account; continuing as guest: ${errorMessage(sessionError)}`)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecking(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -214,12 +246,17 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
       scramble &&
       !scrambleLoading &&
       !pendingSolve &&
+      !authChecking &&
+      !authOpen &&
+      !authBusy &&
       !practiceSettingsOpen,
     ),
     inspectionEnabled,
     handleTimerComplete,
   )
   const controlsDisabled =
+    authChecking ||
+    authBusy ||
     Boolean(pendingSolve) ||
     phase === 'holding' ||
     phase === 'ready' ||
@@ -227,6 +264,36 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
     phase === 'inspection-holding' ||
     phase === 'inspection-ready' ||
     phase === 'running'
+
+  function resetCurrentSession() {
+    setSolves([])
+    setPendingSolve(null)
+    setSaveState('idle')
+    setPendingMutationIds([])
+    setLatestResultId('')
+    latestResultIdRef.current = ''
+    resetTimer()
+  }
+
+  function handleAuthenticated(authenticatedAccount: Account) {
+    setAccount(authenticatedAccount)
+    setAuthOpen(false)
+    resetCurrentSession()
+  }
+
+  async function handleLogout() {
+    if (pendingSolve && !window.confirm('Sign out and discard the unsaved result?')) return
+    setAuthBusy(true)
+    try {
+      await logout()
+      setAccount(null)
+      resetCurrentSession()
+    } catch (logoutError) {
+      setError(`Could not sign out: ${errorMessage(logoutError)}`)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
 
   async function handlePenalty(
     solve: Solve,
@@ -275,7 +342,10 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
   function handleClearSolves(): void {
     if (solves.length === 0 || pendingSolve || pendingMutationIds.length) return
     const label = solves.length === 1 ? 'solve' : 'solves'
-    if (!window.confirm(`Clear all ${solves.length} ${label}? This cannot be undone.`)) return
+    const message = account
+      ? `Clear ${solves.length} current ${label}? Saved solves remain in your profile.`
+      : `Clear all ${solves.length} ${label}? This cannot be undone.`
+    if (!window.confirm(message)) return
 
     setSolves([])
     setLatestResultId('')
@@ -293,6 +363,7 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
   const summary = summarizeSolves(solves)
+  const accountActionDisabled = authBusy || (controlsDisabled && saveState !== 'failed')
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
   const inspectionActive =
@@ -349,6 +420,52 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
             >
               <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
             </button>
+          </nav>
+
+          <nav className="account-nav" aria-label="Account">
+            {account ? (
+              <>
+                <span
+                  className="account-identity"
+                  role="group"
+                  aria-label={`Signed in as ${account.display_name}`}
+                >
+                  <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
+                  <span className="account-name">{account.display_name}</span>
+                  <span
+                    className="account-solve-count"
+                    title={`${solves.length} current ${solves.length === 1 ? 'solve' : 'solves'}`}
+                  >
+                    {solves.length}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={accountActionDisabled}
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <FontAwesomeIcon
+                    className="app-icon"
+                    icon={faArrowRightFromBracket}
+                    fixedWidth
+                    aria-hidden="true"
+                  />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAuthOpen(true)}
+                disabled={accountActionDisabled}
+                aria-label="Sign in"
+                title="Sign in"
+              >
+                <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
+                <span className="account-name">sign in</span>
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -485,6 +602,7 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
                     <button
                       className="post-solve-retry"
                       type="button"
+                      disabled={authBusy}
                       onClick={() => void persistSolve(pendingSolve)}
                     >
                       <FontAwesomeIcon className="app-icon" icon={faRotateRight} aria-hidden="true" />
@@ -586,6 +704,21 @@ function App({ initialTheme, solveStore = guestSolveStore }: AppProps) {
           </a>
         </div>
       </footer>
+
+      <Modal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        labelledBy="auth-dialog-title"
+        closeDisabled={authSubmitting}
+      >
+        {authOpen && (
+          <AuthPanel
+            onAuthenticated={handleAuthenticated}
+            onClose={() => setAuthOpen(false)}
+            onSubmittingChange={setAuthSubmitting}
+          />
+        )}
+      </Modal>
 
       <Modal
         open={practiceSettingsOpen}
