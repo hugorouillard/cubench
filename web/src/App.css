@@ -758,6 +758,83 @@ select:disabled {
   font-size: 1rem;
 }
 
+.auth-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+}
+
+.auth-mode button {
+  border: 0;
+  border-radius: calc(var(--roundness) * 0.75);
+  padding: 0.65rem;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.auth-mode button.is-active {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--sub-readable-color);
+  font-size: 0.7rem;
+}
+
+.auth-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: var(--roundness);
+  padding: 0.8rem 0.9rem;
+  color: var(--text-color);
+  background: var(--sub-alt-color);
+  font: inherit;
+}
+
+.auth-form input:focus {
+  border-color: var(--main-color);
+  outline: none;
+}
+
+.auth-error,
+.auth-note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.auth-error {
+  color: var(--error-readable-color);
+}
+
+.auth-note {
+  color: var(--sub-readable-color);
+}
+
+.auth-form .dialog-actions {
+  margin-top: 0.25rem;
+}
+
+.auth-form .dialog-actions button {
+  width: 100%;
+}
+
 .mobile-config-stack,
 .mobile-config-group {
   display: grid;
