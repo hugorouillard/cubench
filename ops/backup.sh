@@ -7,7 +7,10 @@ readonly backup_dir=/var/backups/cubench
 
 [[ -f "$database" ]] || exit 0
 
-timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+exec 9>"$backup_dir/backup.lock"
+flock 9
+
+timestamp=$(date -u +%Y%m%dT%H%M%S.%NZ)
 backup="$backup_dir/cubench-$timestamp.db"
 
 sqlite3 "$database" ".backup '$backup'"

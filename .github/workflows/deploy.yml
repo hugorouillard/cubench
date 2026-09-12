@@ -18,7 +18,7 @@ jobs:
     env:
       SSH_PORT: ${{ vars.DEPLOY_PORT || '22' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -27,14 +27,14 @@ jobs:
           git fetch origin master
           git merge-base --is-ancestor "$GITHUB_SHA" origin/master
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
         with:
           enable-cache: true
           python-version: "3.12"
       - run: uv sync --directory api --frozen
       - run: uv run --directory api pytest
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
