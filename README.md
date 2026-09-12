@@ -12,7 +12,7 @@ frontend, a FastAPI backend, and a SQLite database.
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 24 or newer
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
 - [just](https://just.systems/)
@@ -48,3 +48,10 @@ Run checks:
 ```bash
 just check
 ```
+
+## Deployment
+
+Production uses one Ubuntu 24.04 VPS with Caddy, systemd, and SQLite. Tagged
+releases are checked, built, and deployed by GitHub Actions. See
+[the deployment runbook](docs/deployment.md) for initial setup and routine
+operations.
