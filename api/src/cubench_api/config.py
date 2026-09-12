@@ -1,3 +1,5 @@
+"""Load and validate Cubench runtime configuration."""
+
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,11 +9,15 @@ from fastapi import Depends, Request
 
 
 class ConfigError(RuntimeError):
+    """Raised when runtime configuration is invalid."""
+
     pass
 
 
 @dataclass(frozen=True)
 class RuntimeConfig:
+    """Settings required by the API for its process lifetime."""
+
     environment: str
     db_path: Path
     invite_code: str | None
@@ -31,6 +37,8 @@ def _boolean_setting(name: str, default: bool) -> bool:
 
 
 def load_runtime_config() -> RuntimeConfig:
+    """Read environment settings and fail closed in production."""
+
     environment = os.getenv("CUBENCH_ENV", "development").strip().lower()
     if environment not in {"development", "test", "production"}:
         raise ConfigError(
@@ -55,6 +63,8 @@ def load_runtime_config() -> RuntimeConfig:
     cookie_secure = _boolean_setting("CUBENCH_COOKIE_SECURE", False)
 
     if environment == "production":
+        if configured_path is None:
+            raise ConfigError("CUBENCH_DB_PATH must be set in production")
         if not db_path.is_absolute():
             raise ConfigError("CUBENCH_DB_PATH must be absolute in production")
         if not cookie_secure:
