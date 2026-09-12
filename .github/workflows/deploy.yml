@@ -46,7 +46,8 @@ jobs:
 
       - name: Package release
         run: >-
-          tar -czf "cubench-$GITHUB_SHA.tar.gz"
+          tar --exclude='*/__pycache__' --exclude='*.py[co]'
+          -czf "cubench-$GITHUB_SHA.tar.gz"
           api/.python-version api/pyproject.toml api/uv.lock api/src web/dist
 
       - name: Configure SSH
