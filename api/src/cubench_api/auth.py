@@ -1,5 +1,4 @@
 import hashlib
-import os
 import secrets
 import sqlite3
 import time
@@ -9,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field, field_validator
 
+from cubench_api.config import ConfigDependency, RuntimeConfig
 from cubench_api.database import connect
 
 SESSION_COOKIE = "cubench_session"
@@ -51,24 +51,13 @@ class LoginRequest(BaseModel):
         return value.strip().lower()
 
 
-def _setting(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
+def _invite_code(config: RuntimeConfig) -> str:
+    if config.invite_code is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Account login is not configured",
         )
-    return value
-
-
-def _invite_code() -> str:
-    invite_code = _setting("CUBENCH_INVITE_CODE")
-    if invite_code == "replace-with-a-private-invite-code":
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Account login is not configured",
-        )
-    return invite_code
+    return config.invite_code
 
 
 def hash_password(password: str) -> str:
@@ -133,18 +122,15 @@ def _account(row: sqlite3.Row) -> Account:
     )
 
 
-def _set_session_cookie(response: Response, token: str) -> None:
-    secure = os.getenv("CUBENCH_COOKIE_SECURE", "false").lower() in {
-        "1",
-        "true",
-        "yes",
-    }
+def _set_session_cookie(
+    response: Response, token: str, config: RuntimeConfig
+) -> None:
     response.set_cookie(
         SESSION_COOKIE,
         token,
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        secure=secure,
+        secure=config.cookie_secure,
         samesite="lax",
     )
 
@@ -176,8 +162,10 @@ AccountDependency = Annotated[Account, Depends(require_account)]
 @router.post(
     "/register", response_model=Account, status_code=status.HTTP_201_CREATED
 )
-def register(payload: RegisterRequest, response: Response) -> Account:
-    expected_invite = _invite_code()
+def register(
+    payload: RegisterRequest, response: Response, config: ConfigDependency
+) -> Account:
+    expected_invite = _invite_code(config)
     if not secrets.compare_digest(payload.invite_code.encode(), expected_invite.encode()):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid invite code"
@@ -216,12 +204,14 @@ def register(payload: RegisterRequest, response: Response) -> Account:
         bio="",
         created_at=created_at,
     )
-    _set_session_cookie(response, token)
+    _set_session_cookie(response, token, config)
     return account
 
 
 @router.post("/login", response_model=Account)
-def login(payload: LoginRequest, response: Response) -> Account:
+def login(
+    payload: LoginRequest, response: Response, config: ConfigDependency
+) -> Account:
     with connect() as connection:
         row = connection.execute(
             """
@@ -240,7 +230,7 @@ def login(payload: LoginRequest, response: Response) -> Account:
     with connect() as connection:
         token = _create_session(connection, account.id)
         connection.commit()
-    _set_session_cookie(response, token)
+    _set_session_cookie(response, token, config)
     return account
 
 
