@@ -55,7 +55,7 @@ Create a GitHub environment named `production`. Add these environment secrets:
 
 | Name | Value |
 | --- | --- |
-| `DEPLOY_HOST` | VPS IP address or hostname |
+| `DEPLOY_HOST` | VPS IP address |
 | `DEPLOY_USER` | `cubench` |
 | `DEPLOY_SSH_KEY` | Contents of `~/.ssh/cubench-deploy` |
 | `DEPLOY_KNOWN_HOSTS` | Verified `ssh-keyscan` output for the VPS |
@@ -69,8 +69,8 @@ ssh -p "$SSH_PORT" "$VPS" \
   'sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub'
 ```
 
-Generate the known-hosts value locally and verify its fingerprint matches
-before saving it in GitHub:
+Generate the known-hosts value for that same IP address locally and verify its
+fingerprint matches before saving it in GitHub:
 
 ```bash
 ssh-keyscan -p "$SSH_PORT" -t ed25519 -H "$VPS_IP" > /tmp/cubench-known-hosts
@@ -133,6 +133,33 @@ ssh -p "$SSH_PORT" "$VPS" 'sudo ls -lh /var/backups/cubench'
 
 Daily backups use SQLite's online backup command, pass an integrity check, are
 compressed, and are retained for at least 14 days.
+
+## Restore A Backup
+
+Log in to the VPS as its administrator and choose a backup. Stop the API before
+replacing the database so no writes can race with the restore.
+
+```bash
+export BACKUP=/var/backups/cubench/cubench-20260912T120000.000000000Z.db.gz
+sudo env BACKUP="$BACKUP" bash <<'SCRIPT'
+set -euo pipefail
+restore=/var/lib/cubench/cubench.restore.db
+trap 'rm -f "$restore"; systemctl start cubench.service' EXIT
+
+gzip -cd "$BACKUP" > "$restore"
+[[ $(sqlite3 "$restore" 'PRAGMA integrity_check;') == ok ]]
+[[ $(sqlite3 "$restore" 'PRAGMA user_version;') == 1 ]]
+systemctl stop cubench.service
+rm -f /var/lib/cubench/cubench.db-wal /var/lib/cubench/cubench.db-shm
+chown cubench:cubench "$restore"
+chmod 600 "$restore"
+mv "$restore" /var/lib/cubench/cubench.db
+systemctl start cubench.service
+curl --fail --retry 20 --retry-delay 1 --retry-connrefused \
+  http://127.0.0.1:8000/api/health/ready
+trap - EXIT
+SCRIPT
+```
 
 ## Manual Rollback
 

@@ -6,6 +6,17 @@ umask 022
 readonly app_dir=/opt/cubench
 readonly current="$app_dir/current"
 
+wait_until_ready() {
+  # Allow systemd and Uvicorn time to start before testing readiness.
+  for _ in {1..20}; do
+    if curl --fail --silent http://127.0.0.1:8000/api/health/ready >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 if [[ $(id -un) != "cubench" || $# -ne 2 ]]; then
   echo "usage: cubench-deploy <40-character-git-sha> <release-archive>" >&2
   exit 2
@@ -40,19 +51,20 @@ ln -sfn "$release" "$next"
 mv -Tf "$next" "$current"
 sudo /usr/bin/systemctl restart cubench.service
 
-for _ in {1..20}; do
-  if curl --fail --silent http://127.0.0.1:8000/api/health/ready >/dev/null; then
-    echo "deployed $sha"
-    exit 0
-  fi
-  sleep 1
-done
+if wait_until_ready; then
+  echo "deployed $sha"
+  exit 0
+fi
 
 if [[ -n $previous ]]; then
   ln -sfn "$previous" "$next"
   mv -Tf "$next" "$current"
   sudo /usr/bin/systemctl restart cubench.service
-  echo "release failed its readiness check; restored the previous release" >&2
+  if wait_until_ready; then
+    echo "release failed its readiness check; restored the previous release" >&2
+  else
+    echo "release and rollback both failed their readiness checks" >&2
+  fi
 else
   echo "first release failed its readiness check" >&2
 fi
