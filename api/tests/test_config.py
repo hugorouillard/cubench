@@ -34,6 +34,14 @@ def test_blank_database_path_is_rejected(monkeypatch) -> None:
         load_runtime_config()
 
 
+def test_production_requires_database_path(monkeypatch) -> None:
+    monkeypatch.setenv("CUBENCH_ENV", "production")
+    monkeypatch.delenv("CUBENCH_DB_PATH", raising=False)
+
+    with pytest.raises(ConfigError, match="DB_PATH must be set"):
+        load_runtime_config()
+
+
 def test_production_configuration_fails_closed(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("CUBENCH_ENV", "production")
     monkeypatch.setenv("CUBENCH_DB_PATH", str(tmp_path / "cubench.db"))
