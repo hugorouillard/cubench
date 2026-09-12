@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 import cubench_api.auth as auth
 from cubench_api.auth import SESSION_COOKIE, SESSION_MAX_AGE
 from cubench_api.database import connect
+from cubench_api.main import app
 
 
 def registration_payload(**overrides) -> dict:
@@ -110,19 +111,27 @@ def test_logout_clears_session(client: TestClient) -> None:
     assert client.get("/api/auth/session").status_code == 401
 
 
-def test_account_configuration_is_required(client: TestClient, monkeypatch) -> None:
-    monkeypatch.delenv("CUBENCH_INVITE_CODE")
+def test_account_configuration_is_required(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("CUBENCH_DB_PATH", str(tmp_path / "test.db"))
+    monkeypatch.setenv("CUBENCH_ENV", "test")
+    monkeypatch.setenv("CUBENCH_COOKIE_SECURE", "false")
+    monkeypatch.delenv("CUBENCH_INVITE_CODE", raising=False)
 
-    response = client.post("/api/auth/register", json=registration_payload())
+    with TestClient(app) as client:
+        response = client.post("/api/auth/register", json=registration_payload())
 
-    assert response.status_code == 503
-    with connect() as connection:
-        assert connection.execute("SELECT count(*) FROM accounts").fetchone()[0] == 0
+        assert response.status_code == 503
+        with connect() as connection:
+            assert connection.execute("SELECT count(*) FROM accounts").fetchone()[0] == 0
 
 
-def test_secure_cookie_can_be_enabled(client: TestClient, monkeypatch) -> None:
+def test_secure_cookie_can_be_enabled(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("CUBENCH_DB_PATH", str(tmp_path / "test.db"))
+    monkeypatch.setenv("CUBENCH_ENV", "test")
+    monkeypatch.setenv("CUBENCH_INVITE_CODE", "test-invite")
     monkeypatch.setenv("CUBENCH_COOKIE_SECURE", "true")
 
-    response = client.post("/api/auth/register", json=registration_payload())
+    with TestClient(app) as client:
+        response = client.post("/api/auth/register", json=registration_payload())
 
-    assert "secure" in response.headers["set-cookie"].lower()
+        assert "secure" in response.headers["set-cookie"].lower()

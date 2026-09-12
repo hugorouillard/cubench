@@ -4,9 +4,11 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Response, status
+from fastapi.responses import JSONResponse
 
 from cubench_api.auth import AccountDependency, router as auth_router
-from cubench_api.database import connect, initialize_database
+from cubench_api.config import ConfigDependency, load_runtime_config
+from cubench_api.database import connect, database_is_ready, initialize_database
 from cubench_api.schemas import (
     ExportData,
     Profile,
@@ -18,18 +20,30 @@ from cubench_api.schemas import (
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
-    initialize_database()
-    yield
+async def lifespan(app: FastAPI):
+    config = load_runtime_config()
+    initialize_database(config.db_path)
+    app.state.runtime_config = config
+    try:
+        yield
+    finally:
+        del app.state.runtime_config
 
 
 app = FastAPI(title="Cubench API", lifespan=lifespan)
 app.include_router(auth_router)
 
 
-@app.get("/api/health")
-def health() -> dict[str, str]:
+@app.get("/api/health/live")
+def health_live() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/health/ready")
+def health_ready(config: ConfigDependency) -> JSONResponse:
+    if database_is_ready(config.db_path):
+        return JSONResponse(content={"status": "ok"})
+    return JSONResponse(status_code=503, content={"status": "unavailable"})
 
 
 @app.get("/api/profile", response_model=Profile)

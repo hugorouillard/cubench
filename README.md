@@ -30,8 +30,18 @@ Open http://localhost:5173. Vite forwards requests beginning with `/api` to
 FastAPI at http://localhost:8000.
 
 Hold the spacebar until the timer turns green, release it to start, and press
-space again to stop. FastAPI creates the SQLite database automatically at
-`api/data/cubench.db` the first time it starts.
+space again to stop. FastAPI creates the versioned SQLite database at
+`api/data/cubench.db` when it first starts.
+
+Unversioned pre-release databases are intentionally not upgraded. Reset the
+pre-release database to let FastAPI create the supported schema.
+
+Set `CUBENCH_DB_PATH` to use another database. Production mode additionally
+requires an absolute database path, `CUBENCH_COOKIE_SECURE=true`, and a
+non-placeholder invite code.
+
+The API exposes `/api/health/live` for liveness and `/api/health/ready` for
+SQLite and schema readiness.
 
 Run checks:
 
