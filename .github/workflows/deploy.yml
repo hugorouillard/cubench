@@ -68,4 +68,4 @@ jobs:
           remote_archive="/tmp/$archive"
           scp -P "$SSH_PORT" "$archive" "$DEPLOY_USER@$DEPLOY_HOST:$remote_archive"
           ssh -p "$SSH_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            sudo /usr/local/sbin/cubench-deploy "$GITHUB_SHA" "$remote_archive"
+            /usr/local/bin/cubench-deploy "$GITHUB_SHA" "$remote_archive"
