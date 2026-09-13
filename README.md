@@ -52,6 +52,4 @@ just check
 ## Deployment
 
 Production uses one Ubuntu 24.04 VPS with Caddy, systemd, and SQLite. Tagged
-releases are checked, built, and deployed by GitHub Actions. See
-[the deployment runbook](docs/deployment.md) for initial setup and routine
-operations.
+releases are checked, built, and deployed by GitHub Actions.
