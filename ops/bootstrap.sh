@@ -10,14 +10,23 @@ fi
 domain=$1
 public_key=$2
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+hostname_pattern='^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$'
 
-if [[ ! $domain =~ ^[a-zA-Z0-9.-]+$ ]]; then
+if (( ${#domain} > 253 )) || [[ ! $domain =~ $hostname_pattern ]]; then
   echo "invalid domain" >&2
   exit 2
 fi
 [[ -f $public_key ]] || { echo "public key file not found" >&2; exit 2; }
 [[ -d /etc/caddy/sites ]] \
   || { echo "run bootstrap-server.sh first" >&2; exit 1; }
+
+site=/etc/caddy/sites/cubench.caddy
+[[ ! -e $site ]] || { echo "$site already exists" >&2; exit 1; }
+site_temp=$(mktemp)
+trap 'rm -f "$site_temp" "$site"' EXIT
+caddyfile=$(<"$script_dir/Caddyfile")
+printf '%s\n' "${caddyfile//__CUBENCH_DOMAIN__/$domain}" > "$site_temp"
+caddy validate --config "$site_temp"
 
 id cubench >/dev/null 2>&1 || adduser --disabled-password --gecos "" cubench
 install -d -m 700 -o cubench -g cubench /home/cubench/.ssh
@@ -46,9 +55,7 @@ install -m 644 "$script_dir/cubench.service" /etc/systemd/system/cubench.service
 install -m 644 "$script_dir/cubench-backup.service" /etc/systemd/system/cubench-backup.service
 install -m 644 "$script_dir/cubench-backup.timer" /etc/systemd/system/cubench-backup.timer
 
-caddyfile=$(<"$script_dir/Caddyfile")
-printf '%s\n' "${caddyfile//__CUBENCH_DOMAIN__/$domain}" \
-  > /etc/caddy/sites/cubench.caddy
+install -m 644 "$site_temp" "$site"
 printf '%s\n' \
   'cubench ALL=(root) NOPASSWD: /usr/bin/systemctl restart cubench.service' \
   > /etc/sudoers.d/cubench
@@ -59,6 +66,8 @@ caddy validate --config /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable cubench.service
 systemctl reload caddy.service
+rm -f "$site_temp"
+trap - EXIT
 systemctl enable --now cubench-backup.timer
 
 echo "Cubench is ready for its first release."

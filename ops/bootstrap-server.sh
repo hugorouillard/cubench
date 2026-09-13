@@ -20,7 +20,7 @@ if [[ ! $ssh_port =~ ^[0-9]+$ ]] || (( ssh_port < 1 || ssh_port > 65535 )); then
 fi
 
 apt-get update
-apt-get install -y caddy curl openssl sqlite3 sudo ufw
+apt-get install -y caddy curl iproute2 openssl sqlite3 sudo ufw
 if ! command -v uv >/dev/null; then
   uv_version=0.11.6
   case $(uname -m) in
@@ -52,6 +52,20 @@ caddy validate --config /etc/caddy/Caddyfile
 systemctl enable caddy.service
 systemctl restart caddy.service
 
+if ! systemctl is-active --quiet ssh.service \
+  && ! systemctl is-active --quiet ssh.socket; then
+  echo "SSH is not active; refusing to enable UFW" >&2
+  exit 1
+fi
+mapfile -t ssh_ports < <(/usr/sbin/sshd -T | awk '$1 == "port" { print $2 }')
+if [[ ! " ${ssh_ports[*]} " == *" $ssh_port "* ]]; then
+  echo "sshd is not configured for port $ssh_port; refusing to enable UFW" >&2
+  exit 1
+fi
+if [[ -z $(ss -H -ltn "sport = :$ssh_port") ]]; then
+  echo "nothing is listening on SSH port $ssh_port; refusing to enable UFW" >&2
+  exit 1
+fi
 ufw allow "$ssh_port/tcp"
 ufw allow 80/tcp
 ufw allow 443/tcp
