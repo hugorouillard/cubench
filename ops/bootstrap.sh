@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Provision a fresh Ubuntu 24.04 VPS for Cubench.
+# Provision a fresh Ubuntu 26.04 VPS for Cubench.
 set -euo pipefail
 
 if [[ $EUID -ne 0 || $# -lt 2 || $# -gt 3 ]]; then
@@ -14,8 +14,8 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 # shellcheck source=/etc/os-release
 source /etc/os-release
-if [[ $ID != "ubuntu" || $VERSION_ID != "24.04" ]]; then
-  echo "bootstrap requires Ubuntu 24.04" >&2
+if [[ $ID != "ubuntu" || $VERSION_ID != "26.04" ]]; then
+  echo "bootstrap requires Ubuntu 26.04" >&2
   exit 1
 fi
 if [[ ! $domain =~ ^[a-zA-Z0-9.-]+$ || ! $ssh_port =~ ^[0-9]+$ ]] \
@@ -26,7 +26,7 @@ fi
 [[ -f $public_key ]] || { echo "public key file not found" >&2; exit 2; }
 
 apt-get update
-apt-get install -y caddy curl openssl python3.12 sqlite3 sudo ufw
+apt-get install -y caddy curl openssl sqlite3 sudo ufw
 if ! command -v uv >/dev/null; then
   uv_version=0.11.6
   case $(uname -m) in
@@ -55,9 +55,12 @@ fi
 id cubench >/dev/null 2>&1 || adduser --disabled-password --gecos "" cubench
 install -d -m 700 -o cubench -g cubench /home/cubench/.ssh
 install -m 600 -o cubench -g cubench "$public_key" /home/cubench/.ssh/authorized_keys
-install -d -m 755 -o cubench -g cubench /opt/cubench /opt/cubench/releases
+install -d -m 755 -o cubench -g cubench \
+  /opt/cubench /opt/cubench/python /opt/cubench/releases
 install -d -m 700 -o cubench -g cubench /var/lib/cubench /var/backups/cubench
 install -d -m 755 /etc/cubench
+sudo -u cubench env UV_PYTHON_INSTALL_DIR=/opt/cubench/python \
+  uv python install 3.12
 
 if [[ ! -f /etc/cubench/cubench.env ]]; then
   invite_code=$(openssl rand -hex 32)

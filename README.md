@@ -51,5 +51,5 @@ just check
 
 ## Deployment
 
-Production uses one Ubuntu 24.04 VPS with Caddy, systemd, and SQLite. Tagged
+Production uses one Ubuntu 26.04 VPS with Caddy, systemd, and SQLite. Tagged
 releases are checked, built, and deployed by GitHub Actions.

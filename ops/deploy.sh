@@ -5,6 +5,8 @@ umask 022
 
 readonly app_dir=/opt/cubench
 readonly current="$app_dir/current"
+export UV_PYTHON_DOWNLOADS=never
+export UV_PYTHON_INSTALL_DIR="$app_dir/python"
 
 wait_until_ready() {
   # Allow systemd and Uvicorn time to start before testing readiness.
