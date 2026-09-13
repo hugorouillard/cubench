@@ -4,6 +4,10 @@ export function effectiveDuration(durationMs: number, penalty: Penalty): number 
   return durationMs + (penalty === 'plus2' ? 2000 : 0)
 }
 
+export function togglePenalty(current: Penalty, selected: Penalty): Penalty {
+  return current === selected ? 'none' : selected
+}
+
 export function inspectionPenalty(elapsedMs: number): Penalty {
   if (elapsedMs > 17_000) return 'dnf'
   if (elapsedMs > 15_000) return 'plus2'

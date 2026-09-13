@@ -1,0 +1,23 @@
+[Unit]
+Description=Cubench API
+After=network.target
+
+[Service]
+Type=simple
+User=cubench
+Group=cubench
+WorkingDirectory=/opt/cubench/current/api
+EnvironmentFile=/etc/cubench/cubench.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/cubench/current/api/.venv/bin/uvicorn cubench_api.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/cubench
+
+[Install]
+WantedBy=multi-user.target

@@ -141,7 +141,23 @@ select:disabled {
 
 .account-nav {
   display: flex;
+  align-items: center;
+  gap: 0.25rem;
   margin-left: auto;
+}
+
+.account-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em;
+  color: var(--account-icon-color);
+  line-height: 1.25;
+}
+
+.account-identity .app-icon {
+  width: 1.25rem;
+  font-size: 0.875rem;
 }
 
 .account-nav button {
@@ -189,17 +205,34 @@ select:disabled {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+  border: 2px solid var(--error-color);
   border-radius: calc(var(--roundness) * 1.5);
   padding: 1rem;
   color: var(--text-color);
-  background: var(--sub-alt-color);
+  background: color-mix(in srgb, var(--error-color) 12%, var(--sub-alt-color));
   box-shadow: 0 1rem 3rem rgb(0 0 0 / 0.25);
   font-size: 0.75rem;
   line-height: 1.55;
   animation: notification-in 125ms ease-out;
 }
 
-.notification span {
+.notification-copy {
+  min-width: 0;
+  display: grid;
+  flex: 1;
+  gap: 0.45rem;
+}
+
+.notification-copy strong {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--error-readable-color);
+  font-size: 0.68rem;
+  font-weight: 400;
+}
+
+.notification-copy span {
   flex: 1;
 }
 
@@ -426,22 +459,44 @@ select:disabled {
 }
 
 .post-solve {
-  min-height: 2.25rem;
+  min-height: 3rem;
   display: grid;
   place-items: center;
+  margin-top: clamp(0.75rem, 2vh, 1.25rem);
   color: var(--sub-readable-color);
   font-size: 0.68rem;
 }
 
-.post-solve-error {
-  color: var(--error-readable-color);
+.post-solve-retry {
+  min-width: min(16rem, 100%);
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0.8rem 1.25rem;
+  color: var(--bg-color);
+  background: var(--error-readable-color);
+  cursor: pointer;
+  font: inherit;
+  transition: filter 125ms ease, transform 125ms ease;
+}
+
+.post-solve-retry:hover {
+  filter: brightness(1.08);
+}
+
+.post-solve-retry:active {
+  transform: translateY(1px);
 }
 
 .timer-results {
   width: 100%;
   display: grid;
   grid-row: 3;
-  grid-template-rows: 2.25rem auto;
+  grid-template-rows: auto minmax(3rem, auto);
   justify-items: center;
   align-self: start;
   margin-top: clamp(0.5rem, 1.5vh, 1rem);
@@ -719,6 +774,83 @@ select:disabled {
   font-size: 1rem;
 }
 
+.auth-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+}
+
+.auth-mode button {
+  border: 0;
+  border-radius: calc(var(--roundness) * 0.75);
+  padding: 0.65rem;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.auth-mode button.is-active {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--sub-readable-color);
+  font-size: 0.7rem;
+}
+
+.auth-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: var(--roundness);
+  padding: 0.8rem 0.9rem;
+  color: var(--text-color);
+  background: var(--sub-alt-color);
+  font: inherit;
+}
+
+.auth-form input:focus {
+  border-color: var(--main-color);
+  outline: none;
+}
+
+.auth-error,
+.auth-note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.auth-error {
+  color: var(--error-readable-color);
+}
+
+.auth-note {
+  color: var(--sub-readable-color);
+}
+
+.auth-form .dialog-actions {
+  margin-top: 0.25rem;
+}
+
+.auth-form .dialog-actions button {
+  width: 100%;
+}
+
 .mobile-config-stack,
 .mobile-config-group {
   display: grid;
@@ -887,6 +1019,14 @@ select:disabled {
 
   .account-name {
     display: none;
+  }
+
+  .account-identity .account-name {
+    display: inline;
+    max-width: 6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .account-nav button {

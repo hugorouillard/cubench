@@ -1,0 +1,14 @@
+[Unit]
+Description=Back up the Cubench database
+
+[Service]
+Type=oneshot
+User=cubench
+Group=cubench
+ExecStart=/usr/local/bin/cubench-backup
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/cubench /var/backups/cubench

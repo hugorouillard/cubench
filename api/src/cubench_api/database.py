@@ -1,94 +1,116 @@
-import os
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from uuid import uuid4
+
+from cubench_api.config import load_runtime_config
+
+CURRENT_SCHEMA_VERSION = 1
 
 
-def database_path() -> Path:
-    configured_path = os.getenv("CUBENCH_DB_PATH")
-    if configured_path:
-        return Path(configured_path)
-    return Path(__file__).resolve().parents[2] / "data" / "cubench.db"
+class SchemaError(RuntimeError):
+    pass
+
+
+def _open_database(path: Path, mode: str = "rw") -> sqlite3.Connection:
+    uri = f"{path.resolve().as_uri()}?mode={mode}"
+    connection = sqlite3.connect(uri, uri=True)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA busy_timeout = 5000")
+    return connection
 
 
 @contextmanager
-def connect() -> Iterator[sqlite3.Connection]:
-    path = database_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path)
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys = ON")
+def connect(path: Path | None = None) -> Generator[sqlite3.Connection]:
+    connection = _open_database(path or load_runtime_config().db_path)
     try:
         yield connection
     finally:
         connection.close()
 
 
-def initialize_database() -> None:
-    with connect() as connection:
-        connection.executescript(
+def initialize_database(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    try:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        tables = connection.execute(
             """
-            CREATE TABLE IF NOT EXISTS practice_sessions (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 60),
-                created_at TEXT NOT NULL
-            );
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            """
+        ).fetchall()
 
-            CREATE TABLE IF NOT EXISTS solves (
-                id TEXT PRIMARY KEY,
-                session_id TEXT NOT NULL REFERENCES practice_sessions(id)
-                    ON DELETE CASCADE,
-                duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
-                penalty TEXT NOT NULL DEFAULT 'none'
-                    CHECK (penalty IN ('none', 'plus2', 'dnf')),
-                scramble TEXT NOT NULL CHECK (length(trim(scramble)) > 0),
-                recorded_at TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            );
+        if version == 0 and tables:
+            raise SchemaError(
+                "This pre-release database is not supported; reset it and restart"
+            )
+        if version not in {0, CURRENT_SCHEMA_VERSION}:
+            raise SchemaError(
+                f"Database schema version {version} is not supported; "
+                f"expected {CURRENT_SCHEMA_VERSION}"
+            )
+        if version == CURRENT_SCHEMA_VERSION:
+            return
 
-            CREATE INDEX IF NOT EXISTS solves_session_recorded_at
-                ON solves(session_id, recorded_at DESC);
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.executescript(
+            f"""
+            BEGIN IMMEDIATE;
 
-            CREATE TABLE IF NOT EXISTS local_profile (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
+            CREATE TABLE accounts (
+                id INTEGER PRIMARY KEY,
+                username TEXT NOT NULL UNIQUE COLLATE NOCASE
+                    CHECK (length(username) BETWEEN 3 AND 32),
+                password_hash TEXT NOT NULL,
                 display_name TEXT NOT NULL
                     CHECK (length(trim(display_name)) BETWEEN 1 AND 40),
                 bio TEXT NOT NULL DEFAULT ''
                     CHECK (length(trim(bio)) <= 160),
                 created_at TEXT NOT NULL
             );
+
+            CREATE TABLE auth_sessions (
+                token_hash TEXT PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES accounts(id)
+                    ON DELETE CASCADE,
+                expires_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE solves (
+                account_id INTEGER NOT NULL REFERENCES accounts(id)
+                    ON DELETE CASCADE,
+                id TEXT NOT NULL,
+                duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
+                penalty TEXT NOT NULL DEFAULT 'none'
+                    CHECK (penalty IN ('none', 'plus2', 'dnf')),
+                scramble TEXT NOT NULL CHECK (length(trim(scramble)) > 0),
+                recorded_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (account_id, id)
+            );
+
+            CREATE INDEX solves_account_recorded_at
+            ON solves(account_id, recorded_at DESC, id DESC);
+
+            PRAGMA user_version = {CURRENT_SCHEMA_VERSION};
+            COMMIT;
             """
         )
-        session_count = connection.execute(
-            "SELECT count(*) FROM practice_sessions"
-        ).fetchone()[0]
-        if session_count == 0:
-            connection.execute(
-                "INSERT INTO practice_sessions (id, name, created_at) "
-                "VALUES (?, 'main', datetime('now'))",
-                (str(uuid4()),),
-            )
-        else:
-            primary_session_id = connection.execute(
-                "SELECT id FROM practice_sessions ORDER BY created_at, id LIMIT 1"
-            ).fetchone()[0]
-            connection.execute(
-                "UPDATE solves SET session_id = ? WHERE session_id != ?",
-                (primary_session_id, primary_session_id),
-            )
-            connection.execute(
-                "DELETE FROM practice_sessions WHERE id != ?", (primary_session_id,)
-            )
-            connection.execute(
-                "UPDATE practice_sessions SET name = 'main' WHERE id = ?",
-                (primary_session_id,),
-            )
-        connection.execute(
-            """
-            INSERT OR IGNORE INTO local_profile (id, display_name, bio, created_at)
-            VALUES (1, 'Cube Solver', '', datetime('now'))
-            """
-        )
-        connection.commit()
+    finally:
+        connection.close()
+
+
+def database_is_ready(path: Path) -> bool:
+    try:
+        connection = _open_database(path, "ro")
+        try:
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+            query_ok = connection.execute("SELECT 1").fetchone()[0] == 1
+            return version == CURRENT_SCHEMA_VERSION and query_ok
+        finally:
+            connection.close()
+    except (OSError, sqlite3.Error):
+        return False
