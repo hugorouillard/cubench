@@ -26,7 +26,7 @@ site_temp=$(mktemp)
 trap 'rm -f "$site_temp" "$site"' EXIT
 caddyfile=$(<"$script_dir/Caddyfile")
 printf '%s\n' "${caddyfile//__CUBENCH_DOMAIN__/$domain}" > "$site_temp"
-caddy validate --config "$site_temp"
+caddy validate --adapter caddyfile --config "$site_temp"
 
 id cubench >/dev/null 2>&1 || adduser --disabled-password --gecos "" cubench
 install -d -m 700 -o cubench -g cubench /home/cubench/.ssh
