@@ -37,16 +37,19 @@ flock -n 9 || { echo "another deployment is running" >&2; exit 1; }
 release="$app_dir/releases/$sha"
 staging="$release.tmp.$$"
 next="$app_dir/current.next"
-previous=$(readlink -f "$current" || true)
+prepared="$release/.prepared"
+previous=$(readlink -e "$current" || true)
 trap 'rm -rf "$staging" "$archive" "$next"' EXIT
 
 /usr/local/bin/cubench-backup
-if [[ ! -d $release ]]; then
+if [[ ! -f $prepared ]]; then
+  rm -rf "$release"
   mkdir "$staging"
   tar -xzf "$archive" -C "$staging"
   [[ -f "$staging/api/pyproject.toml" && -f "$staging/web/dist/index.html" ]]
-  uv sync --directory "$staging/api" --frozen --no-dev --python 3.12
   mv "$staging" "$release"
+  uv sync --directory "$release/api" --frozen --no-dev --python 3.12
+  touch "$prepared"
 fi
 
 ln -sfn "$release" "$next"

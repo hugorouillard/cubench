@@ -50,7 +50,6 @@ if [[ ! -f /etc/cubench/cubench.env ]]; then
 fi
 
 install -m 755 "$script_dir/backup.sh" /usr/local/bin/cubench-backup
-install -m 755 "$script_dir/deploy.sh" /usr/local/bin/cubench-deploy
 install -m 644 "$script_dir/cubench.service" /etc/systemd/system/cubench.service
 install -m 644 "$script_dir/cubench-backup.service" /etc/systemd/system/cubench-backup.service
 install -m 644 "$script_dir/cubench-backup.timer" /etc/systemd/system/cubench-backup.timer
