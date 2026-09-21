@@ -49,7 +49,3 @@ Run checks:
 just check
 ```
 
-## Deployment
-
-Production shares an Ubuntu 26.04 VPS using Caddy, systemd, and SQLite. Tagged
-releases are checked, built, and deployed by GitHub Actions. See `ops/README.md`.
