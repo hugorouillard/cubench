@@ -123,11 +123,9 @@ export function AuthPanel({
         )}
 
         {error && <p className="auth-error" role="alert">{error}</p>}
-        <p className="auth-note">
-          {mode === 'login'
-            ? 'Signing in starts a fresh current session.'
-            : 'Registration is invite-only. Ask for the shared invite code.'}
-        </p>
+        {mode === 'register' && (
+          <p className="auth-note">Registration is invite-only. Ask for the shared invite code.</p>
+        )}
 
         <div className="dialog-actions">
           <button className="button-primary" type="submit" disabled={submitting}>
