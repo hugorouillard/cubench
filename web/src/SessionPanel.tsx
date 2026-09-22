@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { completedDuration } from './stats'
@@ -38,6 +38,7 @@ export function SessionPanel({
   onDelete,
   onClear,
 }: SessionPanelProps) {
+  const [openSolveId, setOpenSolveId] = useState('')
   const successful = solves
     .map((solve) => ({ solve, duration: completedDuration(solve) }))
     .filter((item): item is { solve: Solve; duration: number } => item.duration !== null)
@@ -48,28 +49,26 @@ export function SessionPanel({
   return (
     <aside className="session-panel focus-chrome" aria-labelledby="session-panel-title">
       <header className="session-panel-header">
-        <div>
-          <span>current solves</span>
-          <h2 id="session-panel-title">solve history</h2>
-        </div>
+        <h2 id="session-panel-title">history</h2>
         <div className="session-panel-summary">
-          <strong>{solves.length} {solves.length === 1 ? 'solve' : 'solves'}</strong>
+          <strong title={`${solves.length} ${solves.length === 1 ? 'solve' : 'solves'}`}>
+            {solves.length}
+          </strong>
           <button
             type="button"
             disabled={disabled || solves.length === 0}
             onClick={onClear}
+            aria-label="Clear times"
+            title="Clear times"
           >
             <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
-            clear times
           </button>
         </div>
       </header>
 
       {solves.length === 0 ? (
         <div className="session-panel-empty">
-          <strong>0.00</strong>
-          <p>Your graph and solve history will build here.</p>
-          <span>hold space to log the first solve</span>
+          <p>Your solves will appear here.</p>
         </div>
       ) : (
         <>
@@ -88,10 +87,6 @@ export function SessionPanel({
             </div>
           </div>
 
-          <div className="session-log-heading">
-            <span>solves</span>
-            <small>newest first</small>
-          </div>
           <ol className="session-solve-list">
             {solves.map((solve, index) => {
               const solveNumber = solves.length - index
@@ -101,10 +96,17 @@ export function SessionPanel({
               const result = formatTime(solve.duration_ms, solve.penalty)
               return (
                 <li
-                  className={`${index === 0 ? 'is-latest ' : ''}${isBest ? 'is-best' : ''}`.trim()}
+                  className={`${index === 0 ? 'is-latest ' : ''}${isBest ? 'is-best ' : ''}${openSolveId === solve.id ? 'is-actions-visible' : ''}`.trim()}
                   key={solve.id}
                 >
-                  <div className="session-solve-summary">
+                  <button
+                    className="session-solve-summary"
+                    type="button"
+                    onClick={() => setOpenSolveId((current) => current === solve.id ? '' : solve.id)}
+                    aria-expanded={openSolveId === solve.id}
+                    aria-controls={`solve-actions-${solve.id}`}
+                    title={`Show actions for solve ${solveNumber}`}
+                  >
                     <span className="session-solve-number">#{solveNumber}</span>
                     <span className="session-solve-result">
                       <strong>{result}</strong>
@@ -112,10 +114,13 @@ export function SessionPanel({
                         <small>{solve.penalty === 'plus2' ? '+2 · ' : ''}raw {rawTime}</small>
                       )}
                     </span>
-                    {isBest && <span className="session-best-label">best</span>}
                     <time dateTime={solve.recorded_at}>{formatSolveDate(solve.recorded_at)}</time>
-                  </div>
-                  <div className="session-solve-actions" aria-label={`Actions for solve ${solveNumber}`}>
+                  </button>
+                  <div
+                    className="session-solve-actions"
+                    id={`solve-actions-${solve.id}`}
+                    aria-label={`Actions for solve ${solveNumber}`}
+                  >
                     <button
                       className={solve.penalty === 'plus2' ? 'is-active' : ''}
                       type="button"

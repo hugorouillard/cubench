@@ -136,13 +136,8 @@ export function SessionChart({
     scales: {
       x: {
         grid: { display: false },
-        border: { color: colors.line },
-        ticks: {
-          color: colors.muted,
-          font: { size: 9 },
-          maxTicksLimit: 5,
-          maxRotation: 0,
-        },
+        border: { display: false },
+        ticks: { display: false },
       },
       y: {
         grid: { color: colors.line },
@@ -150,7 +145,7 @@ export function SessionChart({
         ticks: {
           color: colors.muted,
           font: { size: 9 },
-          maxTicksLimit: 5,
+          maxTicksLimit: 3,
           callback: (value) => formatTime(Number(value)),
         },
       },
