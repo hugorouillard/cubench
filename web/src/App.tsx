@@ -565,7 +565,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 <button
                   className={hideTimer ? 'is-active' : ''}
                   type="button"
-                  onClick={() => setHideTimer((current) => !current)}
+                  onClick={(event) => {
+                    setHideTimer((current) => !current)
+                    event.currentTarget.blur()
+                  }}
                   disabled={controlsDisabled}
                   aria-pressed={hideTimer}
                 >
@@ -575,7 +578,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 <button
                   className={inspectionEnabled ? 'is-active' : ''}
                   type="button"
-                  onClick={() => setInspectionEnabled((current) => !current)}
+                  onClick={(event) => {
+                    setInspectionEnabled((current) => !current)
+                    event.currentTarget.blur()
+                  }}
                   disabled={controlsDisabled}
                   aria-pressed={inspectionEnabled}
                 >

@@ -134,6 +134,18 @@ describe('current session', () => {
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
   })
 
+  it('releases option-bar focus so Space remains available to the timer', async () => {
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByText("R U R'")
+
+    for (const name of ['hide timer', 'inspection']) {
+      const option = screen.getByRole('button', { name })
+      option.focus()
+      fireEvent.click(option)
+      expect(document.activeElement).not.toBe(option)
+    }
+  })
+
   it('updates and deletes guest solves without solve API requests', async () => {
     const fetch = vi.mocked(globalThis.fetch)
 
