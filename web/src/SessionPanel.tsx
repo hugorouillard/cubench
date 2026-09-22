@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { completedDuration } from './stats'
+import { completedDuration, solveHistory } from './stats'
 import { formatTime } from './timer'
 import type { Penalty, Solve } from './types'
 import './SessionPanel.css'
@@ -45,6 +45,8 @@ export function SessionPanel({
   const bestSolveId = successful.length
     ? successful.reduce((best, item) => item.duration < best.duration ? item : best).solve.id
     : ''
+  const hasTrend = successful.length >= 3
+  const hasAverage = solveHistory(solves).some((point) => point.ao5Ms !== null)
 
   return (
     <aside className="session-panel focus-chrome" aria-labelledby="session-panel-title">
@@ -72,19 +74,28 @@ export function SessionPanel({
         </div>
       ) : (
         <>
-          <div className="session-chart-region">
-            <div className="session-chart-legend" aria-hidden="true">
-              <span><i className="is-single" />single</span>
-              <span><i className="is-average" />ao5</span>
-            </div>
-            <div className="session-chart">
-              <Suspense fallback={<div className="session-chart-loading">loading graph...</div>}>
-                <SessionChart
-                  solves={solves}
-                  theme={theme}
-                />
-              </Suspense>
-            </div>
+          <div className={`session-chart-region${hasTrend ? '' : ' is-pending'}`}>
+            {hasTrend ? (
+              <>
+                <div className="session-chart-legend" aria-hidden="true">
+                  <span><i className="is-single" />single</span>
+                  {hasAverage && <span><i className="is-average" />ao5</span>}
+                </div>
+                <div className="session-chart">
+                  <Suspense fallback={<div className="session-chart-loading">loading graph...</div>}>
+                    <SessionChart
+                      solves={solves}
+                      theme={theme}
+                    />
+                  </Suspense>
+                </div>
+              </>
+            ) : (
+              <div className="session-chart-pending">
+                <span>trend</span>
+                <p>{3 - successful.length} more {3 - successful.length === 1 ? 'solve' : 'solves'} to draw</p>
+              </div>
+            )}
           </div>
 
           <ol className="session-solve-list">

@@ -66,4 +66,25 @@ describe('SessionPanel', () => {
     expect(screen.getByLabelText('Actions for solve 2').parentElement?.className)
       .toContain('is-actions-visible')
   })
+
+  it('waits for enough solves before drawing a trend', async () => {
+    const thirdSolve: Solve = {
+      id: 'solve-3',
+      duration_ms: 11_000,
+      penalty: 'none',
+      scramble: 'U R',
+      recorded_at: '2026-09-22T12:10:00Z',
+      created_at: '2026-09-22T12:10:00Z',
+    }
+
+    const { rerender } = render(<SessionPanel {...defaultProps} solves={solves} />)
+
+    expect(screen.getByText('1 more solve to draw')).toBeTruthy()
+    expect(screen.queryByTestId('session-chart')).toBeNull()
+
+    rerender(<SessionPanel {...defaultProps} solves={[thirdSolve, ...solves]} />)
+
+    expect(await screen.findByTestId('session-chart')).toBeTruthy()
+    expect(screen.queryByText('ao5')).toBeNull()
+  })
 })

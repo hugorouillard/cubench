@@ -81,17 +81,21 @@
 }
 
 .session-chart-region {
-  border-block-start: 2px solid var(--bg-color);
-  padding: 0.75rem 0.75rem 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--sub-color) 35%, transparent);
+  padding: 0.65rem 0.9rem;
+}
+
+.session-chart-region.is-pending {
+  padding-block: 0;
 }
 
 .session-chart-legend {
   display: flex;
   justify-content: flex-end;
-  gap: 0.85rem;
+  gap: 0.75rem;
   min-height: 0.8rem;
   color: var(--sub-readable-color);
-  font-size: 0.5rem;
+  font-size: 0.52rem;
 }
 
 .session-chart-legend span {
@@ -112,7 +116,7 @@
 
 .session-chart {
   position: relative;
-  height: 9.5rem;
+  height: 7.25rem;
 }
 
 .session-chart canvas {
@@ -127,6 +131,26 @@
   font-size: 0.55rem;
 }
 
+.session-chart-pending {
+  min-height: 4.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 0.1rem;
+  color: var(--sub-readable-color);
+}
+
+.session-chart-pending span {
+  color: var(--text-color);
+  font-size: 0.65rem;
+}
+
+.session-chart-pending p {
+  margin: 0;
+  font-size: 0.52rem;
+}
+
 .session-solve-list {
   min-height: 0;
   margin: 0;
@@ -138,10 +162,8 @@
 }
 
 .session-solve-list li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  border-top: 2px solid var(--bg-color);
+  position: relative;
+  border-top: 1px solid color-mix(in srgb, var(--sub-color) 35%, transparent);
 }
 
 .session-solve-list li.is-latest {
@@ -153,11 +175,11 @@
   width: 100%;
   min-height: 3.3rem;
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   border: 0;
-  padding: 0.6rem 0.35rem 0.6rem 0.85rem;
+  padding: 0.65rem 0.9rem;
   color: var(--sub-readable-color);
   background: transparent;
   cursor: pointer;
@@ -189,7 +211,7 @@
 
 .session-solve-result strong {
   color: var(--text-color);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 400;
 }
 
@@ -208,10 +230,14 @@
 }
 
 .session-solve-actions {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  inset-inline-end: 0.55rem;
   display: flex;
   align-items: center;
   gap: 0.15rem;
-  padding-right: 0.55rem;
+  padding-left: 1.5rem;
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -224,6 +250,16 @@
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
+}
+
+.session-solve-list li:hover .session-solve-summary time,
+.session-solve-list li:focus-within .session-solve-summary time,
+.session-solve-list li.is-actions-visible .session-solve-summary time {
+  opacity: 0;
+}
+
+.session-solve-summary time {
+  transition: opacity 125ms ease;
 }
 
 .session-solve-actions button {
@@ -285,14 +321,14 @@
   }
 
   .session-chart {
-    height: 14rem;
+    height: 9rem;
   }
 
 }
 
 @media (max-width: 480px) {
   .session-chart {
-    height: 11rem;
+    height: 8rem;
   }
 
   .session-solve-summary {
