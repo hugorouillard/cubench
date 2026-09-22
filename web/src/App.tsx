@@ -45,6 +45,8 @@ import type { Account, Penalty, Solve, SolveInput, UserProfile } from './types'
 import { useTimer, type TimerPhase } from './useTimer'
 import './App.css'
 
+declare const __CUBENCH_VERSION__: string
+
 const accountIcon = legacyUser as unknown as IconDefinition
 
 const footerIcons = {
@@ -774,10 +776,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             href="https://github.com/hugorouillard/cubebench/commits/master"
             target="_blank"
             rel="noreferrer"
-            aria-label="Cubench version 0.0.0"
+            aria-label={`Cubench version ${__CUBENCH_VERSION__}`}
           >
             <FontAwesomeIcon className="app-icon" icon={footerIcons.codeBranch} fixedWidth aria-hidden="true" />
-            <span>v0.0.0</span>
+            <span>{__CUBENCH_VERSION__}</span>
           </a>
         </div>
       </footer>
