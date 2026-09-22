@@ -146,6 +146,19 @@ describe('current session', () => {
     }
   })
 
+  it('keeps upcoming header buttons on the timer view', async () => {
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByText("R U R'")
+
+    fireEvent.click(screen.getByRole('button', { name: 'About' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Options' }))
+
+    expect(screen.getByRole('button', { name: 'About' }).getAttribute('aria-disabled')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Options' }).getAttribute('aria-disabled')).toBe('true')
+    expect(location.hash).toBe('')
+    expect(screen.getByText("R U R'")).toBeTruthy()
+  })
+
   it('updates and deletes guest solves without solve API requests', async () => {
     const fetch = vi.mocked(globalThis.fetch)
 

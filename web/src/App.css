@@ -119,12 +119,21 @@
 }
 
 .main-nav button {
-  color: var(--timer-icon-color);
+  --nav-item-color: var(--timer-icon-color);
+  color: var(--nav-item-color);
+}
+
+.main-nav button[data-nav-item='about'] {
+  --nav-item-color: var(--about-icon-color);
+}
+
+.main-nav button[data-nav-item='options'] {
+  --nav-item-color: var(--settings-icon-color);
 }
 
 .main-nav button:hover,
 .main-nav button.is-active {
-  color: color-mix(in srgb, var(--timer-icon-color) 75%, white);
+  color: color-mix(in srgb, var(--nav-item-color) 75%, white);
 }
 
 .account-nav button:hover,

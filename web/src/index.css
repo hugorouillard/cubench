@@ -12,6 +12,7 @@
   --warning-color: #f9e2af;
   --line-color: #313244;
   --timer-icon-color: #f38ba8;
+  --about-icon-color: #f9e2af;
   --account-icon-color: #89dceb;
   --settings-icon-color: #a6e3a1;
   --content-max: 1536px;
@@ -43,6 +44,7 @@
   --warning-color: #d9b46d;
   --line-color: #292b25;
   --timer-icon-color: var(--main-color);
+  --about-icon-color: var(--main-color);
   --account-icon-color: var(--main-color);
   --settings-icon-color: var(--main-color);
 }
@@ -61,6 +63,7 @@
   --warning-color: #e2b714;
   --line-color: #3c3e41;
   --timer-icon-color: var(--main-color);
+  --about-icon-color: var(--main-color);
   --account-icon-color: var(--main-color);
   --settings-icon-color: var(--main-color);
 }

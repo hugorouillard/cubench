@@ -11,8 +11,10 @@ import { faDiscord as legacyDiscord } from 'free-brands-svg-icons-v5'
 import {
   faCode as legacyCode,
   faCodeBranch as legacyCodeBranch,
+  faCog as legacyCog,
   faEnvelope as legacyEnvelope,
   faFileContract as legacyFileContract,
+  faInfo as legacyInfo,
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
@@ -44,6 +46,8 @@ import './App.css'
 declare const __CUBENCH_VERSION__: string
 
 const accountIcon = legacyUser as unknown as IconDefinition
+const aboutIcon = legacyInfo as unknown as IconDefinition
+const optionsIcon = legacyCog as unknown as IconDefinition
 
 const footerIcons = {
   code: legacyCode,
@@ -478,6 +482,26 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
               title="Timer"
             >
               <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={controlsDisabled}
+              aria-label="About"
+              aria-disabled="true"
+              title="About (coming soon)"
+              data-nav-item="about"
+            >
+              <FontAwesomeIcon className="app-icon" icon={aboutIcon} fixedWidth aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={controlsDisabled}
+              aria-label="Options"
+              aria-disabled="true"
+              title="Options (coming soon)"
+              data-nav-item="options"
+            >
+              <FontAwesomeIcon className="app-icon" icon={optionsIcon} fixedWidth aria-hidden="true" />
             </button>
           </nav>
 
