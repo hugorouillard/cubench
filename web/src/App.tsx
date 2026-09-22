@@ -7,14 +7,10 @@ import {
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import {
-  faDiscord as legacyDiscord,
-  faTwitter as legacyTwitter,
-} from 'free-brands-svg-icons-v5'
+import { faDiscord as legacyDiscord } from 'free-brands-svg-icons-v5'
 import {
   faCode as legacyCode,
   faCodeBranch as legacyCodeBranch,
-  faDonate as legacyDonate,
   faEnvelope as legacyEnvelope,
   faFileContract as legacyFileContract,
   faLock as legacyLock,
@@ -53,13 +49,11 @@ const footerIcons = {
   code: legacyCode,
   codeBranch: legacyCodeBranch,
   discord: legacyDiscord,
-  donate: legacyDonate,
   envelope: legacyEnvelope,
   fileContract: legacyFileContract,
   lock: legacyLock,
   palette: legacyPalette,
   shield: legacyShield,
-  twitter: legacyTwitter,
 } as unknown as Record<string, IconDefinition>
 
 function errorMessage(error: unknown): string {
@@ -719,15 +713,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           </a>
           <a
             className="footer-link"
-            href="https://github.com/hugorouillard/cubebench/issues"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <FontAwesomeIcon className="app-icon" icon={footerIcons.donate} fixedWidth aria-hidden="true" />
-            <span>support</span>
-          </a>
-          <a
-            className="footer-link"
             href="https://github.com/hugorouillard/cubebench"
             target="_blank"
             rel="noreferrer"
@@ -738,10 +723,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           <span className="footer-link" aria-disabled="true" title="Coming soon">
             <FontAwesomeIcon className="app-icon" icon={footerIcons.discord} fixedWidth aria-hidden="true" />
             <span>discord</span>
-          </span>
-          <span className="footer-link" aria-disabled="true" title="Coming soon">
-            <FontAwesomeIcon className="app-icon" icon={footerIcons.twitter} fixedWidth aria-hidden="true" />
-            <span>twitter</span>
           </span>
           <span className="footer-link" aria-disabled="true" title="Coming soon">
             <FontAwesomeIcon className="app-icon" icon={footerIcons.fileContract} fixedWidth aria-hidden="true" />
