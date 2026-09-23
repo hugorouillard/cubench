@@ -64,15 +64,6 @@ export function AuthPanel({
         </button>
       </div>
 
-      <div className="auth-intro">
-        <p>Try the account dashboard with fictional solves before signing in.</p>
-        <button type="button" onClick={onPreview} disabled={submitting}>
-          preview account features
-        </button>
-        <p>Accounts are invite-only for now.{' '}
-          <a href={INVITE_REQUEST_URL}>Request an invite from Hugo</a>.
-        </p>
-      </div>
 
       <div className="auth-mode" role="group" aria-label="Account action">
         <button
@@ -139,7 +130,7 @@ export function AuthPanel({
         {error && <p className="auth-error" role="alert">{error}</p>}
         {mode === 'register' && (
           <p className="auth-note" id="invite-code-help">
-            Accounts are invite-only for now. Need one?{' '}
+            Accounts are invite-only for now. {' '}
             <a href={INVITE_REQUEST_URL}>Request an invite</a>.
           </p>
         )}

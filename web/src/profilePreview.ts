@@ -72,7 +72,7 @@ export function createProfilePreview(now = new Date()): ProfilePreview {
     profile: {
       id: 0,
       display_name: 'Sample solver',
-      bio: 'Six months of fictional 3×3 practice, from 38-second solves toward sub-20.',
+      bio: '',
       created_at: solves[0].recorded_at,
     },
     solves: solves.reverse(),

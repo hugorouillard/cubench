@@ -35,7 +35,6 @@ import {
 import { Bar, Chart, Line } from 'react-chartjs-2'
 import { getProfile, getSolves, updateProfile } from './api'
 import type { ProfilePreview } from './profilePreview'
-import { INVITE_REQUEST_URL } from './project'
 import {
   completedDuration,
   dailyAnalytics,
@@ -186,8 +185,7 @@ function activityWeeks(solves: Solve[]): ActivityCell[][] {
   const today = new Date()
   today.setHours(12, 0, 0, 0)
   const rangeStart = new Date(today)
-  rangeStart.setFullYear(rangeStart.getFullYear() - 1)
-  rangeStart.setDate(rangeStart.getDate() + 1)
+  rangeStart.setDate(rangeStart.getDate() - 363)
 
   const calendarStart = new Date(rangeStart)
   calendarStart.setDate(calendarStart.getDate() - calendarStart.getDay())
@@ -355,7 +353,21 @@ function ActivityHeatmap({
   currentStreak,
   longestStreak,
 }: ActivityHeatmapProps) {
-  const maxAttempts = Math.max(0, ...weeks.flat().map((cell) => cell.count))
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const cells = weeks.flat()
+  const totalAttempts = cells.reduce((total, cell) => total + cell.count, 0)
+  const counts = cells.filter((cell) => cell.inRange).map((cell) => cell.count).sort((a, b) => a - b)
+  const trim = Math.round(counts.length * 0.1)
+  const trimmed = counts.slice(trim, counts.length - trim)
+  const mean = trimmed.reduce((total, count) => total + count, 0) / trimmed.length
+  const buckets = [Math.floor(mean / 2), Math.round(mean), Math.round(mean * 1.5)]
+
+  useEffect(() => {
+    const scroll = scrollRef.current
+    if (scroll && scroll.scrollWidth > scroll.clientWidth) {
+      scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth
+    }
+  }, [])
 
   return (
     <section className="profile-activity" aria-labelledby="profile-activity-title">
@@ -371,33 +383,36 @@ function ActivityHeatmap({
         </div>
       </div>
 
-      <div className="profile-heatmap-scroll">
-        <div className="profile-heatmap-key" aria-hidden="true">
-          <span>less</span>
-          <i className="level-0" />
-          <i className="level-1" />
-          <i className="level-2" />
-          <i className="level-3" />
-          <i className="level-4" />
-          <span>more</span>
-        </div>
-        <div
-          className="profile-heatmap-layout"
-          role="img"
-          aria-label={`${activeDays} active days in total, ${currentStreak} day current streak, and ${longestStreak} day longest streak. Heatmap includes every solve attempt in the last 12 months.`}
-        >
-          <div className="profile-heatmap-days" aria-hidden="true">
-            <span>mon</span>
-            <span>wed</span>
-            <span>fri</span>
+      <div className="profile-heatmap-card">
+        <div className="profile-heatmap-top">
+          <span className="profile-heatmap-period">last 12 months</span>
+          <span className="profile-heatmap-total">{totalAttempts} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
+          <div className="profile-heatmap-key" aria-hidden="true">
+            <span>less</span>
+            <i className="level-0" />
+            <i className="level-1" />
+            <i className="level-2" />
+            <i className="level-3" />
+            <i className="level-4" />
+            <span>more</span>
           </div>
-          <div className="profile-heatmap" aria-hidden="true">
-            {weeks.map((week, weekIndex) => (
-              <div className="profile-heatmap-week" key={week[0]?.key ?? weekIndex}>
-                {week.map((cell) => {
-                  const level = cell.count === 0 || maxAttempts === 0
-                    ? 0
-                    : Math.max(1, Math.ceil((cell.count / maxAttempts) * 4))
+        </div>
+        <div className="profile-heatmap-scroll" ref={scrollRef}>
+          <div
+            className="profile-heatmap-layout"
+            role="img"
+            aria-label={`${totalAttempts} attempts in the last 12 months. ${activeDays} lifetime active days, ${currentStreak} day current streak, and ${longestStreak} day longest streak.`}
+          >
+            <div className="profile-heatmap-days" aria-hidden="true">
+              <span>monday</span>
+              <span>wednesday</span>
+              <span>friday</span>
+            </div>
+            <div className="profile-heatmap" aria-hidden="true">
+              {weeks.flatMap((week) =>
+                week.map((cell) => {
+                  const bucket = buckets.findIndex((threshold) => cell.count <= threshold)
+                  const level = cell.count === 0 ? 0 : bucket === -1 ? 4 : bucket + 1
                   const attemptLabel = `${cell.count} ${cell.count === 1 ? 'attempt' : 'attempts'}`
                   return (
                     <i
@@ -406,11 +421,12 @@ function ActivityHeatmap({
                       title={`${formatLongDate(cell.date.toISOString())}: ${attemptLabel}`}
                     />
                   )
-                })}
-              </div>
-            ))}
+                }),
+              )}
+            </div>
           </div>
         </div>
+        <span className="profile-heatmap-note">Activity is shown in local time.</span>
       </div>
     </section>
   )
@@ -738,6 +754,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
+    font: { family: "'Monkeytype Roboto Mono', monospace" },
     normalized: true,
     interaction: { mode: 'nearest', intersect: true },
     onClick: (_event: ChartEvent, elements: ActiveElement[]) => {
@@ -800,6 +817,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
+    font: { family: "'Monkeytype Roboto Mono', monospace" },
     plugins: {
       tooltip: {
         displayColors: false,
@@ -831,6 +849,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
+    font: { family: "'Monkeytype Roboto Mono', monospace" },
     interaction: { mode: 'index', intersect: false },
     plugins: {
       tooltip: {
@@ -883,52 +902,47 @@ export function ProfileView({
 
   return (
     <main className="profile-view page-width" aria-busy={filtersPending}>
-      {preview && (
-        <aside className="profile-preview-notice" aria-label="Account preview">
-          <strong>Account preview</strong>
-          <p>Explore fictional results here. Filters, charts, and history work without an account.</p>
-          <p>Want to save your own solves? <a href={INVITE_REQUEST_URL}>Request an invite from Hugo</a>.</p>
-        </aside>
-      )}
       <section className="profile-identity-band" aria-labelledby="profile-name">
-        <div className="profile-avatar" aria-hidden="true">{initials(profile.display_name)}</div>
-        <div className="profile-identity-copy">
-          <span className="profile-kicker">solver profile</span>
-          <h1 id="profile-name">{profile.display_name}</h1>
-          {profile.bio && <p>{profile.bio}</p>}
-          <span className="profile-tracking">
-            <FontAwesomeIcon className="app-icon" icon={faCalendarDays} fixedWidth aria-hidden="true" />
-            {lifetime.earliestSolveAt
-              ? `tracking since ${formatLongDate(lifetime.earliestSolveAt)}`
-              : 'tracking starts with your first solve'}
-          </span>
+        <div className="profile-identity-main">
+          <div className="profile-avatar" aria-hidden="true">{initials(profile.display_name)}</div>
+          <div className="profile-identity-copy">
+            <h1 id="profile-name">{profile.display_name}</h1>
+            {profile.bio && <p>{profile.bio}</p>}
+            <span className="profile-tracking">
+              <FontAwesomeIcon className="app-icon" icon={faCalendarDays} fixedWidth aria-hidden="true" />
+              {lifetime.earliestSolveAt
+                ? `Joined ${formatLongDate(lifetime.earliestSolveAt)}`
+                : 'tracking starts with your first solve'}
+            </span>
+          </div>
         </div>
+        <span className="profile-identity-divider" aria-hidden="true" />
+        <section className="profile-lifetime-metrics" aria-label="Lifetime totals">
+          <div>
+            <span>solves logged</span>
+            <strong>{lifetime.loggedCount.toLocaleString()}</strong>
+          </div>
+          <div>
+            <span>successful</span>
+            <strong>{lifetime.successfulCount.toLocaleString()}</strong>
+            <small>{successPercentage}% of attempts</small>
+          </div>
+          <div>
+            <span>timed solving</span>
+            <strong>{formatClock(lifetime.totalRawDurationMs)}</strong>
+          </div>
+        </section>
         {!preview && <button
           className="profile-edit-button"
           type="button"
           onClick={() => setEditorOpen(true)}
           aria-haspopup="dialog"
           aria-controls="profile-editor-dialog"
+          aria-label="Edit profile"
+          title="Edit profile"
         >
           <FontAwesomeIcon className="app-icon" icon={faPen} fixedWidth aria-hidden="true" />
-          edit profile
         </button>}
-      </section>
-
-      <section className="profile-lifetime-metrics" aria-label="Lifetime totals">
-        <div>
-          <span>solves logged</span>
-          <strong>{lifetime.loggedCount.toLocaleString()}</strong>
-        </div>
-        <div>
-          <span>successful</span>
-          <strong>{lifetime.successfulCount.toLocaleString()}</strong>
-          <small>{successPercentage}% of attempts</small>
-        </div>
-        <div>
-          <span>timed solving</span>
-          <strong>{formatClock(lifetime.totalRawDurationMs)}</strong>
-        </div>
       </section>
 
       <section className="profile-pb-band" aria-labelledby="profile-pb-title">
