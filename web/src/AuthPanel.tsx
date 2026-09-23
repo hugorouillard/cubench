@@ -2,12 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { login, register } from './api'
+import { INVITE_REQUEST_URL } from './project'
 import type { Account } from './types'
 
 type AuthPanelProps = {
   onAuthenticated: (account: Account) => void
   onClose: () => void
   onSubmittingChange: (submitting: boolean) => void
+  onPreview: () => void
 }
 
 function errorMessage(error: unknown): string {
@@ -18,6 +20,7 @@ export function AuthPanel({
   onAuthenticated,
   onClose,
   onSubmittingChange,
+  onPreview,
 }: AuthPanelProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('')
@@ -59,6 +62,16 @@ export function AuthPanel({
         <button type="button" onClick={onClose} disabled={submitting} aria-label="Close">
           <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
         </button>
+      </div>
+
+      <div className="auth-intro">
+        <p>Try the account dashboard with fictional solves before signing in.</p>
+        <button type="button" onClick={onPreview} disabled={submitting}>
+          preview account features
+        </button>
+        <p>Accounts are invite-only for now.{' '}
+          <a href={INVITE_REQUEST_URL}>Request an invite from Hugo</a>.
+        </p>
       </div>
 
       <div className="auth-mode" role="group" aria-label="Account action">
@@ -116,6 +129,7 @@ export function AuthPanel({
               maxLength={256}
               type="password"
               autoComplete="off"
+              aria-describedby="invite-code-help"
               value={inviteCode}
               onChange={(event) => setInviteCode(event.target.value)}
             />
@@ -124,7 +138,10 @@ export function AuthPanel({
 
         {error && <p className="auth-error" role="alert">{error}</p>}
         {mode === 'register' && (
-          <p className="auth-note">Registration is invite-only. Ask for the shared invite code.</p>
+          <p className="auth-note" id="invite-code-help">
+            Accounts are invite-only for now. Need one?{' '}
+            <a href={INVITE_REQUEST_URL}>Request an invite</a>.
+          </p>
         )}
 
         <div className="dialog-actions">

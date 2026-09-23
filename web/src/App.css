@@ -784,6 +784,34 @@ select:disabled {
   font-size: 1rem;
 }
 
+.auth-intro button {
+  border: 0;
+  padding: 0.35rem 0;
+  color: var(--main-color);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.auth-intro {
+  margin-bottom: 1.25rem;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.auth-intro p {
+  margin: 0 0 0.75rem;
+}
+
+.auth-intro a,
+.auth-note a {
+  color: var(--main-color);
+  text-underline-offset: 0.2em;
+}
+
 .auth-mode {
   display: grid;
   grid-template-columns: 1fr 1fr;

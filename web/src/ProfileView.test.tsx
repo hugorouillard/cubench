@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('react-chartjs-2', () => ({
@@ -10,11 +10,43 @@ vi.mock('react-chartjs-2', () => ({
 }))
 
 import { ProfileView } from './ProfileView'
+import { createProfilePreview } from './profilePreview'
 
 describe('profile view', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+  })
+
+  it('lets guests explore sample history without fetching or exposing account mutations', () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected request'))
+    const preview = createProfilePreview()
+    render(
+      <ProfileView
+        preview={preview}
+        onPenalty={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+        onError={vi.fn()}
+        onProfileChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Sample solver' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Account preview' }).textContent)
+      .toContain('fictional results')
+    expect(screen.queryByRole('button', { name: /edit profile|export|toggle .* penalty|delete .* solve/i }))
+      .toBeNull()
+    expect(screen.queryByRole('dialog', { hidden: true })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'last week' }))
+    expect(screen.getByRole('button', { name: 'last week' }).getAttribute('aria-pressed')).toBe('true')
+    const filteredCount = screen.getByText(/showing \d+ of \d+/).textContent!
+    expect(Number(filteredCount.split(' of ')[1])).toBeLessThan(preview.solves.length)
+    expect(screen.getByTestId('line-chart')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'result' }))
+    expect(screen.getByRole('columnheader', { name: 'result' }).getAttribute('aria-sort')).toBe('ascending')
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('loads the account profile and lifetime solves', async () => {

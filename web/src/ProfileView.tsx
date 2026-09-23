@@ -34,6 +34,8 @@ import {
 } from 'chart.js'
 import { Bar, Chart, Line } from 'react-chartjs-2'
 import { getProfile, getSolves, updateProfile } from './api'
+import type { ProfilePreview } from './profilePreview'
+import { INVITE_REQUEST_URL } from './project'
 import {
   completedDuration,
   dailyAnalytics,
@@ -63,6 +65,7 @@ ChartJS.register(
 ChartJS.defaults.font.family = "'Roboto Mono', monospace"
 
 export type ProfileViewProps = {
+  preview?: ProfilePreview
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
   onDelete: (solve: Solve) => Promise<boolean>
   onExport: () => void
@@ -418,15 +421,16 @@ function EmptyChart({ children }: { children: string }) {
 }
 
 export function ProfileView({
+  preview,
   onPenalty,
   onDelete,
   onExport,
   onError,
   onProfileChange,
 }: ProfileViewProps) {
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [solves, setSolves] = useState<Solve[]>([])
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<UserProfile | null>(preview?.profile ?? null)
+  const [solves, setSolves] = useState<Solve[]>(preview?.solves ?? [])
+  const [loading, setLoading] = useState(!preview)
   const [loadFailed, setLoadFailed] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [range, setRange] = useState<SolveDateRange>('all')
@@ -445,6 +449,7 @@ export function ProfileView({
   const reportLoadError = useEffectEvent(onError)
 
   useEffect(() => {
+    if (preview) return
     let cancelled = false
 
     void Promise.allSettled([getProfile(), getSolves()]).then(([profileResult, solvesResult]) => {
@@ -470,7 +475,7 @@ export function ProfileView({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [preview])
 
   const lifetime = useMemo(() => lifetimeProfileSummary(solves), [solves])
   const weeks = useMemo(() => activityWeeks(solves), [solves])
@@ -664,6 +669,7 @@ export function ProfileView({
   }
 
   async function changePenalty(solve: Solve, penalty: Penalty) {
+    if (preview) return
     setPendingSolveIds((current) => [...current, solve.id])
     try {
       const updatedSolve = await onPenalty(solve, penalty)
@@ -678,6 +684,7 @@ export function ProfileView({
   }
 
   async function removeSolve(solve: Solve) {
+    if (preview) return
     setPendingSolveIds((current) => [...current, solve.id])
     try {
       if (await onDelete(solve)) {
@@ -876,6 +883,13 @@ export function ProfileView({
 
   return (
     <main className="profile-view page-width" aria-busy={filtersPending}>
+      {preview && (
+        <aside className="profile-preview-notice" aria-label="Account preview">
+          <strong>Account preview</strong>
+          <p>Explore fictional results here. Filters, charts, and history work without an account.</p>
+          <p>Want to save your own solves? <a href={INVITE_REQUEST_URL}>Request an invite from Hugo</a>.</p>
+        </aside>
+      )}
       <section className="profile-identity-band" aria-labelledby="profile-name">
         <div className="profile-avatar" aria-hidden="true">{initials(profile.display_name)}</div>
         <div className="profile-identity-copy">
@@ -889,7 +903,7 @@ export function ProfileView({
               : 'tracking starts with your first solve'}
           </span>
         </div>
-        <button
+        {!preview && <button
           className="profile-edit-button"
           type="button"
           onClick={() => setEditorOpen(true)}
@@ -898,7 +912,7 @@ export function ProfileView({
         >
           <FontAwesomeIcon className="app-icon" icon={faPen} fixedWidth aria-hidden="true" />
           edit profile
-        </button>
+        </button>}
       </section>
 
       <section className="profile-lifetime-metrics" aria-label="Lifetime totals">
@@ -943,10 +957,10 @@ export function ProfileView({
             <span className="profile-kicker">analysis range</span>
             <h2 id="profile-filter-title">Filter history</h2>
           </div>
-          <button className="profile-export-button" type="button" onClick={onExport}>
+          {!preview && <button className="profile-export-button" type="button" onClick={onExport}>
             <FontAwesomeIcon className="app-icon" icon={faDownload} fixedWidth aria-hidden="true" />
             export all data (.json)
-          </button>
+          </button>}
         </div>
 
         <fieldset className="profile-filter-group">
@@ -1108,7 +1122,7 @@ export function ProfileView({
                       </button>
                     </th>
                     <th scope="col">scramble</th>
-                    <th scope="col"><span className="profile-sr-only">actions</span></th>
+                    {!preview && <th scope="col"><span className="profile-sr-only">actions</span></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -1140,7 +1154,7 @@ export function ProfileView({
                             <span>{solve.scramble}</span>
                           </details>
                         </td>
-                        <td>
+                        {!preview && <td>
                           <div className="profile-solve-actions">
                             <button
                               className={solve.penalty === 'plus2' ? 'is-active' : ''}
@@ -1173,7 +1187,7 @@ export function ProfileView({
                               <FontAwesomeIcon className="app-icon" icon={faTrashCan} fixedWidth aria-hidden="true" />
                             </button>
                           </div>
-                        </td>
+                        </td>}
                       </tr>
                     )
                   })}
@@ -1193,7 +1207,7 @@ export function ProfileView({
         )}
       </section>
 
-      <ProfileEditor
+      {!preview && <ProfileEditor
         open={editorOpen}
         profile={profile}
         onClose={() => setEditorOpen(false)}
@@ -1202,7 +1216,7 @@ export function ProfileView({
           onProfileChange(updatedProfile)
         }}
         onError={onError}
-      />
+      />}
     </main>
   )
 }

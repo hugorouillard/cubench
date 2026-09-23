@@ -31,6 +31,7 @@ describe('account access', () => {
         onAuthenticated={authenticated}
         onClose={vi.fn()}
         onSubmittingChange={submittingChanged}
+        onPreview={vi.fn()}
       />,
     )
 
@@ -73,6 +74,7 @@ describe('account access', () => {
         onAuthenticated={vi.fn()}
         onClose={vi.fn()}
         onSubmittingChange={vi.fn()}
+        onPreview={vi.fn()}
       />,
     )
     fireEvent.change(screen.getByLabelText('username'), {
