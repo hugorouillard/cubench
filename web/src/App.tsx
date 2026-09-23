@@ -576,76 +576,76 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         <main className="practice-view page-width">
           <div className="practice-workspace">
             <div className="practice-config-row focus-chrome">
-            <div
-              className="practice-config practice-config--desktop"
-              role="group"
-              aria-label="Practice settings"
-            >
               <div
-                className="config-panel config-panel--toggles"
+                className="practice-config practice-config--desktop"
                 role="group"
-                aria-label="Solve modifiers"
+                aria-label="Practice settings"
               >
-                <button
-                  className={hideTimer ? 'is-active' : ''}
-                  type="button"
-                  onClick={(event) => {
-                    setHideTimer((current) => !current)
-                    event.currentTarget.blur()
-                  }}
-                  disabled={controlsDisabled}
-                  aria-pressed={hideTimer}
+                <div
+                  className="config-panel config-panel--toggles"
+                  role="group"
+                  aria-label="Solve modifiers"
                 >
-                  <FontAwesomeIcon className="app-icon" icon={faEyeSlash} fixedWidth aria-hidden="true" />
-                  hide timer
-                </button>
-                <button
-                  className={inspectionEnabled ? 'is-active' : ''}
-                  type="button"
-                  onClick={(event) => {
-                    setInspectionEnabled((current) => !current)
-                    event.currentTarget.blur()
-                  }}
-                  disabled={controlsDisabled}
-                  aria-pressed={inspectionEnabled}
+                  <button
+                    className={hideTimer ? 'is-active' : ''}
+                    type="button"
+                    onClick={(event) => {
+                      setHideTimer((current) => !current)
+                      event.currentTarget.blur()
+                    }}
+                    disabled={controlsDisabled}
+                    aria-pressed={hideTimer}
+                  >
+                    <FontAwesomeIcon className="app-icon" icon={faEyeSlash} fixedWidth aria-hidden="true" />
+                    hide timer
+                  </button>
+                  <button
+                    className={inspectionEnabled ? 'is-active' : ''}
+                    type="button"
+                    onClick={(event) => {
+                      setInspectionEnabled((current) => !current)
+                      event.currentTarget.blur()
+                    }}
+                    disabled={controlsDisabled}
+                    aria-pressed={inspectionEnabled}
+                  >
+                    inspection
+                  </button>
+                </div>
+
+                <div
+                  className="config-panel config-panel--modes"
+                  role="group"
+                  aria-label="Practice mode"
                 >
-                  inspection
-                </button>
+                  <span className="config-value is-active">
+                    <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
+                    timer
+                  </span>
+                  <button type="button" disabled title="Trainer mode is not available yet">
+                    <FontAwesomeIcon className="app-icon" icon={faCube} fixedWidth aria-hidden="true" />
+                    trainer
+                  </button>
+                </div>
+
+                <div
+                  className="config-panel config-panel--values"
+                  role="group"
+                  aria-label="Timer settings"
+                >
+                  <span className="config-value is-active">3x3</span>
+                </div>
               </div>
 
-              <div
-                className="config-panel config-panel--modes"
-                role="group"
-                aria-label="Practice mode"
+              <button
+                className="practice-config-mobile"
+                type="button"
+                onClick={() => setPracticeSettingsOpen(true)}
+                disabled={controlsDisabled}
               >
-                <span className="config-value is-active">
-                  <FontAwesomeIcon className="app-icon" icon={faStopwatch} fixedWidth aria-hidden="true" />
-                  timer
-                </span>
-                <button type="button" disabled title="Trainer mode is not available yet">
-                  <FontAwesomeIcon className="app-icon" icon={faCube} fixedWidth aria-hidden="true" />
-                  trainer
-                </button>
-              </div>
-
-              <div
-                className="config-panel config-panel--values"
-                role="group"
-                aria-label="Timer settings"
-              >
-                <span className="config-value is-active">3x3</span>
-              </div>
-            </div>
-
-            <button
-              className="practice-config-mobile"
-              type="button"
-              onClick={() => setPracticeSettingsOpen(true)}
-              disabled={controlsDisabled}
-            >
-              <FontAwesomeIcon className="app-icon" icon={faSliders} fixedWidth aria-hidden="true" />
-              practice settings
-            </button>
+                <FontAwesomeIcon className="app-icon" icon={faSliders} fixedWidth aria-hidden="true" />
+                practice settings
+              </button>
             </div>
 
             <section className="timer-stage" aria-label="Timer">
@@ -672,21 +672,28 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                     <span>mean</span>
                     <strong>{statTime(summary.mean)}</strong>
                   </div>
-                  <div>
+                  <div className="session-stat--primary">
                     <span>ao5</span>
                     <strong>{statTime(summary.currentAo5)}</strong>
+                  </div>
+                  <div className="session-stat--primary">
+                    <span>ao12</span>
+                    <strong>{statTime(summary.currentAo12)}</strong>
                   </div>
                   <div>
                     <span>best ao5</span>
                     <strong>{statTime(summary.bestAo5)}</strong>
                   </div>
                   <div>
-                    <span>ao12</span>
-                    <strong>{statTime(summary.currentAo12)}</strong>
-                  </div>
-                  <div>
                     <span>best</span>
                     <strong>{statTime(summary.bestSingle)}</strong>
+                  </div>
+                </div>
+
+                <div className="timer-controls">
+                  <div className="timer-status" aria-live="polite">
+                    <span className="keycap">space</span>
+                    <span>{phaseInstruction(phase, inspectionEnabled)}</span>
                   </div>
                 </div>
 
@@ -703,13 +710,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                       Retry saving result
                     </button>
                   )}
-                </div>
-              </div>
-
-              <div className="timer-controls">
-                <div className="timer-status" aria-live="polite">
-                  <span className="keycap">space</span>
-                  <span>{phaseInstruction(phase, inspectionEnabled)}</span>
                 </div>
               </div>
             </section>

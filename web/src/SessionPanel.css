@@ -6,11 +6,12 @@
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   align-self: center;
-  border-radius: var(--roundness);
+  border: 1px solid color-mix(in srgb, var(--line-color) 65%, transparent);
+  border-radius: calc(var(--roundness) * 1.5);
   background: var(--sub-alt-color);
   overflow: hidden;
   text-align: left;
-  transition: opacity 125ms ease;
+  transition: opacity 180ms ease;
 }
 
 .session-panel-header {
@@ -19,7 +20,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.15rem 1.25rem;
 }
 
 .session-panel-header strong,
@@ -29,12 +30,12 @@
 
 .session-panel-summary > strong {
   color: var(--sub-readable-color);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
 }
 
 .session-panel-header h2 {
   margin: 0;
-  color: var(--text-color);
+  color: var(--sub-readable-color);
   font-size: 0.82rem;
   font-weight: 400;
   overflow: hidden;
@@ -63,7 +64,7 @@
   border-radius: 0.25rem;
   padding: 0;
   color: var(--sub-readable-color);
-  background: var(--bg-color);
+  background: transparent;
   cursor: pointer;
   font: inherit;
   font-size: 0.55rem;
@@ -81,8 +82,8 @@
 }
 
 .session-chart-region {
-  border-block-start: 1px solid color-mix(in srgb, var(--sub-color) 35%, transparent);
-  padding: 0.65rem 0.9rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--line-color) 60%, transparent);
+  padding: 0.85rem 1.1rem;
 }
 
 .session-chart-region.is-pending {
@@ -95,7 +96,7 @@
   gap: 0.75rem;
   min-height: 0.8rem;
   color: var(--sub-readable-color);
-  font-size: 0.52rem;
+  font-size: 0.65rem;
 }
 
 .session-chart-legend span {
@@ -116,7 +117,7 @@
 
 .session-chart {
   position: relative;
-  height: 7.25rem;
+  height: 9.75rem;
 }
 
 .session-chart canvas {
@@ -128,7 +129,7 @@
   display: grid;
   place-items: center;
   color: var(--sub-readable-color);
-  font-size: 0.55rem;
+  font-size: 0.65rem;
 }
 
 .session-chart-pending {
@@ -148,7 +149,7 @@
 
 .session-chart-pending p {
   margin: 0;
-  font-size: 0.52rem;
+  font-size: 0.65rem;
 }
 
 .session-solve-list {
@@ -163,11 +164,12 @@
 
 .session-solve-list li {
   position: relative;
-  border-top: 1px solid color-mix(in srgb, var(--sub-color) 35%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--line-color) 60%, transparent);
 }
 
 .session-solve-list li.is-latest {
   box-shadow: inset 2px 0 var(--main-color);
+  background: color-mix(in srgb, var(--main-color) 4%, transparent);
 }
 
 .session-solve-summary {
@@ -179,7 +181,7 @@
   align-items: center;
   gap: 0.45rem;
   border: 0;
-  padding: 0.65rem 0.9rem;
+  padding: 0.85rem 1.1rem;
   color: var(--sub-readable-color);
   background: transparent;
   cursor: pointer;
@@ -195,7 +197,7 @@
 
 .session-solve-number,
 .session-solve-list time {
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   white-space: nowrap;
 }
 
@@ -211,14 +213,14 @@
 
 .session-solve-result strong {
   color: var(--text-color);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 400;
 }
 
 .session-solve-result small {
   margin-top: 0.15rem;
   color: var(--sub-readable-color);
-  font-size: 0.48rem;
+  font-size: 0.6rem;
 }
 
 .session-solve-list li.is-best .session-solve-result strong {
@@ -311,7 +313,7 @@
   max-width: 15rem;
   margin: 0;
   color: var(--sub-readable-color);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   line-height: 1.6;
 }
 

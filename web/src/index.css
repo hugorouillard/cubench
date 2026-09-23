@@ -43,7 +43,6 @@
   --ready-color: #87b26c;
   --warning-color: #d9b46d;
   --line-color: #292b25;
-  --timer-icon-color: var(--main-color);
   --about-icon-color: var(--main-color);
   --account-icon-color: var(--main-color);
   --settings-icon-color: var(--main-color);
@@ -62,7 +61,6 @@
   --ready-color: #78c490;
   --warning-color: #e2b714;
   --line-color: #3c3e41;
-  --timer-icon-color: var(--main-color);
   --about-icon-color: var(--main-color);
   --account-icon-color: var(--main-color);
   --settings-icon-color: var(--main-color);
