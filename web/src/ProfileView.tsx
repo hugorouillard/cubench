@@ -944,16 +944,28 @@ export function ProfileView({
       </section>
 
       <section className="profile-pb-band" aria-labelledby="profile-pb-title">
-        <div className="profile-pb-title">
-          <FontAwesomeIcon className="app-icon" icon={faTrophy} fixedWidth aria-hidden="true" />
-          <div>
-            <span className="profile-kicker">lifetime</span>
-            <h2 id="profile-pb-title">Personal bests</h2>
+        <div className="profile-pb-surfaces">
+          <div className="profile-pb-surface">
+            <div className="profile-pb-title">
+              <FontAwesomeIcon className="app-icon" icon={faTrophy} fixedWidth aria-hidden="true" />
+              <h2 id="profile-pb-title">Personal bests</h2>
+            </div>
+            <div className="profile-pb-record">
+              <span>single</span>
+              <div className="profile-pb-result">{recordContent(lifetime.bestSingle)}</div>
+            </div>
+          </div>
+          <div className="profile-pb-surface profile-pb-averages">
+            <div className="profile-pb-record">
+              <span>ao5</span>
+              <div className="profile-pb-result">{recordContent(lifetime.bestAo5)}</div>
+            </div>
+            <div className="profile-pb-record">
+              <span>ao12</span>
+              <div className="profile-pb-result">{recordContent(lifetime.bestAo12)}</div>
+            </div>
           </div>
         </div>
-        <div><span>single</span>{recordContent(lifetime.bestSingle)}</div>
-        <div><span>ao5</span>{recordContent(lifetime.bestAo5)}</div>
-        <div><span>ao12</span>{recordContent(lifetime.bestAo12)}</div>
       </section>
 
       <ActivityHeatmap
