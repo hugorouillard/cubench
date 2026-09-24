@@ -329,45 +329,20 @@
 
 .profile-pb-surfaces {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--profile-section-gap);
 }
 
 .profile-pb-surface {
   min-width: 0;
-  padding: 1rem 1.5rem;
 }
 
-.profile-pb-surface:not(.profile-pb-averages) {
+.profile-pb-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 1rem;
-}
-
-.profile-pb-averages {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: end;
-  gap: 1rem;
-}
-
-.profile-pb-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.profile-pb-title > .app-icon {
-  color: var(--main-color);
-  font-size: 0.75rem;
-}
-
-.profile-pb-title h2 {
-  margin: 0;
-  color: var(--sub-readable-color);
-  font-size: 0.875rem;
-  font-weight: 400;
+  gap: 2rem;
+  padding: 1rem;
 }
 
 .profile-section-heading h2,
@@ -380,11 +355,13 @@
 
 .profile-pb-record {
   min-width: 0;
+  text-align: center;
 }
 
 .profile-pb-record > span,
-.profile-pb-result > strong,
-.profile-pb-result > time {
+.profile-pb-record > strong,
+.profile-pb-record > time,
+.profile-pb-record > small {
   display: block;
 }
 
@@ -394,19 +371,30 @@
   font-size: var(--profile-pb-label-size);
 }
 
-.profile-pb-result > strong {
+.profile-pb-record > strong {
   color: var(--text-color);
-  font-size: var(--profile-pb-figure-size);
+  font-size: clamp(1.35rem, 1.7vw, var(--profile-pb-figure-size));
   font-variant-numeric: tabular-nums;
   font-weight: 400;
 }
 
-.profile-pb-result > time,
-.profile-pb-result > span {
-  display: block;
+.profile-pb-record > time,
+.profile-pb-record > small {
   margin-top: 0.35rem;
   color: var(--sub-readable-color);
   font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .profile-pb-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1105px) {
+  .profile-pb-surfaces {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .profile-activity {
@@ -1112,10 +1100,6 @@
 }
 
 @media (max-width: 1104px) {
-  .profile-view {
-    --profile-pb-figure-size: 1.875rem;
-  }
-
   .profile-identity-content {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1146,11 +1130,6 @@
     margin-top: 1rem;
   }
 
-  .profile-pb-surfaces {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
-  }
-
   .profile-filtered-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1159,11 +1138,6 @@
 @media (max-width: 640px) {
   .profile-view {
     --profile-avatar-size: 3.5rem;
-  }
-
-  .profile-pb-surface:not(.profile-pb-averages) {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
   }
 
   .profile-lifetime-metrics {
@@ -1239,14 +1213,6 @@
 }
 
 @media (max-width: 420px) {
-  .profile-view {
-    --profile-pb-figure-size: 2.25rem;
-  }
-
-  .profile-pb-averages {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .profile-filtered-stats {
     grid-template-columns: 1fr 1fr;
   }

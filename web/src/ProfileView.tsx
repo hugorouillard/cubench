@@ -13,7 +13,6 @@ import {
   faPen,
   faSort,
   faTrashCan,
-  faTrophy,
   faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -36,10 +35,13 @@ import { Bar, Chart, Line } from 'react-chartjs-2'
 import { getProfile, getSolves, updateProfile } from './api'
 import type { ProfilePreview } from './profilePreview'
 import {
+  bestAverage,
   completedDuration,
+  currentAverage,
   dailyAnalytics,
   filterSolves,
   lifetimeProfileSummary,
+  newestSolvesFirst,
   personalBestHistory,
   solveDurationHistogram,
   solveHistory,
@@ -209,21 +211,33 @@ function activityWeeks(solves: Solve[]): ActivityCell[][] {
   return weeks
 }
 
-function recordContent(record: DatedSolveRecord | null) {
-  if (!record) {
-    return (
-      <>
-        <strong>--</strong>
-        <span>not set</span>
-      </>
-    )
-  }
+type ProfileFigure = {
+  label: string
+  value: string
+  context: string
+  dateTime?: string
+}
 
+function recordFigure(label: string, record: DatedSolveRecord | null): ProfileFigure {
+  return record
+    ? { label, value: formatTime(record.durationMs), context: formatLongDate(record.achievedAt), dateTime: record.achievedAt }
+    : { label, value: '--', context: 'not set' }
+}
+
+function ProfileFigureCard({ title, id, figures }: { title: string; id: string; figures: ProfileFigure[] }) {
   return (
-    <>
-      <strong>{formatTime(record.durationMs)}</strong>
-      <time dateTime={record.achievedAt}>{formatLongDate(record.achievedAt)}</time>
-    </>
+    <section className="profile-pb-surface" aria-labelledby={id}>
+      <h2 id={id} className="profile-sr-only">{title}</h2>
+      <div className="profile-pb-grid">
+        {figures.map(({ label, value, context, dateTime }) => (
+          <div className="profile-pb-record" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+            {dateTime ? <time dateTime={dateTime}>{context}</time> : <small>{context}</small>}
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -473,6 +487,25 @@ export function ProfileView({
   }, [preview])
 
   const lifetime = useMemo(() => lifetimeProfileSummary(solves), [solves])
+  const form = useMemo(() => {
+    const newest = newestSolvesFirst(solves)
+    const recentCompleted: number[] = []
+    for (const solve of newest) {
+      const duration = completedDuration(solve)
+      if (duration !== null) recentCompleted.push(duration)
+      if (recentCompleted.length === 25) break
+    }
+
+    return {
+      latest: newest[0],
+      bestAo50: bestAverage(newest, 50),
+      currentAo5: currentAverage(newest, 5),
+      currentAo12: currentAverage(newest, 12),
+      last25Mean: recentCompleted.length === 25
+        ? Math.round(recentCompleted.reduce((sum, duration) => sum + duration, 0) / 25)
+        : null,
+    }
+  }, [solves])
   const weeks = useMemo(() => activityWeeks(solves), [solves])
   const lifetimePbSolveIds = useMemo(
     () => new Set(personalBestHistory(solves).map((record) => record.solve.id)),
@@ -941,30 +974,35 @@ export function ProfileView({
         <div><strong>{lifetime.longestStreak.toLocaleString()}</strong><span>longest streak</span></div>
       </section>
 
-      <section className="profile-pb-band" aria-labelledby="profile-pb-title">
+      <div className="profile-pb-band">
         <div className="profile-pb-surfaces">
-          <div className="profile-pb-surface">
-            <div className="profile-pb-title">
-              <FontAwesomeIcon className="app-icon" icon={faTrophy} fixedWidth aria-hidden="true" />
-              <h2 id="profile-pb-title">Personal bests</h2>
-            </div>
-            <div className="profile-pb-record">
-              <span>single</span>
-              <div className="profile-pb-result">{recordContent(lifetime.bestSingle)}</div>
-            </div>
-          </div>
-          <div className="profile-pb-surface profile-pb-averages">
-            <div className="profile-pb-record">
-              <span>ao5</span>
-              <div className="profile-pb-result">{recordContent(lifetime.bestAo5)}</div>
-            </div>
-            <div className="profile-pb-record">
-              <span>ao12</span>
-              <div className="profile-pb-result">{recordContent(lifetime.bestAo12)}</div>
-            </div>
-          </div>
+          <ProfileFigureCard
+            id="profile-pb-title"
+            title="Personal bests"
+            figures={[
+              recordFigure('best single', lifetime.bestSingle),
+              recordFigure('best ao5', lifetime.bestAo5),
+              recordFigure('best ao12', lifetime.bestAo12),
+              { label: 'best ao50', value: statTime(form.bestAo50), context: '50 consecutive attempts' },
+            ]}
+          />
+          <ProfileFigureCard
+            id="profile-form-title"
+            title="Current form"
+            figures={[
+              {
+                label: 'latest result',
+                value: form.latest ? formatTime(form.latest.duration_ms, form.latest.penalty) : '--',
+                context: form.latest ? formatLongDate(form.latest.recorded_at) : 'no attempts',
+                dateTime: form.latest?.recorded_at,
+              },
+              { label: 'current ao5', value: statTime(form.currentAo5), context: 'last 5 attempts' },
+              { label: 'current ao12', value: statTime(form.currentAo12), context: 'last 12 attempts' },
+              { label: 'last 25 mean', value: statTime(form.last25Mean), context: 'non-DNF solves' },
+            ]}
+          />
         </div>
-      </section>
+      </div>
 
       <ActivityHeatmap
         weeks={weeks}
