@@ -7,8 +7,9 @@
 }
 
 .profile-view {
+  --profile-section-gap: 2rem;
   min-width: 0;
-  padding-block: 1.5rem 4rem;
+  padding-block: 0.25rem 4rem;
 }
 
 .profile-view,
@@ -252,7 +253,7 @@
   grid-template-columns: minmax(12rem, 1fr) repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: 0.5rem;
-  margin-top: 2rem;
+  margin-top: var(--profile-section-gap);
   border-radius: var(--roundness);
   background: var(--sub-alt-color);
 }
@@ -314,7 +315,7 @@
 
 .profile-activity {
   min-width: 0;
-  margin-top: 2rem;
+  margin-top: var(--profile-section-gap);
 }
 
 .profile-section-heading,
@@ -474,7 +475,7 @@
 
 .profile-filter-boundary {
   min-width: 0;
-  margin-top: 2rem;
+  margin-top: var(--profile-section-gap);
   border-radius: var(--roundness);
   padding: 1.5rem;
   background: var(--sub-alt-color);
@@ -577,7 +578,7 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
-  margin-block: 2rem;
+  margin-block: var(--profile-section-gap);
   border-radius: var(--roundness);
   padding: 1rem;
   background: var(--sub-alt-color);
@@ -614,7 +615,7 @@
 }
 
 .profile-history-section {
-  margin-top: 2rem;
+  margin-top: var(--profile-section-gap);
 }
 
 .profile-series-toggles {
@@ -662,7 +663,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: var(--profile-section-gap);
 }
 
 .profile-chart-legend {
@@ -693,7 +694,7 @@
 }
 
 .profile-table-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--profile-section-gap);
 }
 
 .profile-row-count {
@@ -1040,6 +1041,10 @@
 @media (max-width: 848px) {
   .profile-view {
     padding-top: 0.5rem;
+  }
+
+  .profile-chart-pair {
+    margin-top: 1rem;
   }
 
   .profile-pb-band {
