@@ -33,8 +33,17 @@ describe('profile view', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Sample solver' })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'Account preview' }).textContent)
-      .toContain('fictional results')
+    const overview = screen.getByRole('region', { name: 'Practice activity overview' })
+    expect(Number(within(overview).getByText('active days').previousElementSibling?.textContent))
+      .toBeGreaterThan(0)
+    expect(within(overview).getByText('current streak')).toBeTruthy()
+    expect(within(overview).getByText('longest streak')).toBeTruthy()
+    const personalBests = screen.getByRole('region', { name: 'Personal bests' })
+    expect(within(personalBests).getAllByRole('time')).toHaveLength(3)
+    const activity = screen.getByRole('region', { name: 'Activity' })
+    expect(within(activity).getByRole('img', {
+      name: new RegExp(`^${preview.solves.length} attempts in the last 12 months\\.`),
+    })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /edit profile|export|toggle .* penalty|delete .* solve/i }))
       .toBeNull()
     expect(screen.queryByRole('dialog', { hidden: true })).toBeNull()
