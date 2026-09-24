@@ -53,6 +53,7 @@
 }
 
 .profile-view button:focus-visible,
+.profile-view select:focus-visible,
 .profile-view textarea:focus-visible,
 .profile-view summary:focus-visible,
 .profile-dialog button:focus-visible,
@@ -445,13 +446,16 @@
 }
 
 .profile-heatmap-card {
-  max-width: 100%;
   padding: 1rem;
 }
 
-.profile-heatmap-scroll {
+.profile-heatmap-wrapper {
   max-width: 80rem;
-  margin: 1rem auto 0;
+  margin-inline: auto;
+}
+
+.profile-heatmap-scroll {
+  margin-top: 1rem;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scrollbar-color: var(--sub-color) transparent;
@@ -460,7 +464,6 @@
 .profile-heatmap-layout {
   width: 100%;
   min-width: 56rem;
-  max-width: 80rem;
   display: grid;
   grid-template-columns: min-content minmax(0, 1fr);
   grid-template-areas: 'days chart';
@@ -468,9 +471,8 @@
 }
 
 .profile-heatmap-top {
-  max-width: 80rem;
   display: grid;
-  grid-template-columns: 15rem 1fr max-content;
+  grid-template-columns: 15rem minmax(0, 1fr) max-content;
   align-items: center;
   gap: 1rem;
   margin-inline: auto;
@@ -479,10 +481,14 @@
 }
 
 .profile-heatmap-period {
-  border: 2px solid var(--bg-color);
+  width: 100%;
+  border: 0.2em solid var(--bg-color);
   border-radius: var(--roundness);
   padding: 0.5rem;
-  color: var(--text-color);
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+  font: inherit;
 }
 
 .profile-heatmap-key {
@@ -537,7 +543,6 @@
   grid-area: chart;
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: repeat(53, minmax(0, 1fr));
   grid-template-rows: repeat(7, 1fr);
   gap: 0.25rem;
 }

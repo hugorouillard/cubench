@@ -17,6 +17,7 @@ describe('profile view', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    vi.useRealTimers()
   })
 
   it('lets guests explore sample history without fetching or exposing account mutations', () => {
@@ -131,6 +132,87 @@ describe('profile view', () => {
       '/api/profile',
       '/api/solves',
     ])
+  })
+
+  it('switches the activity calendar between local rolling and calendar-year totals', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 8, 24, 12))
+    const solves: Solve[] = [
+      [2024, 11, 31, 2],
+      [2025, 8, 24, 3],
+      [2025, 8, 25, 4],
+      [2026, 0, 1, 5],
+      [2026, 8, 24, 6],
+      [2026, 8, 25, 7],
+    ].flatMap(([year, month, day, count]) => {
+      const timestamp = new Date(year, month, day, 12).toISOString()
+      return Array.from({ length: count }, (_, index) => ({
+        id: `${year}-${month}-${day}-${index}`,
+        duration_ms: 12_000,
+        penalty: 'none' as const,
+        scramble: "R U R'",
+        recorded_at: timestamp,
+        created_at: timestamp,
+      }))
+    })
+    const preview: ProfilePreview = {
+      profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2024, 5, 1, 12).toISOString() },
+      solves,
+    }
+    render(
+      <ProfileView
+        preview={preview}
+        onPenalty={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+        onError={vi.fn()}
+        onProfileChange={vi.fn()}
+      />,
+    )
+
+    const activity = screen.getByRole('region', { name: 'Activity' })
+    const select = within(activity).getByRole('combobox', { name: 'Activity range' })
+    expect(within(select).getAllByRole('option').map((option) => option.textContent))
+      .toEqual(['last 12 months', '2026', '2025', '2024'])
+    expect(within(activity).getByRole('img', { name: /^15 attempts in the last 12 months\./ })).toBeTruthy()
+    expect(within(activity).getByText('Activity is shown in local time.')).toBeTruthy()
+
+    fireEvent.change(select, { target: { value: '2025' } })
+    expect(within(activity).getByText('7 attempts')).toBeTruthy()
+    expect(within(activity).getByRole('img', { name: /^7 attempts in 2025\./ })).toBeTruthy()
+
+    fireEvent.change(select, { target: { value: '2024' } })
+    expect(within(activity).getByRole('img', { name: /^2 attempts in 2024\./ })).toBeTruthy()
+
+    fireEvent.change(select, { target: { value: '2026' } })
+    expect(within(activity).getByRole('img', { name: /^11 attempts in 2026\./ })).toBeTruthy()
+
+    fireEvent.change(select, { target: { value: 'current' } })
+    expect(within(activity).getByRole('img', { name: /^15 attempts in the last 12 months\./ })).toBeTruthy()
+  })
+
+  it('sizes the calendar grid for a 54-week leap year', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2028, 11, 31, 12))
+    render(
+      <ProfileView
+        preview={{
+          profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2028, 0, 1, 12).toISOString() },
+          solves: [],
+        }}
+        onPenalty={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+        onError={vi.fn()}
+        onProfileChange={vi.fn()}
+      />,
+    )
+
+    const activity = screen.getByRole('region', { name: 'Activity' })
+    fireEvent.change(within(activity).getByRole('combobox', { name: 'Activity range' }), { target: { value: '2028' } })
+    expect(within(activity).getByRole('img', { name: /^0 attempts in 2028\./ })).toBeTruthy()
+    expect(activity.querySelector<HTMLElement>('.profile-heatmap')?.style.gridTemplateColumns)
+      .toBe('repeat(54, minmax(0, 1fr))')
   })
 
   it('shows dated lifetime records and current-form figures from all solves regardless of analysis range', () => {

@@ -173,15 +173,20 @@ function getChartColors(): ChartColors {
   }
 }
 
-function activityWeeks(solves: Solve[]): ActivityCell[][] {
+function activityWeeks(solves: Solve[], range: string): ActivityCell[][] {
   const today = new Date()
   today.setHours(12, 0, 0, 0)
-  const rangeStart = new Date(today)
-  rangeStart.setDate(rangeStart.getDate() - 363)
+  const rangeStart = range === 'current' ? new Date(today) : new Date(Number(range), 0, 1, 12)
+  const rangeEnd = range === 'current' ? today : new Date(Number(range), 11, 31, 12)
+  if (range === 'current') {
+    rangeStart.setFullYear(rangeStart.getFullYear() - 1)
+    rangeStart.setDate(rangeStart.getDate() + 1)
+  }
+  if (rangeEnd > today) rangeEnd.setTime(today.getTime())
 
   const calendarStart = new Date(rangeStart)
   calendarStart.setDate(calendarStart.getDate() - calendarStart.getDay())
-  const calendarEnd = new Date(today)
+  const calendarEnd = new Date(rangeEnd)
   calendarEnd.setDate(calendarEnd.getDate() + (6 - calendarEnd.getDay()))
 
   const attemptsByDay = new Map<string, number>()
@@ -189,7 +194,7 @@ function activityWeeks(solves: Solve[]): ActivityCell[][] {
     const date = new Date(solve.recorded_at)
     const solveDay = new Date(date)
     solveDay.setHours(12, 0, 0, 0)
-    if (solveDay < rangeStart || solveDay > today) continue
+    if (solveDay < rangeStart || solveDay > rangeEnd) continue
     const key = localDateKey(date)
     attemptsByDay.set(key, (attemptsByDay.get(key) ?? 0) + 1)
   }
@@ -202,7 +207,7 @@ function activityWeeks(solves: Solve[]): ActivityCell[][] {
       key,
       date,
       count: attemptsByDay.get(key) ?? 0,
-      inRange: date >= rangeStart && date <= today,
+      inRange: date >= rangeStart && date <= rangeEnd,
     })
   }
 
@@ -346,6 +351,9 @@ function ProfileEditor({ open, profile, onClose, onSaved, onError }: ProfileEdit
 
 type ActivityHeatmapProps = {
   weeks: ActivityCell[][]
+  range: string
+  years: number[]
+  onRangeChange: (range: string) => void
   activeDays: number
   currentStreak: number
   longestStreak: number
@@ -353,6 +361,9 @@ type ActivityHeatmapProps = {
 
 function ActivityHeatmap({
   weeks,
+  range,
+  years,
+  onRangeChange,
   activeDays,
   currentStreak,
   longestStreak,
@@ -365,61 +376,73 @@ function ActivityHeatmap({
   const trimmed = counts.slice(trim, counts.length - trim)
   const mean = trimmed.reduce((total, count) => total + count, 0) / trimmed.length
   const buckets = [Math.floor(mean / 2), Math.round(mean), Math.round(mean * 1.5)]
+  const columns = { gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }
+  const period = range === 'current' ? 'the last 12 months' : range
 
   useEffect(() => {
     const scroll = scrollRef.current
     if (scroll && scroll.scrollWidth > scroll.clientWidth) {
       scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth
     }
-  }, [])
+  }, [weeks])
 
   return (
     <section className="profile-activity" aria-labelledby="profile-activity-title">
       <div className="profile-heatmap-card">
         <h2 id="profile-activity-title" className="profile-sr-only">Activity</h2>
-        <div className="profile-heatmap-top">
-          <span className="profile-heatmap-period">last 12 months</span>
-          <span className="profile-heatmap-total">{totalAttempts} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
-          <div className="profile-heatmap-key" aria-hidden="true">
-            <span>less</span>
-            <i className="level-0" />
-            <i className="level-1" />
-            <i className="level-2" />
-            <i className="level-3" />
-            <i className="level-4" />
-            <span>more</span>
-          </div>
-        </div>
-        <div className="profile-heatmap-scroll" ref={scrollRef}>
-          <div
-            className="profile-heatmap-layout"
-            role="img"
-            aria-label={`${totalAttempts} attempts in the last 12 months. ${activeDays} lifetime active days, ${currentStreak} day current streak, and ${longestStreak} day longest streak.`}
-          >
-            <div className="profile-heatmap-days" aria-hidden="true">
-              <span>monday</span>
-              <span>wednesday</span>
-              <span>friday</span>
-            </div>
-            <div className="profile-heatmap" aria-hidden="true">
-              {weeks.flatMap((week) =>
-                week.map((cell) => {
-                  const bucket = buckets.findIndex((threshold) => cell.count <= threshold)
-                  const level = cell.count === 0 ? 0 : bucket === -1 ? 4 : bucket + 1
-                  const attemptLabel = `${cell.count} ${cell.count === 1 ? 'attempt' : 'attempts'}`
-                  return (
-                    <i
-                      className={`profile-heatmap-cell level-${level}${cell.inRange ? '' : ' is-outside'}`}
-                      key={cell.key}
-                      title={`${formatLongDate(cell.date.toISOString())}: ${attemptLabel}`}
-                    />
-                  )
-                }),
-              )}
+        <div className="profile-heatmap-wrapper">
+          <div className="profile-heatmap-top">
+            <select
+              className="profile-heatmap-period"
+              aria-label="Activity range"
+              value={range}
+              onChange={(event) => onRangeChange(event.target.value)}
+            >
+              <option value="current">last 12 months</option>
+              {years.map((year) => <option value={year} key={year}>{year}</option>)}
+            </select>
+            <span className="profile-heatmap-total">{totalAttempts} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
+            <div className="profile-heatmap-key" aria-hidden="true">
+              <span>less</span>
+              <i className="level-0" />
+              <i className="level-1" />
+              <i className="level-2" />
+              <i className="level-3" />
+              <i className="level-4" />
+              <span>more</span>
             </div>
           </div>
+          <div className="profile-heatmap-scroll" ref={scrollRef}>
+            <div
+              className="profile-heatmap-layout"
+              role="img"
+              aria-label={`${totalAttempts} attempts in ${period}. ${activeDays} lifetime active days, ${currentStreak} day current streak, and ${longestStreak} day longest streak.`}
+            >
+              <div className="profile-heatmap-days" aria-hidden="true">
+                <span>monday</span>
+                <span>wednesday</span>
+                <span>friday</span>
+              </div>
+              <div className="profile-heatmap" style={columns} aria-hidden="true">
+                {weeks.flatMap((week) =>
+                  week.map((cell) => {
+                    const bucket = buckets.findIndex((threshold) => cell.count <= threshold)
+                    const level = cell.count === 0 ? 0 : bucket === -1 ? 4 : bucket + 1
+                    const attemptLabel = `${cell.count} ${cell.count === 1 ? 'attempt' : 'attempts'}`
+                    return (
+                      <i
+                        className={`profile-heatmap-cell level-${level}${cell.inRange ? '' : ' is-outside'}`}
+                        key={cell.key}
+                        title={`${cell.date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}: ${attemptLabel}`}
+                      />
+                    )
+                  }),
+                )}
+              </div>
+            </div>
+          </div>
+          <span className="profile-heatmap-note">Activity is shown in local time.</span>
         </div>
-        <span className="profile-heatmap-note">Activity is shown in local time.</span>
       </div>
     </section>
   )
@@ -442,6 +465,7 @@ export function ProfileView({
   const [loading, setLoading] = useState(!preview)
   const [loadFailed, setLoadFailed] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
+  const [activityRange, setActivityRange] = useState('current')
   const [range, setRange] = useState<SolveDateRange>('all')
   const [historySeries, setHistorySeries] = useState<HistorySeries>({
     single: true,
@@ -506,7 +530,12 @@ export function ProfileView({
         : null,
     }
   }, [solves])
-  const weeks = useMemo(() => activityWeeks(solves), [solves])
+  const activityYears = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    const joinedYear = Math.min(new Date(profile?.created_at ?? Date.now()).getFullYear(), currentYear)
+    return Array.from({ length: currentYear - joinedYear + 1 }, (_, index) => currentYear - index)
+  }, [profile?.created_at])
+  const weeks = useMemo(() => activityWeeks(solves, activityRange), [solves, activityRange])
   const lifetimePbSolveIds = useMemo(
     () => new Set(personalBestHistory(solves).map((record) => record.solve.id)),
     [solves],
@@ -1006,6 +1035,9 @@ export function ProfileView({
 
       <ActivityHeatmap
         weeks={weeks}
+        range={activityRange}
+        years={activityYears}
+        onRangeChange={setActivityRange}
         activeDays={lifetime.totalActiveDays}
         currentStreak={lifetime.currentStreak}
         longestStreak={lifetime.longestStreak}
