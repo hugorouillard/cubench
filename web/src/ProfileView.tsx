@@ -372,19 +372,8 @@ function ActivityHeatmap({
 
   return (
     <section className="profile-activity" aria-labelledby="profile-activity-title">
-      <div className="profile-section-heading">
-        <div>
-          <span className="profile-kicker">last 12 months</span>
-          <h2 id="profile-activity-title">Activity</h2>
-        </div>
-        <div className="profile-activity-totals" aria-label="Activity streak statistics">
-          <span><strong>{activeDays}</strong>active days</span>
-          <span><strong>{currentStreak}</strong>current streak</span>
-          <span><strong>{longestStreak}</strong>longest streak</span>
-        </div>
-      </div>
-
       <div className="profile-heatmap-card">
+        <h2 id="profile-activity-title" className="profile-sr-only">Activity</h2>
         <div className="profile-heatmap-top">
           <span className="profile-heatmap-period">last 12 months</span>
           <span className="profile-heatmap-total">{totalAttempts} {totalAttempts === 1 ? 'attempt' : 'attempts'}</span>
@@ -941,6 +930,13 @@ export function ProfileView({
         >
           <FontAwesomeIcon className="app-icon" icon={faPen} fixedWidth aria-hidden="true" />
         </button>}
+      </section>
+
+      <section className="profile-activity-overview" aria-label="Practice activity overview">
+        <span className="profile-activity-overview-label">Practice activity</span>
+        <div><strong>{lifetime.totalActiveDays}</strong><span>active days</span></div>
+        <div><strong>{lifetime.currentStreak}</strong><span>current streak</span></div>
+        <div><strong>{lifetime.longestStreak}</strong><span>longest streak</span></div>
       </section>
 
       <section className="profile-pb-band" aria-labelledby="profile-pb-title">

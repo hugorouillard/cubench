@@ -356,6 +356,42 @@
   margin-top: var(--profile-section-gap);
 }
 
+.profile-activity-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.75rem;
+  margin-top: var(--profile-section-gap);
+  border-radius: var(--roundness);
+  padding: 0.75rem 1rem;
+  background: var(--sub-alt-color);
+}
+
+.profile-activity-overview-label {
+  color: var(--sub-readable-color);
+  font-size: 0.875rem;
+}
+
+.profile-activity-overview div {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.profile-activity-overview div span {
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+}
+
+.profile-activity-overview strong {
+  color: var(--text-color);
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
 .profile-section-heading,
 .profile-filter-heading {
   display: flex;
@@ -364,28 +400,8 @@
   gap: 1.5rem;
 }
 
-.profile-activity-totals {
-  display: flex;
-  gap: clamp(1rem, 3vw, 2.5rem);
-}
-
-.profile-activity-totals span {
-  display: grid;
-  gap: 0.25rem;
-  color: var(--sub-readable-color);
-  font-size: 0.75rem;
-}
-
-.profile-activity-totals strong {
-  color: var(--text-color);
-  font-size: 1.25rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 400;
-}
-
 .profile-heatmap-card {
   max-width: 100%;
-  margin-top: 1.2rem;
   border-radius: var(--roundness);
   padding: 1rem;
   background: var(--sub-alt-color);
@@ -404,7 +420,7 @@
   min-width: 56rem;
   max-width: 80rem;
   display: grid;
-  grid-template-columns: 7rem minmax(0, 1fr);
+  grid-template-columns: min-content minmax(0, 1fr);
   grid-template-areas: 'days chart';
   gap: 1rem;
 }
@@ -1099,11 +1115,6 @@
     gap: 0.75rem;
   }
 
-  .profile-activity .profile-section-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .profile-filtered-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1133,9 +1144,18 @@
     grid-column: 1 / -1;
   }
 
-  .profile-activity-totals {
-    width: 100%;
-    justify-content: space-between;
+  .profile-activity-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .profile-activity-overview-label {
+    grid-column: 1 / -1;
+  }
+
+  .profile-activity-overview div {
+    flex-direction: column;
+    gap: 0.15rem;
   }
 
   .profile-filter-boundary {
@@ -1193,10 +1213,6 @@
 
   .profile-pb-averages {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .profile-activity-totals {
-    flex-wrap: wrap;
   }
 
   .profile-filtered-stats {
