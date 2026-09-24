@@ -33,11 +33,21 @@ describe('profile view', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Sample solver' })).toBeTruthy()
-    const overview = screen.getByRole('region', { name: 'Practice activity overview' })
+    const logged = preview.solves.length
+    const progress = logged % 100
+    const nextMilestone = logged - progress + 100
+    expect(screen.getByText(/Current streak \d+ days/)).toBeTruthy()
+    const milestone = screen.getByRole('progressbar', {
+      name: `${logged} solves logged; ${100 - progress} solves until ${nextMilestone} solves`,
+    })
+    expect(milestone.getAttribute('value')).toBe(String(progress))
+    expect(milestone.parentElement?.firstElementChild?.textContent).toBe(String(logged))
+    expect(screen.getByText(`${progress}/100`)).toBeTruthy()
+    const overview = screen.getByRole('region', { name: 'All-time 3×3 practice' })
     expect(Number(within(overview).getByText('active days').previousElementSibling?.textContent))
       .toBeGreaterThan(0)
-    expect(within(overview).getByText('current streak')).toBeTruthy()
     expect(within(overview).getByText('longest streak')).toBeTruthy()
+    expect(within(overview).queryByText('current streak')).toBeNull()
     const personalBests = screen.getByRole('region', { name: 'Personal bests' })
     expect(within(personalBests).getAllByRole('time')).toHaveLength(3)
     const activity = screen.getByRole('region', { name: 'Activity' })
@@ -96,6 +106,13 @@ describe('profile view', () => {
     expect(screen.getAllByText('Practicing lookahead.')[0]).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Lifetime totals' })).getAllByText('1'))
       .toHaveLength(2)
+    const milestone = screen.getByRole('progressbar', {
+      name: '1 solve logged; 99 solves until 100 solves',
+    })
+    expect(milestone.getAttribute('value')).toBe('1')
+    expect(milestone.parentElement?.firstElementChild?.textContent).toBe('1')
+    expect(screen.queryByText(/Current streak/)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Edit profile' })).toBeTruthy()
     expect(screen.getByText("R U R'")).toBeTruthy()
     expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
       '/api/profile',

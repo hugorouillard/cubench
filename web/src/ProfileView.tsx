@@ -14,6 +14,7 @@ import {
   faSort,
   faTrashCan,
   faTrophy,
+  faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -110,18 +111,6 @@ const RANGE_OPTIONS: { value: SolveDateRange; label: string; summary: string }[]
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
-}
-
-function initials(name: string): string {
-  const value = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-  return value || 'CB'
 }
 
 function localDateKey(date: Date): string {
@@ -733,6 +722,9 @@ export function ProfileView({
   const successPercentage = lifetime.loggedCount === 0
     ? 0
     : Math.round((lifetime.successfulCount / lifetime.loggedCount) * 100)
+  const milestoneProgress = lifetime.loggedCount % 100
+  const nextMilestone = lifetime.loggedCount - milestoneProgress + 100
+  const milestoneLabel = `${lifetime.loggedCount.toLocaleString()} ${lifetime.loggedCount === 1 ? 'solve' : 'solves'} logged; ${100 - milestoneProgress} solves until ${nextMilestone.toLocaleString()} solves`
   const filteredSuccessful = analytics.summary.count - analytics.summary.dnfCount
   const filteredSuccessPercentage = analytics.summary.count === 0
     ? 0
@@ -893,32 +885,43 @@ export function ProfileView({
   return (
     <main className="profile-view page-width" aria-busy={filtersPending}>
       <section className={`profile-identity-band${preview ? '' : ' has-actions'}`} aria-labelledby="profile-name">
-        <div className="profile-identity-main">
-          <div className="profile-avatar" aria-hidden="true">{initials(profile.display_name)}</div>
-          <div className="profile-identity-copy">
-            <h1 id="profile-name">{profile.display_name}</h1>
-            {profile.bio && <p>{profile.bio}</p>}
-            <span className="profile-tracking">
-              Joined <time dateTime={profile.created_at}>{formatLongDate(profile.created_at)}</time>
-            </span>
+        <div className="profile-identity-content">
+          <div className="profile-identity-main">
+            <div className="profile-avatar" aria-hidden="true">
+              <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth />
+            </div>
+            <div className="profile-identity-copy">
+              <h1 id="profile-name">{profile.display_name}</h1>
+              <span className="profile-tracking">
+                Joined <time dateTime={profile.created_at}>{formatLongDate(profile.created_at)}</time>
+              </span>
+              {lifetime.currentStreak > 0 && (
+                <span className="profile-tracking">Current streak {lifetime.currentStreak} {lifetime.currentStreak === 1 ? 'day' : 'days'}</span>
+              )}
+              {profile.bio && <p>{profile.bio}</p>}
+            </div>
+            <div className="profile-milestone">
+              <span title={milestoneLabel}>{lifetime.loggedCount.toLocaleString()}</span>
+              <progress max={100} value={milestoneProgress} aria-label={milestoneLabel} title={milestoneLabel} />
+              <span title={milestoneLabel}>{milestoneProgress}/100</span>
+            </div>
           </div>
+          <span className="profile-identity-divider" aria-hidden="true" />
+          <section className="profile-lifetime-metrics" aria-label="Lifetime totals">
+            <div>
+              <span>solves logged</span>
+              <strong>{lifetime.loggedCount.toLocaleString()}</strong>
+            </div>
+            <div title={`${successPercentage}% of attempts successful`}>
+              <span>successful</span>
+              <strong>{lifetime.successfulCount.toLocaleString()}</strong>
+            </div>
+            <div>
+              <span>timed solving</span>
+              <strong>{formatClock(lifetime.totalRawDurationMs)}</strong>
+            </div>
+          </section>
         </div>
-        <span className="profile-identity-divider" aria-hidden="true" />
-        <section className="profile-lifetime-metrics" aria-label="Lifetime totals">
-          <div>
-            <span>solves logged</span>
-            <strong>{lifetime.loggedCount.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>successful</span>
-            <strong>{lifetime.successfulCount.toLocaleString()}</strong>
-            <small>{successPercentage}% of attempts</small>
-          </div>
-          <div>
-            <span>timed solving</span>
-            <strong>{formatClock(lifetime.totalRawDurationMs)}</strong>
-          </div>
-        </section>
         {!preview && <button
           className="profile-edit-button"
           type="button"
@@ -932,11 +935,10 @@ export function ProfileView({
         </button>}
       </section>
 
-      <section className="profile-activity-overview" aria-label="Practice activity overview">
-        <span className="profile-activity-overview-label">Practice activity</span>
-        <div><strong>{lifetime.totalActiveDays}</strong><span>active days</span></div>
-        <div><strong>{lifetime.currentStreak}</strong><span>current streak</span></div>
-        <div><strong>{lifetime.longestStreak}</strong><span>longest streak</span></div>
+      <section className="profile-activity-overview" aria-label="All-time 3×3 practice">
+        <span className="profile-activity-overview-label">All-time 3×3 practice</span>
+        <div><strong>{lifetime.totalActiveDays.toLocaleString()}</strong><span>active days</span></div>
+        <div><strong>{lifetime.longestStreak.toLocaleString()}</strong><span>longest streak</span></div>
       </section>
 
       <section className="profile-pb-band" aria-labelledby="profile-pb-title">

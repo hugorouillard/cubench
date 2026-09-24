@@ -8,7 +8,9 @@
 
 .profile-view {
   --profile-section-gap: 1.75rem;
-  --profile-lifetime-label-size: 1.1rem;
+  --profile-identity-column: 19rem;
+  --profile-avatar-size: 5rem;
+  --profile-lifetime-label-size: 0.875rem;
   --profile-lifetime-figure-size: 1.875rem;
   --profile-pb-label-size: 0.75rem;
   --profile-pb-figure-size: 2.25rem;
@@ -112,23 +114,28 @@
 
 .profile-identity-band {
   display: grid;
-  grid-template-columns: minmax(0, 21rem) 0.5rem minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  min-height: 8.25rem;
-  padding: 1rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .profile-identity-band.has-actions {
-  grid-template-columns: minmax(0, 21rem) 0.5rem minmax(0, 1fr) 2rem;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+}
+
+.profile-identity-content {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, var(--profile-identity-column)) 0.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
 }
 
 .profile-identity-main {
   min-width: 0;
   display: grid;
-  grid-template-columns: 5rem minmax(0, 1fr);
+  grid-template-columns: var(--profile-avatar-size) minmax(0, 1fr);
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
 }
 
 .profile-identity-divider {
@@ -139,15 +146,14 @@
 }
 
 .profile-avatar {
-  width: 5rem;
-  height: 5rem;
+  width: var(--profile-avatar-size);
+  height: var(--profile-avatar-size);
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--bg-color);
+  color: var(--sub-alt-color);
   background: var(--sub-color);
-  font-family: inherit;
-  font-size: 1.5rem;
+  font-size: calc(var(--profile-avatar-size) * 0.55);
 }
 
 .profile-identity-copy {
@@ -155,9 +161,9 @@
 }
 
 .profile-identity-copy h1 {
-  margin: 0.25rem 0 0;
+  margin: 0 0 0.25rem;
   color: var(--text-color);
-  font-size: clamp(1.3rem, 1.6vw, 1.75rem);
+  font-size: clamp(1.1rem, 1.5vw, 1.5rem);
   font-weight: 400;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -165,19 +171,60 @@
 
 .profile-identity-copy p {
   max-width: 36ch;
-  margin: 0.5rem 0;
+  margin: 0.4rem 0 0;
   color: var(--sub-readable-color);
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.75rem;
+  line-height: 1.35;
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
 
 .profile-tracking {
   display: block;
-  margin-top: 0.55rem;
   color: var(--sub-readable-color);
   font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.profile-milestone {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-milestone span:first-child {
+  color: var(--text-color);
+}
+
+.profile-milestone progress {
+  width: 100%;
+  height: 0.5rem;
+  flex: 1 1 auto;
+  appearance: none;
+  border: 0;
+  border-radius: var(--roundness);
+  background: var(--bg-color);
+  overflow: hidden;
+}
+
+.profile-milestone progress::-webkit-progress-bar {
+  border-radius: var(--roundness);
+  background: var(--bg-color);
+}
+
+.profile-milestone progress::-webkit-progress-value {
+  border-radius: var(--roundness);
+  background: var(--main-color);
+}
+
+.profile-milestone progress::-moz-progress-bar {
+  border-radius: var(--roundness);
+  background: var(--main-color);
 }
 
 .profile-export-button,
@@ -208,12 +255,11 @@
 
 .profile-edit-button {
   width: 2rem;
-  height: 2rem;
+  min-height: 2rem;
   display: grid;
   place-items: center;
-  align-self: start;
   border: 0;
-  border-radius: var(--roundness);
+  border-radius: 0 var(--roundness) var(--roundness) 0;
   padding: 0;
   color: var(--sub-readable-color);
   background: transparent;
@@ -243,7 +289,6 @@
 
 .profile-lifetime-metrics span,
 .profile-lifetime-metrics strong,
-.profile-lifetime-metrics small,
 .profile-filtered-stats span,
 .profile-filtered-stats strong,
 .profile-filtered-stats small {
@@ -272,7 +317,6 @@
   line-height: 1.25;
 }
 
-.profile-lifetime-metrics small,
 .profile-filtered-stats small {
   margin-top: 0.35rem;
   color: var(--sub-readable-color);
@@ -372,10 +416,9 @@
 
 .profile-activity-overview {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 10rem));
   align-items: center;
-  gap: 1rem;
-  min-height: 3.75rem;
+  gap: 1.5rem;
   margin-top: var(--profile-section-gap);
   padding: 0.75rem 1rem;
 }
@@ -389,7 +432,8 @@
   min-width: 0;
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
 
 .profile-activity-overview div span {
@@ -399,7 +443,7 @@
 
 .profile-activity-overview strong {
   color: var(--text-color);
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-variant-numeric: tabular-nums;
   font-weight: 400;
 }
@@ -1072,12 +1116,8 @@
     --profile-pb-figure-size: 1.875rem;
   }
 
-  .profile-identity-band {
+  .profile-identity-content {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .profile-identity-band.has-actions {
-    grid-template-columns: minmax(0, 1fr) 2rem;
   }
 
   .profile-identity-divider {
@@ -1085,13 +1125,7 @@
   }
 
   .profile-lifetime-metrics {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .profile-edit-button {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
   }
 
   .profile-chart-pair {
@@ -1124,22 +1158,12 @@
 
 @media (max-width: 640px) {
   .profile-view {
-    --profile-lifetime-label-size: 1rem;
+    --profile-avatar-size: 3.5rem;
   }
 
   .profile-pb-surface:not(.profile-pb-averages) {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
-  }
-
-  .profile-identity-main {
-    grid-template-columns: 3.5rem minmax(0, 1fr);
-  }
-
-  .profile-avatar {
-    width: 3.5rem;
-    height: 3.5rem;
-    font-size: 1rem;
   }
 
   .profile-lifetime-metrics {
@@ -1152,8 +1176,8 @@
   }
 
   .profile-activity-overview {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
   }
 
   .profile-activity-overview-label {
@@ -1161,8 +1185,9 @@
   }
 
   .profile-activity-overview div {
-    flex-direction: column;
-    gap: 0.15rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.5rem;
   }
 
   .profile-filter-boundary {
