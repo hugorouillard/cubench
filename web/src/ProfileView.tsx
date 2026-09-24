@@ -9,7 +9,6 @@ import {
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faCalendarDays,
   faDownload,
   faPen,
   faSort,
@@ -904,17 +903,14 @@ export function ProfileView({
 
   return (
     <main className="profile-view page-width" aria-busy={filtersPending}>
-      <section className="profile-identity-band" aria-labelledby="profile-name">
+      <section className={`profile-identity-band${preview ? '' : ' has-actions'}`} aria-labelledby="profile-name">
         <div className="profile-identity-main">
           <div className="profile-avatar" aria-hidden="true">{initials(profile.display_name)}</div>
           <div className="profile-identity-copy">
             <h1 id="profile-name">{profile.display_name}</h1>
             {profile.bio && <p>{profile.bio}</p>}
             <span className="profile-tracking">
-              <FontAwesomeIcon className="app-icon" icon={faCalendarDays} fixedWidth aria-hidden="true" />
-              {lifetime.earliestSolveAt
-                ? `Joined ${formatLongDate(lifetime.earliestSolveAt)}`
-                : 'tracking starts with your first solve'}
+              Joined <time dateTime={profile.created_at}>{formatLongDate(profile.created_at)}</time>
             </span>
           </div>
         </div>

@@ -100,12 +100,17 @@
 
 .profile-identity-band {
   display: grid;
-  grid-template-columns: minmax(20rem, 24rem) 0.5rem minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
+  min-height: 8.25rem;
   border-radius: var(--roundness);
   padding: 1rem;
   background: var(--sub-alt-color);
+}
+
+.profile-identity-band.has-actions {
+  grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr) 2rem;
 }
 
 .profile-identity-main {
@@ -128,9 +133,9 @@
   height: 5rem;
   display: grid;
   place-items: center;
-  border-radius: var(--roundness);
+  border-radius: 50%;
   color: var(--bg-color);
-  background: var(--main-color);
+  background: var(--sub-color);
   font-family: inherit;
   font-size: 1.5rem;
 }
@@ -154,22 +159,17 @@
   color: var(--sub-readable-color);
   font-size: 0.875rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .profile-tracking {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  display: block;
   margin-top: 0.55rem;
   color: var(--sub-readable-color);
   font-size: 0.75rem;
 }
 
-.profile-tracking .app-icon {
-  font-size: 0.85rem;
-}
-
-.profile-edit-button,
 .profile-export-button,
 .profile-load-more {
   display: inline-flex;
@@ -186,28 +186,38 @@
   transition: color 125ms ease, background 125ms ease;
 }
 
-.profile-edit-button:hover,
 .profile-export-button:hover,
 .profile-load-more:hover {
   color: var(--bg-color);
   background: var(--text-color);
 }
 
-.profile-edit-button .app-icon,
 .profile-export-button .app-icon {
   font-size: 0.9rem;
 }
 
 .profile-edit-button {
-  width: 2.5rem;
-  height: 100%;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  align-self: start;
+  border: 0;
+  border-radius: var(--roundness);
   padding: 0;
-  font-size: 1rem;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  transition: color 125ms ease, background 125ms ease;
 }
 
 .profile-edit-button:hover {
-  color: var(--main-color);
+  color: var(--text-color);
   background: var(--bg-color);
+}
+
+.profile-edit-button .app-icon {
+  font-size: 0.9rem;
 }
 
 .profile-lifetime-metrics {
@@ -1028,7 +1038,11 @@
   }
 
   .profile-identity-band {
-    grid-template-columns: minmax(0, 1fr) 2.5rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-identity-band.has-actions {
+    grid-template-columns: minmax(0, 1fr) 2rem;
   }
 
   .profile-identity-divider {
@@ -1037,6 +1051,7 @@
 
   .profile-lifetime-metrics {
     grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .profile-edit-button {
