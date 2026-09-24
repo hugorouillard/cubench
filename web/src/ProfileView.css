@@ -15,7 +15,7 @@
   --profile-pb-label-size: 0.75rem;
   --profile-pb-figure-size: 2.25rem;
   min-width: 0;
-  padding-block: 0.25rem 4rem;
+  padding-block: 0 4rem;
 }
 
 .profile-view,
@@ -128,7 +128,7 @@
   grid-template-columns: minmax(0, var(--profile-identity-column)) 0.5rem minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
 }
 
 .profile-identity-main {
@@ -405,27 +405,29 @@
 
 .profile-activity-overview {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 10rem));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: 1.5rem;
   margin-top: var(--profile-section-gap);
-  padding: 0.75rem 1rem;
+  padding: 0.9375rem 1rem;
 }
 
 .profile-activity-overview-label {
   color: var(--sub-readable-color);
   font-size: 0.875rem;
+  text-align: center;
 }
 
 .profile-activity-overview div {
   min-width: 0;
   display: flex;
   align-items: baseline;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.6rem;
 }
 
 .profile-activity-overview div span {
+  order: -1;
   color: var(--sub-readable-color);
   font-size: 0.75rem;
 }
@@ -446,16 +448,16 @@
 }
 
 .profile-heatmap-card {
-  padding: 1rem;
+  padding: 1rem 1rem 0.5rem;
 }
 
 .profile-heatmap-wrapper {
-  max-width: 80rem;
+  max-width: 71rem;
   margin-inline: auto;
 }
 
 .profile-heatmap-scroll {
-  margin-top: 1rem;
+  margin-top: 0.6875rem;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scrollbar-color: var(--sub-color) transparent;
@@ -472,7 +474,7 @@
 
 .profile-heatmap-top {
   display: grid;
-  grid-template-columns: 15rem minmax(0, 1fr) max-content;
+  grid-template-columns: 13.5rem minmax(0, 1fr) max-content;
   align-items: center;
   gap: 1rem;
   margin-inline: auto;
@@ -484,7 +486,7 @@
   width: 100%;
   border: 0.2em solid var(--bg-color);
   border-radius: var(--roundness);
-  padding: 0.5rem;
+  padding: 0.375rem 0.5rem;
   color: var(--sub-readable-color);
   background: var(--sub-alt-color);
   cursor: pointer;
@@ -514,6 +516,7 @@
   gap: 0.25rem;
   color: var(--sub-readable-color);
   font-size: 1rem;
+  line-height: 1;
 }
 
 @media (max-width: 848px) {
@@ -568,7 +571,7 @@
 
 .profile-heatmap-note {
   display: block;
-  margin-top: 1rem;
+  margin-top: 1.75rem;
   color: var(--sub-readable-color);
   font-size: 0.6rem;
   text-align: center;
@@ -1167,6 +1170,10 @@
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 0.2rem 0.5rem;
+  }
+
+  .profile-activity-overview div span {
+    order: 0;
   }
 
   .profile-filter-boundary {

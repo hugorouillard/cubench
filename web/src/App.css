@@ -300,6 +300,10 @@ select:disabled {
   font-size: 0.75rem;
 }
 
+.app:has(.profile-view) > .page-width {
+  max-width: 1366px;
+}
+
 .practice-config-row {
   position: absolute;
   z-index: 1;

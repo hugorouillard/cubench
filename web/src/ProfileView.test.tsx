@@ -257,7 +257,7 @@ describe('profile view', () => {
       solves[4].recorded_at,
       solves[11].recorded_at,
     ])
-    expect(within(bests).getByText('50 consecutive attempts')).toBeTruthy()
+    expect(within(bests).getByText('50 attempts')).toBeTruthy()
     expect(value(form, 'latest result')).toBe('13.00')
     expect(within(form).getByRole('time').getAttribute('dateTime')).toBe(solves[51].recorded_at)
     expect(value(form, 'current ao5')).toBe('11.00')

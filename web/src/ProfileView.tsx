@@ -1012,7 +1012,7 @@ export function ProfileView({
               recordFigure('best single', lifetime.bestSingle),
               recordFigure('best ao5', lifetime.bestAo5),
               recordFigure('best ao12', lifetime.bestAo12),
-              { label: 'best ao50', value: statTime(form.bestAo50), context: '50 consecutive attempts' },
+              { label: 'best ao50', value: statTime(form.bestAo50), context: '50 attempts' },
             ]}
           />
           <ProfileFigureCard
