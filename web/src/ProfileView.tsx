@@ -51,6 +51,8 @@ import { formatTime } from './timer'
 import type { Penalty, Solve, UserProfile, UserProfileInput } from './types'
 import './ProfileView.css'
 
+const PROFILE_CHART_FONT_FAMILY = "'Monkeytype Roboto Mono', monospace"
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -61,7 +63,7 @@ ChartJS.register(
   BarController,
   Tooltip,
 )
-ChartJS.defaults.font.family = "'Roboto Mono', monospace"
+ChartJS.defaults.font.family = PROFILE_CHART_FONT_FAMILY
 
 export type ProfileViewProps = {
   preview?: ProfilePreview
@@ -754,7 +756,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
-    font: { family: "'Monkeytype Roboto Mono', monospace" },
+    font: { family: PROFILE_CHART_FONT_FAMILY },
     normalized: true,
     interaction: { mode: 'nearest', intersect: true },
     onClick: (_event: ChartEvent, elements: ActiveElement[]) => {
@@ -817,7 +819,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
-    font: { family: "'Monkeytype Roboto Mono', monospace" },
+    font: { family: PROFILE_CHART_FONT_FAMILY },
     plugins: {
       tooltip: {
         displayColors: false,
@@ -849,7 +851,7 @@ export function ProfileView({
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
-    font: { family: "'Monkeytype Roboto Mono', monospace" },
+    font: { family: PROFILE_CHART_FONT_FAMILY },
     interaction: { mode: 'index', intersect: false },
     plugins: {
       tooltip: {
