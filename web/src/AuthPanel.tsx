@@ -64,6 +64,14 @@ export function AuthPanel({
         </button>
       </div>
 
+      <div className="auth-intro">
+        {mode === 'login' && (
+          <p>Accounts are invite-only for now. <a href={INVITE_REQUEST_URL}>Request an invite from Hugo</a>.</p>
+        )}
+        <button type="button" onClick={onPreview} disabled={submitting}>
+          preview account features
+        </button>
+      </div>
 
       <div className="auth-mode" role="group" aria-label="Account action">
         <button
