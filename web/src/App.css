@@ -963,6 +963,10 @@ select:disabled {
 }
 
 @media (min-width: 849px) {
+  .app:has(.profile-view) {
+    row-gap: 1rem;
+  }
+
   .app:has(.practice-view) {
     row-gap: 0.5rem;
     padding-block: 1.5rem;

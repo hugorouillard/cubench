@@ -7,7 +7,7 @@
 }
 
 .profile-view {
-  --profile-section-gap: 2rem;
+  --profile-section-gap: 1.75rem;
   --profile-lifetime-label-size: 1.1rem;
   --profile-lifetime-figure-size: 1.875rem;
   --profile-pb-label-size: 0.75rem;
@@ -112,7 +112,7 @@
 
 .profile-identity-band {
   display: grid;
-  grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 21rem) 0.5rem minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
   min-height: 8.25rem;
@@ -120,7 +120,7 @@
 }
 
 .profile-identity-band.has-actions {
-  grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr) 2rem;
+  grid-template-columns: minmax(0, 21rem) 0.5rem minmax(0, 1fr) 2rem;
 }
 
 .profile-identity-main {
@@ -157,7 +157,7 @@
 .profile-identity-copy h1 {
   margin: 0.25rem 0 0;
   color: var(--text-color);
-  font-size: clamp(1.3rem, 2vw, 2rem);
+  font-size: clamp(1.3rem, 1.6vw, 1.75rem);
   font-weight: 400;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -291,7 +291,14 @@
 
 .profile-pb-surface {
   min-width: 0;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.5rem;
+}
+
+.profile-pb-surface:not(.profile-pb-averages) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 1rem;
 }
 
 .profile-pb-averages {
@@ -305,7 +312,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .profile-pb-title > .app-icon {
@@ -1119,6 +1125,11 @@
 @media (max-width: 640px) {
   .profile-view {
     --profile-lifetime-label-size: 1rem;
+  }
+
+  .profile-pb-surface:not(.profile-pb-averages) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
   }
 
   .profile-identity-main {
