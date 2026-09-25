@@ -1,54 +1,13 @@
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  LineController,
-  LineElement,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  type ChartData,
-  type ChartOptions,
-} from 'chart.js'
+import type { ChartData, ChartOptions } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
 import { solveHistory } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Solve } from '../types'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  LineController,
-  Tooltip,
-)
-
-type ChartColors = {
-  main: string
-  muted: string
-  surface: string
-  text: string
-  error: string
-  line: string
-}
-
 type SessionChartProps = {
   solves: Solve[]
   theme: string
-}
-
-function getChartColors(): ChartColors {
-  const readColor = (variable: string, fallback: string) =>
-    getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || fallback
-
-  return {
-    main: readColor('--main-color', '#cba6f7'),
-    muted: readColor('--sub-readable-color', '#a6adc8'),
-    surface: readColor('--sub-alt-color', '#181825'),
-    text: readColor('--text-color', '#cdd6f4'),
-    error: readColor('--error-readable-color', '#f38ba8'),
-    line: readColor('--line-color', '#313244'),
-  }
 }
 
 export function SessionChart({
@@ -58,6 +17,7 @@ export function SessionChart({
   const history = solveHistory(solves)
   const solveById = new Map(solves.map((solve) => [solve.id, solve]))
   const colors = getChartColors()
+  const baseOptions = getLineChartOptions()
   const compactPoints = history.length > 50
   const data: ChartData<'line', (number | null)[], string> = {
     labels: history.map((_, index) => `#${index + 1}`),
@@ -99,21 +59,12 @@ export function SessionChart({
     ],
   }
   const options: ChartOptions<'line'> = {
-    font: { family: getComputedStyle(document.documentElement).fontFamily },
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    normalized: true,
+    ...baseOptions,
     interaction: { mode: 'nearest', intersect: true },
     plugins: {
-      legend: { display: false },
+      ...baseOptions.plugins,
       tooltip: {
-        displayColors: false,
-        backgroundColor: colors.surface,
-        titleColor: colors.text,
-        bodyColor: colors.muted,
-        borderColor: colors.line,
-        borderWidth: 1,
+        ...getTooltipOptions(colors),
         callbacks: {
           title: (items) => {
             const index = items[0]?.dataIndex

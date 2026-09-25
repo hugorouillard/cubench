@@ -37,6 +37,7 @@ function chartData() {
 afterEach(() => {
   cleanup()
   lineChart.mockClear()
+  document.documentElement.style.removeProperty('--main-color')
 })
 
 describe('account progression', () => {
@@ -54,13 +55,29 @@ describe('account progression', () => {
     expect(data.datasets[4].borderColor).toBe('#cba6f7')
     expect(data.datasets[2].borderColor).not.toBe(data.datasets[4].borderColor)
     expect(chartData().options.scales?.y).toMatchObject({ position: 'right', title: { text: 'time' } })
+    expect(chartData().options).toMatchObject({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false }, tooltip: { displayColors: false, backgroundColor: '#181825' } },
+    })
     expect(screen.getByRole('img', { name: /5 completed solves/ })).toBeTruthy()
+  })
+
+  it('reads updated theme colors when the theme changes', () => {
+    const solves = [solve(0)]
+    const { rerender } = render(<AccountProgression solves={solves} theme="catppuccin-mocha" />)
+    expect(chartData().data.datasets[4].borderColor).toBe('#cba6f7')
+
+    document.documentElement.style.setProperty('--main-color', '#e2b714')
+    rerender(<AccountProgression solves={solves} theme="serika-dark" />)
+    expect(chartData().data.datasets[4].borderColor).toBe('#e2b714')
   })
 
   it('toggles PB and each average independently without hiding solve dots', () => {
     render(<AccountProgression solves={Array.from({ length: 50 }, (_, index) => solve(index))} theme="catppuccin-mocha" />)
     const controls = screen.getByRole('group', { name: 'Progression series' })
-    const buttons = ['PB', 'AO5', 'AO12', 'AO50'].map((label) => within(controls).getByRole('button', { name: label }))
+    const buttons = ['PB', 'Avg of 5', 'Avg of 12', 'Avg of 50'].map((label) => within(controls).getByRole('button', { name: label }))
 
     expect(chartData().data.datasets[4].data.at(-1)).not.toBeNull()
     for (const button of buttons) {

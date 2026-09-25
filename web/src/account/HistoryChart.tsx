@@ -1,24 +1,13 @@
 import { useMemo, useState } from 'react'
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  LineController,
-  LineElement,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  type ChartData,
-  type ChartOptions,
-} from 'chart.js'
+import type { ChartData, ChartOptions } from 'chart.js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartLine, faCrown } from '@fortawesome/free-solid-svg-icons'
 import { Line } from 'react-chartjs-2'
+import { getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
 import { solveHistory } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Solve } from '../types'
 import { formatAccountDate } from './format'
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, LineController, Tooltip)
 
 const AVERAGE_SERIES = [
   { key: 'ao5', label: 'Avg of 5' },
@@ -37,20 +26,6 @@ function blendHex(background: string, foreground: string, amount: number): strin
   return `#${channels.join('')}`
 }
 
-function chartColors() {
-  const style = getComputedStyle(document.documentElement)
-  const color = (variable: string, fallback: string) =>
-    style.getPropertyValue(variable).trim() || fallback
-
-  return {
-    background: color('--bg-color', '#1e1e2e'),
-    main: color('--main-color', '#cba6f7'),
-    text: color('--text-color', '#cdd6f4'),
-    muted: color('--sub-readable-color', '#7f849c'),
-    surface: color('--sub-alt-color', '#181825'),
-  }
-}
-
 export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: string }) {
   const [visible, setVisible] = useState<Record<Series, boolean>>({
     pb: true, ao5: true, ao12: true, ao50: true,
@@ -60,7 +35,8 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
   const plotted = history.flatMap((point, index) =>
     point.singleMs === null ? [] : [{ point, solveNumber: index + 1 }],
   )
-  const colors = useMemo(chartColors, [theme])
+  const colors = useMemo(getChartColors, [theme])
+  const baseOptions = getLineChartOptions()
   const visibleAverages = AVERAGE_SERIES.filter(({ key }) => visible[key])
   const averageColors = Object.fromEntries(visibleAverages.map(({ key }, index) => [
     key,
@@ -113,21 +89,13 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
     ],
   }
   const options: ChartOptions<'line'> = {
-    font: {family: getComputedStyle(document.documentElement).fontFamily},
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    normalized: true,
+    ...baseOptions,
     interaction: { mode: 'nearest', intersect: false },
     plugins: {
-      legend: { display: false },
+      ...baseOptions.plugins,
       tooltip: {
-        displayColors: false,
-        backgroundColor: colors.surface,
-        titleColor: colors.text,
-        bodyColor: colors.muted,
+        ...getTooltipOptions(colors),
         borderColor: colors.surface,
-        borderWidth: 1,
         filter: (item) => item.datasetIndex === 0,
         callbacks: {
           title: () => '',
