@@ -5,7 +5,7 @@ import {
   formatTime,
   inspectionPenalty,
   togglePenalty,
-} from './timer'
+} from '../timer'
 
 describe('formatTime', () => {
   it('truncates to centiseconds', () => {

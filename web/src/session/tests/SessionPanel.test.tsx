@@ -2,10 +2,10 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SessionPanel } from './SessionPanel'
-import type { Solve } from './types'
+import { SessionPanel } from '../SessionPanel'
+import type { Solve } from '../../types'
 
-vi.mock('./SessionChart', () => ({
+vi.mock('../SessionChart', () => ({
   SessionChart: () => <div data-testid="session-chart" />,
 }))
 

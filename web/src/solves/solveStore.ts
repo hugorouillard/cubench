@@ -1,5 +1,5 @@
-import { createSolve, deleteSolve, updateSolve } from './api'
-import type { Solve, SolveInput } from './types'
+import { createSolve, deleteSolve, updateSolve } from '../api'
+import type { Solve, SolveInput } from '../types'
 
 export type SolveUpdate = Partial<Pick<Solve, 'duration_ms' | 'penalty'>>
 

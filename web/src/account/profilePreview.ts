@@ -1,4 +1,4 @@
-import type { Solve, UserProfile } from './types'
+import type { Solve, UserProfile } from '../types'
 
 export type ProfilePreview = {
   profile: UserProfile

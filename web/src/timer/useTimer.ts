@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { inspectionPenalty } from './timer'
-import type { Penalty } from './types'
+import type { Penalty } from '../types'
 
 export type TimerPhase =
   | 'idle'

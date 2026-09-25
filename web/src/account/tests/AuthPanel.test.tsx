@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AuthPanel } from './AuthPanel'
+import { AuthPanel } from '../AuthPanel'
 
 describe('account access', () => {
   afterEach(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_THEME, THEME_OPTIONS } from './theme'
+import { DEFAULT_THEME, THEME_OPTIONS } from '../theme'
 
 describe('themes', () => {
   it('keeps Catppuccin Mocha as the default', () => {

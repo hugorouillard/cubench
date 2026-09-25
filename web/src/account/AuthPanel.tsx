@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
-import { login, register } from './api'
+import { login, register } from '../api'
 import { INVITE_REQUEST_URL } from './project'
-import type { Account } from './types'
+import type { Account } from '../types'
 
 type AuthPanelProps = {
   onAuthenticated: (account: Account) => void

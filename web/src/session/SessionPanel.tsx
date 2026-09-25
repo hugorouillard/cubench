@@ -1,9 +1,9 @@
 import { lazy, Suspense, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { completedDuration, solveHistory } from './stats'
-import { formatTime } from './timer'
-import type { Penalty, Solve } from './types'
+import { completedDuration, solveHistory } from '../solves/stats'
+import { formatTime } from '../timer/timer'
+import type { Penalty, Solve } from '../types'
 import './SessionPanel.css'
 
 const SessionChart = lazy(() =>

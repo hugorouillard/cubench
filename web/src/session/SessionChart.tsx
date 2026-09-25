@@ -10,9 +10,9 @@ import {
   type ChartOptions,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
-import { solveHistory } from './stats'
-import { formatTime } from './timer'
-import type { Solve } from './types'
+import { solveHistory } from '../solves/stats'
+import { formatTime } from '../timer/timer'
+import type { Solve } from '../types'
 
 ChartJS.register(
   CategoryScale,

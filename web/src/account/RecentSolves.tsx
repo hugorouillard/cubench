@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCrown, faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { newestSolvesFirst, personalBestHistory } from '../stats'
-import { formatTime } from '../timer'
+import { newestSolvesFirst, personalBestHistory } from '../solves/stats'
+import { formatTime } from '../timer/timer'
 import type { Penalty, Solve } from '../types'
 import { formatAccountDate } from './format'
 

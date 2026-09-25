@@ -3,9 +3,9 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProfilePreview, type ProfilePreview } from '../profilePreview'
-import { lifetimeProfileSummary } from '../stats'
-import type { Solve } from '../types'
-import { AccountPage } from './AccountPage'
+import { lifetimeProfileSummary } from '../../solves/stats'
+import type { Solve } from '../../types'
+import { AccountPage } from '../AccountPage'
 
 function props() {
   return { onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }

@@ -1,5 +1,5 @@
-import { effectiveDuration } from './timer'
-import type { Solve } from './types'
+import { effectiveDuration } from '../timer/timer'
+import type { Solve } from '../types'
 
 export type SolveSummary = {
   count: number

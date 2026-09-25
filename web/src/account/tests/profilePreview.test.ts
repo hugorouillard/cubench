@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createProfilePreview } from './profilePreview'
-import { filterSolves, lifetimeProfileSummary } from './stats'
+import { createProfilePreview } from '../profilePreview'
+import { filterSolves, lifetimeProfileSummary } from '../../solves/stats'
 
 describe('profile preview', () => {
   it('provides sparse, reproducible practice throughout the last year', () => {

@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faUserCircle as legacyUserCircle } from 'free-solid-svg-icons-v5'
 import { faPen } from '@fortawesome/free-solid-svg-icons'
-import type { LifetimeProfileSummary } from '../stats'
+import type { LifetimeProfileSummary } from '../solves/stats'
 import type { UserProfile } from '../types'
 import { formatAccountDate, formatSolvingTime } from './format'
 

@@ -4,8 +4,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import '@fontsource/lexend-deca/latin-400.css'
 import './index.css'
-import App from './App.tsx'
-import { applyTheme, getStoredTheme } from './theme.ts'
+import App from './app/App.tsx'
+import { applyTheme, getStoredTheme } from './app/theme.ts'
 
 config.autoAddCss = false
 

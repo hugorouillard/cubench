@@ -2,9 +2,9 @@
 
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SolveStore } from './solveStore'
-import type { ProfilePreview } from './profilePreview'
-import type { Penalty, Solve, UserProfile } from './types'
+import type { SolveStore } from '../../solves/solveStore'
+import type { ProfilePreview } from '../../account/profilePreview'
+import type { Penalty, Solve, UserProfile } from '../../types'
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }))
 const timer = vi.hoisted(() => ({
@@ -27,7 +27,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 vi.mock('cubing/scramble', () => ({ randomScrambleForEvent: scramble.random }))
-vi.mock('./SessionPanel', () => ({
+vi.mock('../../session/SessionPanel', () => ({
   SessionPanel: ({
     solves,
     onPenalty,
@@ -56,7 +56,7 @@ vi.mock('./SessionPanel', () => ({
     </div>
   ),
 }))
-vi.mock('./useTimer', () => ({
+vi.mock('../../timer/useTimer', () => ({
   useTimer: (
     _enabled: boolean,
     _inspectionEnabled: boolean,
@@ -66,7 +66,7 @@ vi.mock('./useTimer', () => ({
     return { phase: 'stopped', elapsedMs: 12_340, reset: timer.reset }
   },
 }))
-vi.mock('./account/AccountPage', () => ({
+vi.mock('../../account/AccountPage', () => ({
   AccountPage: ({
     onProfileChange,
     preview,
@@ -91,7 +91,7 @@ vi.mock('./account/AccountPage', () => ({
   ),
 }))
 
-import App from './App'
+import App from '../App'
 
 describe('current session', () => {
   afterEach(cleanup)

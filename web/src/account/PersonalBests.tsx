@@ -1,5 +1,5 @@
-import type { DatedSolveRecord } from '../stats'
-import { formatTime } from '../timer'
+import type { DatedSolveRecord } from '../solves/stats'
+import { formatTime } from '../timer/timer'
 import { formatAccountDate } from './format'
 
 type Best = { label: string; value: number | null; achievedAt?: string; context?: string }

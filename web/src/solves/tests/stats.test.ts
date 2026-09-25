@@ -11,8 +11,8 @@ import {
   solveHistory,
   summarizeSolves,
   trimmedAverage,
-} from './stats'
-import type { Penalty, Solve } from './types'
+} from '../stats'
+import type { Penalty, Solve } from '../../types'
 
 function solve(durationMs: number, penalty: Penalty = 'none', index = 0): Solve {
   return {

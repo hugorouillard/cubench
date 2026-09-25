@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { guestSolveStore } from './solveStore'
-import type { SolveInput } from './types'
+import { guestSolveStore } from '../solveStore'
+import type { SolveInput } from '../../types'
 
 const solve: SolveInput = {
   id: 'solve-1',
