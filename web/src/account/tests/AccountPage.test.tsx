@@ -7,6 +7,10 @@ import { lifetimeProfileSummary } from '../../solves/stats'
 import type { Solve } from '../../types'
 import { AccountPage } from '../AccountPage'
 
+vi.mock('react-chartjs-2', () => ({
+  Line: (props: { 'aria-label': string }) => <div role="img" aria-label={props['aria-label']} />,
+}))
+
 function props() {
   return { onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }
 }
@@ -23,7 +27,7 @@ describe('account page', () => {
     vi.useRealTimers()
   })
 
-  it('renders the sample account with real lifetime totals and no account mutations or fetching', () => {
+  it('renders the sample account with real lifetime totals and no account mutations or fetching', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected request'))
     const preview = createProfilePreview()
     const summary = lifetimeProfileSummary(preview.solves)
@@ -38,6 +42,9 @@ describe('account page', () => {
     expect(screen.getByLabelText('Level unavailable')).toBeTruthy()
     expect(screen.getByText(/Current streak \d+ days/)).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Personal bests' })).toBeTruthy()
+    const progression = await screen.findByRole('region', { name: 'progression' })
+    expect(within(progression).getByRole('group', { name: 'Progression series' })).toBeTruthy()
+    expect(within(progression).getByRole('img', { name: /completed solves/ })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'recent solves' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /edit profile|toggle .* penalty|delete .* solve|export/i })).toBeNull()
@@ -63,6 +70,7 @@ describe('account page', () => {
     render(<AccountPage {...callbacks} />)
 
     await screen.findByRole('heading', { name: 'Speed Cuber' })
+    await screen.findByRole('img', { name: /Progression of 1 completed solve/ })
     expect(screen.getAllByText('Practicing lookahead.')[0]).toBeTruthy()
     const totals = screen.getByRole('group', { name: 'Lifetime totals' })
     expect(within(totals).getByText('total solves').nextElementSibling?.textContent).toBe('1')
@@ -73,6 +81,7 @@ describe('account page', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Toggle +2 penalty for 12.34 solve' }).getAttribute('aria-pressed')).toBe('true'))
     fireEvent.click(screen.getByRole('button', { name: 'Delete 12.34 solve' }))
     await screen.findByText('No solves yet. Your results will appear here after your first solve.')
+    expect(screen.getByText('Your progression will appear after your first completed solve.')).toBeTruthy()
     expect(within(totals).getByText('total solves').nextElementSibling?.textContent).toBe('0')
     expect(callbacks.onDelete).toHaveBeenCalledWith({ ...solve, penalty: 'plus2' })
     fireEvent.click(screen.getByRole('button', { name: 'Edit profile' }))

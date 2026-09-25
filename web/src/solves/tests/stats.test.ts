@@ -216,6 +216,22 @@ describe('profile history', () => {
     expect(history[4]).toMatchObject({ singleMs: null, ao5Ms: 11_333 })
     expect(history[11]).toMatchObject({ ao12Ms: 11_100, pbSingleMs: 9_000 })
   })
+
+  it('calculates ao50 over attempts, including penalties and DNFs, before plotting', () => {
+    const solves = Array.from({ length: 51 }, (_, index) => solveAt(
+      `solve-${String(index).padStart(2, '0')}`,
+      10_000,
+      new Date(Date.UTC(2026, 0, index + 1)),
+      index < 2 ? 'dnf' : index < 5 ? 'plus2' : 'none',
+    ))
+
+    const history = solveHistory([...solves].reverse())
+    expect(history[48].ao50Ms).toBeNull()
+    expect(history[0]).toMatchObject({ singleMs: null, pbSingleMs: null })
+    expect(history[2]).toMatchObject({ singleMs: 12_000, pbSingleMs: 12_000 })
+    expect(history[49]).toMatchObject({ singleMs: 10_000, ao50Ms: null, pbSingleMs: 10_000 })
+    expect(history[50]).toMatchObject({ singleMs: 10_000, ao50Ms: 10_125, pbSingleMs: 10_000 })
+  })
 })
 
 describe('daily analytics', () => {

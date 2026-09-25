@@ -116,7 +116,6 @@ export function ActivityCalendar({ profile, solves, activeDays, currentStreak, l
             </div>
           </div>
         </div>
-        <small>Activity is shown in local time.</small>
       </div>
     </section>
   )

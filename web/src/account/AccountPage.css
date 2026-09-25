@@ -302,6 +302,79 @@
   text-align: center;
 }
 
+.account-progression { min-width: 0; }
+.account-progression-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+.account-progression h2 {
+  margin: 0;
+  color: var(--sub-readable-color);
+  font-size: 1rem;
+  font-weight: 400;
+}
+.account-progression-header span,
+.account-progression-caption { color: var(--sub-readable-color); font-size: 0.75rem; }
+
+.account-progression-chart { position: relative; height: 25rem; }
+.account-progression-chart canvas { max-width: 100%; }
+.account-progression-loading,
+.account-progression-empty {
+  min-height: 25rem;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--sub-readable-color);
+  text-align: center;
+}
+
+.account-progression-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.account-progression-caption { padding: 1rem; text-align: center; }
+.account-progression-controls {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.account-progression-toggle {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0.5em;
+  color: var(--text-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  transition: color 125ms ease, background 125ms ease;
+}
+
+.account-progression-toggle:hover { color: var(--bg-color); background: var(--text-color); }
+.account-progression-toggle[aria-pressed='true'] {
+  color: var(--bg-color);
+  background: var(--main-color);
+}
+
+.account-progression-toggle[aria-pressed='true']:hover {
+  background: var(--text-color);
+}
+
 .account-recent { min-width: 0; }
 .account-recent h2 { margin: 0 0 1rem; color: var(--sub-readable-color); font-size: 1rem; font-weight: 400; }
 .account-recent-empty { padding: 3rem 1rem; color: var(--sub-readable-color); text-align: center; }
@@ -402,6 +475,11 @@
   .account-totals { font-size: 1.25rem; }
 }
 
+@media (max-width: 1023px) {
+  .account-progression-footer { grid-template-columns: minmax(0, 1fr); }
+  .account-progression-controls { width: min(100%, 30rem); justify-self: end; }
+}
+
 @media (max-width: 848px) {
   .account-divider { display: none; }
   .account-summary-body { gap: 1.5rem; }
@@ -418,4 +496,9 @@
   .account-calendar-legend { grid-column: 1 / -1; justify-content: flex-end; }
   .account-best strong { font-size: 1.75rem; }
   .account-editor-dialog form { padding: 1.25rem; }
+  .account-progression-chart { height: 22rem; }
+}
+
+@media (max-width: 475px) {
+  .account-progression-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

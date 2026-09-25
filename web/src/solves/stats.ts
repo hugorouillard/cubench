@@ -52,6 +52,7 @@ export type SolveHistoryPoint = {
   singleMs: number | null
   ao5Ms: number | null
   ao12Ms: number | null
+  ao50Ms: number | null
   pbSingleMs: number | null
 }
 
@@ -323,6 +324,9 @@ export function solveHistory(solves: Solve[]): SolveHistoryPoint[] {
       ao12Ms: index < 11
         ? null
         : trimmedAverage(chronological.slice(index - 11, index + 1)),
+      ao50Ms: index < 49
+        ? null
+        : trimmedAverage(chronological.slice(index - 49, index + 1)),
       pbSingleMs,
     }
   })

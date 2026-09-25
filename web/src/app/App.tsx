@@ -717,6 +717,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         <AccountPage
           key={view}
           preview={view === 'preview' ? profilePreview : undefined}
+          theme={theme}
           onPenalty={handlePenalty}
           onDelete={handleDelete}
           onError={setError}

@@ -1,17 +1,22 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { getProfile, getSolves } from '../api'
 import type { ProfilePreview } from './profilePreview'
 import { bestAverage, lifetimeProfileSummary, newestSolvesFirst } from '../solves/stats'
 import type { Penalty, Solve, UserProfile } from '../types'
 import { AccountSummary } from './AccountSummary'
-import { ActivityCalendar } from './ActivityCalendar'
+import { ActivityCalendar } from './DailyActivityChart'
 import { PersonalBests } from './PersonalBests'
 import { ProfileEditor } from './ProfileEditor'
 import { RecentSolves } from './RecentSolves'
 import './AccountPage.css'
 
+const AccountProgression = lazy(() =>
+  import('./HistoryChart').then((module) => ({ default: module.AccountProgression })),
+)
+
 export type AccountPageProps = {
   preview?: ProfilePreview
+  theme?: string
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
   onDelete: (solve: Solve) => Promise<boolean>
   onError: (message: string) => void
@@ -22,7 +27,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
 }
 
-export function AccountPage({ preview, onPenalty, onDelete, onError, onProfileChange }: AccountPageProps) {
+export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, onDelete, onError, onProfileChange }: AccountPageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(preview?.profile ?? null)
   const [solves, setSolves] = useState<Solve[]>(preview?.solves ?? [])
   const [loading, setLoading] = useState(!preview)
@@ -80,6 +85,9 @@ export function AccountPage({ preview, onPenalty, onDelete, onError, onProfileCh
       <AccountSummary profile={profile} lifetime={lifetime} onEdit={preview ? undefined : () => setEditorOpen(true)} />
       <PersonalBests single={lifetime.bestSingle} ao5={lifetime.bestAo5} ao12={lifetime.bestAo12} ao50={ao50} />
       <ActivityCalendar profile={profile} solves={solves} activeDays={lifetime.totalActiveDays} currentStreak={lifetime.currentStreak} longestStreak={lifetime.longestStreak} />
+      <Suspense fallback={<p className="account-progression-loading" role="status">loading progression...</p>}>
+        <AccountProgression solves={solves} theme={theme} />
+      </Suspense>
       <RecentSolves solves={solves} onPenalty={preview ? undefined : changePenalty} onDelete={preview ? undefined : deleteSolve} />
       {!preview && <ProfileEditor
         open={editorOpen}
