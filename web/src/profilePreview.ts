@@ -92,7 +92,7 @@ export function createProfilePreview(now = new Date()): ProfilePreview {
   return {
     profile: {
       id: 0,
-      display_name: 'Sample solver',
+      display_name: 'Speedcuber',
       bio: '',
       created_at: accountStart.toISOString(),
     },

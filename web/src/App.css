@@ -72,7 +72,7 @@
 }
 
 .brand-copy strong {
-  font-family: var(--brand-font);
+  font-family: 'Lexend Deca', sans-serif;
   font-size: 1.85rem;
   font-weight: 400;
   letter-spacing: -0.07em;
@@ -292,14 +292,6 @@ select:disabled {
   align-self: start;
 }
 
-.profile-fallback {
-  min-height: min(36rem, 65vh);
-  display: grid;
-  place-items: center;
-  color: var(--sub-readable-color);
-  font-size: 0.75rem;
-}
-
 .practice-config-row {
   position: absolute;
   z-index: 1;
@@ -490,7 +482,6 @@ select:disabled {
   color: var(--bg-color);
   background: var(--error-readable-color);
   cursor: pointer;
-  font: inherit;
   transition: filter 125ms ease, transform 125ms ease;
 }
 
@@ -789,7 +780,6 @@ select:disabled {
   padding: 0.35rem 0;
   color: var(--main-color);
   background: transparent;
-  font: inherit;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 0.2em;
@@ -829,7 +819,6 @@ select:disabled {
   color: var(--sub-readable-color);
   background: transparent;
   cursor: pointer;
-  font: inherit;
   font-size: 0.75rem;
 }
 
@@ -858,7 +847,6 @@ select:disabled {
   padding: 0.8rem 0.9rem;
   color: var(--text-color);
   background: var(--sub-alt-color);
-  font: inherit;
 }
 
 .auth-form input:focus {
@@ -963,10 +951,6 @@ select:disabled {
 }
 
 @media (min-width: 849px) {
-  .app:has(.profile-view) {
-    row-gap: 1rem;
-  }
-
   .app:has(.practice-view) {
     row-gap: 0.5rem;
     padding-block: 1.5rem;

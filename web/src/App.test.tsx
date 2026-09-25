@@ -66,8 +66,8 @@ vi.mock('./useTimer', () => ({
     return { phase: 'stopped', elapsedMs: 12_340, reset: timer.reset }
   },
 }))
-vi.mock('./ProfileView', () => ({
-  ProfileView: ({
+vi.mock('./account/AccountPage', () => ({
+  AccountPage: ({
     onProfileChange,
     preview,
   }: {

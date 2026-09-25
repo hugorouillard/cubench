@@ -31,9 +31,9 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import { ApiError, getAuthSession, getExportData, logout } from './api'
+import { ApiError, getAuthSession, logout } from './api'
 import { AuthPanel } from './AuthPanel'
-import { ProfileView } from './ProfileView'
+import { AccountPage } from './account/AccountPage'
 import { createProfilePreview } from './profilePreview'
 import { SessionPanel } from './SessionPanel'
 import { accountSolveStore, guestSolveStore, type SolveStore } from './solveStore'
@@ -402,24 +402,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     applyTheme(nextTheme)
   }
 
-  async function handleExport() {
-    try {
-      const data = await getExportData()
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      )
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'cubench-export.json'
-      document.body.append(link)
-      link.click()
-      link.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 0)
-    } catch (exportError) {
-      setError(`Could not export account data: ${errorMessage(exportError)}`)
-    }
-  }
-
   function handleProfileChange(profile: UserProfile) {
     setAccount((current) => current ? { ...current, ...profile } : current)
   }
@@ -732,12 +714,11 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           </div>
         </main>
       ) : view === 'preview' || account ? (
-        <ProfileView
+        <AccountPage
           key={view}
           preview={view === 'preview' ? profilePreview : undefined}
           onPenalty={handlePenalty}
           onDelete={handleDelete}
-          onExport={() => void handleExport()}
           onError={setError}
           onProfileChange={handleProfileChange}
         />
