@@ -3,6 +3,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SolveStore } from './solveStore'
+import type { ProfilePreview } from './profilePreview'
 import type { Penalty, Solve, UserProfile } from './types'
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }))
@@ -65,14 +66,16 @@ vi.mock('./useTimer', () => ({
     return { phase: 'stopped', elapsedMs: 12_340, reset: timer.reset }
   },
 }))
-vi.mock('./ProfileView', () => ({
-  ProfileView: ({
+vi.mock('./account/AccountPage', () => ({
+  AccountPage: ({
     onProfileChange,
+    preview,
   }: {
     onProfileChange: (profile: UserProfile) => void
+    preview?: ProfilePreview
   }) => (
     <main>
-      <h1>Lifetime profile</h1>
+      <h1>{preview ? 'Sample profile' : 'Lifetime profile'}</h1>
       <button
         type="button"
         onClick={() => onProfileChange({
@@ -144,6 +147,46 @@ describe('current session', () => {
       fireEvent.click(option)
       expect(document.activeElement).not.toBe(option)
     }
+  })
+
+  it('previews account features and returns to the guest session without changing its solves', async () => {
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByText("R U R'")
+    await act(async () => {
+      timer.onComplete?.(12_340, 'none')
+    })
+    await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'preview account features' }))
+    expect(screen.getByRole('heading', { name: 'Sample profile' })).toBeTruthy()
+    expect(location.hash).toBe('#preview')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
+    expect(screen.getByTestId('solve-count').textContent).toBe('1')
+    expect(location.hash).toBe('')
+    expect(vi.mocked(globalThis.fetch).mock.calls.map(([path]) => String(path)))
+      .toEqual(['/api/auth/session'])
+  })
+
+  it('opens a shared preview link without signing in', async () => {
+    window.history.replaceState(null, '', '/#preview')
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByRole('heading', { name: 'Sample profile' })
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(location.hash).toBe('#preview')
+  })
+
+  it('offers the preview from the account dialog before requesting credentials', async () => {
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByText("R U R'")
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByRole('link', { name: 'Request an invite from Hugo' }).getAttribute('href'))
+      .toContain('mailto:rouillard.hugo1@gmail.com')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'preview account features' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Sample profile' })).toBeTruthy()
   })
 
   it('keeps upcoming header buttons on the timer view', async () => {

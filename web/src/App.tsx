@@ -31,9 +31,10 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import { ApiError, getAuthSession, getExportData, logout } from './api'
+import { ApiError, getAuthSession, logout } from './api'
 import { AuthPanel } from './AuthPanel'
-import { ProfileView } from './ProfileView'
+import { AccountPage } from './account/AccountPage'
+import { createProfilePreview } from './profilePreview'
 import { SessionPanel } from './SessionPanel'
 import { accountSolveStore, guestSolveStore, type SolveStore } from './solveStore'
 import { newestSolvesFirst, summarizeSolves } from './stats'
@@ -135,10 +136,16 @@ type AppProps = {
 }
 
 type SaveState = 'idle' | 'saving' | 'failed'
-type AppView = 'timer' | 'profile'
+type AppView = 'timer' | 'profile' | 'preview'
+
+function requestedView(account: Account | null): AppView {
+  if (location.hash === '#preview') return 'preview'
+  return account && location.hash === '#profile' ? 'profile' : 'timer'
+}
 
 function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [view, setView] = useState<AppView>('timer')
+  const [profilePreview] = useState(createProfilePreview)
   const [account, setAccount] = useState<Account | null>(null)
   const [authChecking, setAuthChecking] = useState(true)
   const [authOpen, setAuthOpen] = useState(false)
@@ -161,8 +168,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
 
   function navigate(nextView: AppView, replace = false) {
-    const target = nextView === 'profile'
-      ? `${location.pathname}${location.search}#profile`
+    const target = nextView !== 'timer'
+      ? `${location.pathname}${location.search}#${nextView}`
       : `${location.pathname}${location.search}`
     if (`${location.pathname}${location.search}${location.hash}` !== target) {
       window.history[replace ? 'replaceState' : 'pushState'](null, '', target)
@@ -280,19 +287,18 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     phase === 'running'
 
   useEffect(() => {
-    if (!account) setView('timer')
-    else if (location.hash === '#profile') setView('profile')
-  }, [account])
+    if (!authChecking) setView(requestedView(account))
+  }, [account, authChecking])
 
   useEffect(() => {
     function handlePopState() {
-      const requestedView = account && location.hash === '#profile' ? 'profile' : 'timer'
-      if (requestedView !== view && controlsDisabled) {
-        const hash = view === 'profile' ? '#profile' : ''
+      const nextView = requestedView(account)
+      if (nextView !== view && controlsDisabled) {
+        const hash = view === 'timer' ? '' : `#${view}`
         window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
         return
       }
-      setView(requestedView)
+      setView(nextView)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -394,24 +400,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     if (!isTheme(nextTheme)) return
     setTheme(nextTheme)
     applyTheme(nextTheme)
-  }
-
-  async function handleExport() {
-    try {
-      const data = await getExportData()
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      )
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'cubench-export.json'
-      document.body.append(link)
-      link.click()
-      link.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 0)
-    } catch (exportError) {
-      setError(`Could not export account data: ${errorMessage(exportError)}`)
-    }
   }
 
   function handleProfileChange(profile: UserProfile) {
@@ -725,11 +713,12 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             />
           </div>
         </main>
-      ) : account ? (
-        <ProfileView
+      ) : view === 'preview' || account ? (
+        <AccountPage
+          key={view}
+          preview={view === 'preview' ? profilePreview : undefined}
           onPenalty={handlePenalty}
           onDelete={handleDelete}
-          onExport={() => void handleExport()}
           onError={setError}
           onProfileChange={handleProfileChange}
         />
@@ -743,7 +732,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           </a>
           <a
             className="footer-link"
-            href="https://github.com/hugorouillard/cubebench"
+            href="https://github.com/hugorouillard/cubench"
             target="_blank"
             rel="noreferrer"
           >
@@ -784,7 +773,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           </label>
           <a
             className="footer-version"
-            href="https://github.com/hugorouillard/cubebench/commits/master"
+            href="https://github.com/hugorouillard/cubench/commits/master"
             target="_blank"
             rel="noreferrer"
             aria-label={`Cubench version ${__CUBENCH_VERSION__}`}
@@ -806,6 +795,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             onAuthenticated={handleAuthenticated}
             onClose={() => setAuthOpen(false)}
             onSubmittingChange={setAuthSubmitting}
+            onPreview={() => {
+              setAuthOpen(false)
+              navigate('preview')
+            }}
           />
         )}
       </Modal>

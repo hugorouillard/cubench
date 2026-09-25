@@ -22,7 +22,6 @@ ChartJS.register(
   LineController,
   Tooltip,
 )
-ChartJS.defaults.font.family = "'Roboto Mono', monospace"
 
 type ChartColors = {
   main: string
@@ -100,6 +99,7 @@ export function SessionChart({
     ],
   }
   const options: ChartOptions<'line'> = {
+    font: { family: getComputedStyle(document.documentElement).fontFamily },
     responsive: true,
     maintainAspectRatio: false,
     animation: false,

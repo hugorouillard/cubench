@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
 :root {
   --bg-color: #1e1e2e;
   --main-color: #cba6f7;
@@ -17,17 +25,13 @@
   --settings-icon-color: #a6e3a1;
   --content-max: 1536px;
   --roundness: 0.5rem;
-  --font: 'Roboto Mono', monospace;
-  --brand-font: 'Lexend Deca', sans-serif;
-  font-family: var(--font);
+  font-family: 'JetBrains Mono', monospace;
   font-weight: 400;
   line-height: 1.25;
   color: var(--text-color);
   background: var(--bg-color);
   color-scheme: dark;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
 }
 
 :root[data-theme='original'] {
@@ -91,7 +95,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 

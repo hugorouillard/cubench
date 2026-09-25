@@ -1,0 +1,421 @@
+.account-page {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+.account-page-state {
+  min-height: 55vh;
+  align-items: center;
+  justify-content: center;
+  color: var(--sub-readable-color);
+}
+
+.account-page button,
+.account-page select,
+.account-editor-dialog button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.account-page button:focus-visible,
+.account-page select:focus-visible,
+.account-page summary:focus-visible,
+.account-editor-dialog button:focus-visible,
+.account-editor-dialog input:focus-visible,
+.account-editor-dialog textarea:focus-visible {
+  outline: 2px solid var(--text-color);
+  outline-offset: 2px;
+}
+
+.account-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.account-summary,
+.account-bests,
+.account-calendar {
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+}
+
+.account-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+}
+
+.account-summary-body {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.account-summary-identity {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  color: var(--sub-readable-color);
+}
+
+.account-summary-avatar {
+  width: 5rem;
+  height: 5rem;
+  color: var(--sub-color);
+}
+
+.account-summary-identity-text { min-width: 0; }
+
+.account-summary-identity-text h1 {
+  width: max-content;
+  margin: 0 0 0.25rem;
+  color: var(--text-color);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.account-joined,
+.account-streak {
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.account-level {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.account-level > span:first-child { color: var(--text-color); }
+.account-level-next { font-size: 0.75rem; }
+
+.account-level-track {
+  height: 0.5rem;
+  flex: 1 1 auto;
+  border-radius: var(--roundness);
+  background: var(--bg-color);
+}
+
+.account-divider {
+  width: 0.5rem;
+  height: 100%;
+  border-radius: var(--roundness);
+  background: var(--bg-color);
+}
+
+.account-bio {
+  min-width: 0;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.account-bio > span { color: var(--sub-readable-color); }
+.account-bio p { margin: 0.25rem 0 0; }
+
+.account-totals {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.account-totals > div { min-width: 0; }
+
+.account-totals span {
+  display: block;
+  color: var(--sub-readable-color);
+  font-size: 0.875em;
+}
+
+.account-totals strong {
+  display: block;
+  color: var(--text-color);
+  font-size: 1.5em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  line-height: 2rem;
+  overflow-wrap: anywhere;
+}
+
+.account-edit {
+  width: 2rem;
+  min-height: 2rem;
+  border: 0;
+  border-radius: 0 var(--roundness) var(--roundness) 0;
+  padding: 0;
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.account-edit:hover { color: var(--text-color); background: var(--bg-color); }
+
+.account-bests {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.account-bests-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 2rem;
+}
+
+.account-best {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.account-best span { color: var(--sub-readable-color); font-size: 0.75rem; }
+.account-best strong { color: var(--text-color); font-size: 2.25rem; font-weight: 400; overflow-wrap: anywhere; }
+.account-best time,
+.account-best small { color: var(--sub-readable-color); font-size: 0.75rem; }
+
+.account-calendar {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.account-calendar-inner { width: 100%; max-width: 80rem; min-width: 0; }
+
+.account-calendar-top {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 1rem;
+  color: var(--sub-readable-color);
+}
+
+.account-calendar-top select {
+  min-width: 0;
+  border: 0.2em solid var(--bg-color);
+  border-radius: var(--roundness);
+  padding: 0.4rem;
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+}
+
+.account-calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.account-calendar-legend span:first-child { margin-right: 0.25rem; }
+.account-calendar-legend span:last-child { margin-left: 0.25rem; }
+
+.account-calendar-legend i {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+}
+
+.account-calendar-scroll {
+  margin-top: 1rem;
+  overflow-x: auto;
+  scrollbar-color: var(--sub-color) transparent;
+}
+
+.account-calendar-layout {
+  min-width: 56rem;
+  display: grid;
+  grid-template-columns: min-content minmax(0, 1fr);
+  grid-template-areas: 'days grid' '. months';
+  gap: 0.75rem 1rem;
+}
+
+.account-calendar-days {
+  grid-area: days;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  align-items: center;
+  color: var(--sub-readable-color);
+  font-size: 0.875rem;
+}
+
+.account-calendar-days span:nth-child(1) { grid-row: 2; }
+.account-calendar-days span:nth-child(2) { grid-row: 4; }
+.account-calendar-days span:nth-child(3) { grid-row: 6; }
+
+.account-calendar-grid {
+  grid-area: grid;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.account-calendar-grid i,
+.account-calendar-legend i {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0.25rem;
+}
+
+.account-activity-level-0 { background: var(--bg-color); }
+.account-activity-level-1 { background: color-mix(in srgb, var(--main-color) 20%, var(--sub-alt-color)); }
+.account-activity-level-2 { background: color-mix(in srgb, var(--main-color) 50%, var(--sub-alt-color)); }
+.account-activity-level-3 { background: color-mix(in srgb, var(--main-color) 75%, var(--sub-alt-color)); }
+.account-activity-level-4 { background: var(--main-color); }
+.account-calendar-grid .is-outside { visibility: hidden; }
+
+.account-calendar-months {
+  grid-area: months;
+  display: grid;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+}
+
+.account-calendar-inner > small {
+  display: block;
+  margin-top: 1rem;
+  color: var(--sub-readable-color);
+  font-size: 0.6rem;
+  text-align: center;
+}
+
+.account-recent { min-width: 0; }
+.account-recent h2 { margin: 0 0 1rem; color: var(--sub-readable-color); font-size: 1rem; font-weight: 400; }
+.account-recent-empty { padding: 3rem 1rem; color: var(--sub-readable-color); text-align: center; }
+.account-recent-scroll { overflow-x: auto; scrollbar-color: var(--sub-color) transparent; }
+
+.account-recent-table {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  color: var(--sub-readable-color);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.account-recent-table th,
+.account-recent-table td { border-bottom: 1px solid var(--sub-alt-color); padding: 0.75rem 0.5rem; text-align: left; }
+.account-recent-table th { font-weight: 400; }
+.account-recent-table tbody tr:hover { background: var(--sub-alt-color); }
+.account-recent-pb { width: 2rem; color: var(--main-color); }
+.account-recent-result { color: var(--text-color); font-size: 1.125rem; white-space: nowrap; }
+.account-recent-scramble summary { width: max-content; cursor: pointer; }
+.account-recent-scramble details[open] { min-width: 12rem; }
+.account-recent-scramble details span { display: block; max-width: 20rem; padding-top: 0.5rem; color: var(--text-color); }
+.account-recent-table time { white-space: nowrap; }
+.account-recent-table time small { display: block; font-size: 0.75rem; }
+.account-recent-actions > div { display: flex; justify-content: flex-end; gap: 0.25rem; }
+
+.account-recent-actions button {
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: calc(var(--roundness) / 2);
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.account-recent-actions button:hover,
+.account-recent-actions button[aria-pressed='true'] { color: var(--bg-color); background: var(--main-color); }
+.account-recent-actions button:disabled { opacity: 0.35; cursor: wait; }
+
+.account-load-more {
+  width: 100%;
+  border: 0;
+  border-radius: var(--roundness);
+  margin-top: 1rem;
+  padding: 0.7rem;
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+}
+
+.account-load-more:hover { color: var(--bg-color); background: var(--text-color); }
+
+.account-editor-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-width: none;
+  border: 0;
+  border-radius: var(--roundness);
+  padding: 0;
+  color: var(--text-color);
+  background: var(--bg-color);
+  box-shadow: 0 0 0 4px var(--sub-alt-color), 0 2rem 5rem rgb(0 0 0 / 0.35);
+}
+
+.account-editor-dialog::backdrop { background: rgb(0 0 0 / 0.58); }
+.account-editor-dialog form { display: grid; gap: 1rem; padding: 2rem; }
+.account-editor-dialog header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.account-editor-dialog h2 { margin: 0; font-size: 1.25rem; font-weight: 400; }
+.account-editor-dialog label { display: grid; gap: 0.5rem; color: var(--sub-readable-color); font-size: 0.875rem; }
+.account-editor-dialog input,
+.account-editor-dialog textarea { width: 100%; border: 0; border-radius: var(--roundness); padding: 0.8rem; color: var(--text-color); background: var(--sub-alt-color); resize: vertical; }
+.account-editor-dialog label small { justify-self: end; }
+.account-editor-dialog button { border: 0; border-radius: var(--roundness); padding: 0.7rem 0.9rem; color: var(--text-color); background: var(--sub-alt-color); cursor: pointer; }
+.account-editor-dialog header button { background: transparent; }
+.account-editor-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+.account-editor-actions button:last-child { color: var(--bg-color); background: var(--main-color); }
+
+@media (min-width: 721px) {
+  .account-bests-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (min-width: 849px) {
+  .account-summary-body { grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr); }
+  .account-summary.has-bio .account-summary-body { grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(8rem, 1fr) 0.5rem minmax(0, 2fr); }
+}
+
+@media (min-width: 849px) and (max-width: 1104px) {
+  .account-summary.has-bio .account-summary-body { grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr); }
+  .account-summary.has-bio .account-bio { grid-column: 1 / -1; grid-row: 2; }
+  .account-summary.has-bio .account-bio-divider { display: none; }
+  .account-summary.has-bio .account-totals { grid-column: 3; grid-row: 1; }
+  .account-totals { font-size: 0.9rem; }
+}
+
+@media (min-width: 1105px) {
+  .account-totals { font-size: 1.25rem; }
+}
+
+@media (max-width: 848px) {
+  .account-divider { display: none; }
+  .account-summary-body { gap: 1.5rem; }
+  .account-bio { border-top: 0.5rem solid var(--bg-color); padding-top: 1rem; }
+  .account-calendar-days { position: sticky; left: 0; z-index: 1; background: var(--sub-alt-color); }
+}
+
+@media (max-width: 640px) {
+  .account-summary-identity { grid-template-columns: 3.5rem minmax(0, 1fr); }
+  .account-summary-avatar { width: 3.5rem; height: 3.5rem; }
+  .account-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .account-totals > div:last-child { grid-column: 1 / -1; }
+  .account-calendar-top { grid-template-columns: minmax(0, 1fr) auto; }
+  .account-calendar-legend { grid-column: 1 / -1; justify-content: flex-end; }
+  .account-best strong { font-size: 1.75rem; }
+  .account-editor-dialog form { padding: 1.25rem; }
+}

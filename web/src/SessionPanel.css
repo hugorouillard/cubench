@@ -66,7 +66,6 @@
   color: var(--sub-readable-color);
   background: transparent;
   cursor: pointer;
-  font: inherit;
   font-size: 0.55rem;
   transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
 }
@@ -185,7 +184,6 @@
   color: var(--sub-readable-color);
   background: transparent;
   cursor: pointer;
-  font: inherit;
   text-align: left;
 }
 
