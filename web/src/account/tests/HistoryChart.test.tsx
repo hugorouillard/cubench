@@ -41,20 +41,20 @@ afterEach(() => {
 })
 
 describe('account progression', () => {
-  it('omits DNF positions, but keeps them in the rolling averages', () => {
+  it('omits DNFs from the rolling averages while retaining attempt numbers', () => {
     const solves = [solve(0), solve(1), solve(2), solve(3, 'dnf'), solve(4), solve(5)]
     render(<AccountProgression solves={[...solves].reverse()} theme="catppuccin-mocha" />)
 
     const { data } = chartData()
     expect(data.labels).toEqual(['#1', '#2', '#3', '#5', '#6'])
     expect(data.datasets[0].data).toEqual([10_000, 11_000, 12_000, 14_000, 15_000])
-    expect(data.datasets[2].data).toEqual([null, null, null, 12_333, 13_667])
-    expect(data.datasets[1]).toMatchObject({ borderDash: [2, 5], stepped: 'before' })
-    expect(data.datasets[2]).toMatchObject({ pointRadius: 0, spanGaps: false, tension: 0.5 })
+    expect(data.datasets[2].data).toEqual([null, null, null, null, 12_400])
+    expect(data.datasets[1]).toMatchObject({ borderWidth: 3, stepped: 'before' })
+    expect(data.datasets[2]).toMatchObject({ pointRadius: 0, spanGaps: true, tension: 0.5 })
     expect(data.datasets[0]).toMatchObject({ showLine: false, borderWidth: 0 })
     expect(data.datasets[4].borderColor).toBe('#cba6f7')
     expect(data.datasets[2].borderColor).not.toBe(data.datasets[4].borderColor)
-    expect(chartData().options.scales?.y).toMatchObject({ position: 'right', title: { text: 'time' } })
+    expect(chartData().options.scales?.y).toMatchObject({ position: 'right', title: { text: 'Time' } })
     expect(chartData().options).toMatchObject({
       responsive: true,
       maintainAspectRatio: false,

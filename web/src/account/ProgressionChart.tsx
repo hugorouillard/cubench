@@ -10,9 +10,9 @@ import type { Solve } from '../types'
 import { formatAccountDate } from './format'
 
 const AVERAGE_SERIES = [
-  { key: 'ao5', label: 'Avg of 5' },
-  { key: 'ao12', label: 'Avg of 12' },
-  { key: 'ao50', label: 'Avg of 50' },
+  { key: 'ao5', label: 'Avg of 5', size: 5 },
+  { key: 'ao12', label: 'Avg of 12', size: 12 },
+  { key: 'ao50', label: 'Avg of 50', size: 50 },
 ] as const
 type Series = 'pb' | (typeof AVERAGE_SERIES)[number]['key']
 const SERIES: { key: Series; label: string }[] = [{ key: 'pb', label: 'PB' }, ...AVERAGE_SERIES]
@@ -31,9 +31,14 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
     pb: true, ao5: true, ao12: true, ao50: true,
   })
   const history = useMemo(() => solveHistory(solves), [solves])
-  // A DNF still affects WCA average windows, but has no position on this graph.
+  // DNFs count toward attempt numbers, but not the chart's rolling averages.
   const plotted = history.flatMap((point, index) =>
-    point.singleMs === null ? [] : [{ point, solveNumber: index + 1 }],
+    point.singleMs === null ? [] : [{ point, singleMs: point.singleMs, solveNumber: index + 1 }],
+  )
+  const rollingMean = (size: number) => plotted.map((_, index) =>
+    index < size - 1 ? null : Math.round(
+      plotted.slice(index - size + 1, index + 1).reduce((sum, { singleMs }) => sum + singleMs, 0) / size,
+    ),
   )
   const firstPb = plotted[0]?.point.pbSingleMs
   const currentPb = plotted.at(-1)?.point.pbSingleMs
@@ -66,27 +71,26 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
       {
         label: 'PB',
         data: plotted.map(({ point }) => point.pbSingleMs),
-        borderColor: blendHex(colors.background, colors.text, 0.4),
-        borderDash: [2, 5],
-        borderWidth: 2,
+        borderColor: blendHex(colors.background, colors.text, 0.2),
+        borderWidth: 3,
         fill: false,
         stepped: 'before',
         pointRadius: 0,
         pointHoverRadius: 0,
-        spanGaps: false,
+        spanGaps: true,
         hidden: !visible.pb,
         order: 3,
       },
-      ...AVERAGE_SERIES.map(({ key, label }) => ({
+      ...AVERAGE_SERIES.map(({ key, label, size }) => ({
         label,
-        data: plotted.map(({ point }) => point[`${key}Ms`]),
+        data: rollingMean(size),
         borderColor: averageColors[key] ?? colors.main,
-        borderWidth: 2,
+        borderWidth: 3,
         fill: false,
         tension: 0.5,
         pointRadius: 0,
         pointHoverRadius: 0,
-        spanGaps: false,
+        spanGaps: true,
         hidden: !visible[key],
         order: 2,
       })),
@@ -148,7 +152,7 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
             data={data}
             options={options}
             role="img"
-            aria-label={`Progression of ${plotted.length} completed solves: individual solve dots, dotted personal best, and rolling averages of 5, 12, and 50 attempts`}
+            aria-label={`Progression of ${plotted.length} completed solves: individual solve dots, personal best, and rolling averages of 5, 12, and 50 completed solves`}
           />
         </div>
       ) : (
