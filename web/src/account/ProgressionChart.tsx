@@ -3,7 +3,7 @@ import type { ChartData, ChartOptions } from 'chart.js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartLine, faCrown } from '@fortawesome/free-solid-svg-icons'
 import { Line } from 'react-chartjs-2'
-import { getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
+import { formatTimeAxisTick, getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
 import { solveHistory } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Solve } from '../types'
@@ -35,8 +35,8 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
   const plotted = history.flatMap((point, index) =>
     point.singleMs === null ? [] : [{ point, solveNumber: index + 1 }],
   )
-  const firstPb = plotted[0].point.pbSingleMs
-  const currentPb = plotted.at(-1).point.pbSingleMs
+  const firstPb = plotted[0]?.point.pbSingleMs
+  const currentPb = plotted.at(-1)?.point.pbSingleMs
   const timeSolving = solves.reduce((sum, solve) => sum + solve.duration_ms, 0)
   const improvementPerHour = firstPb != null && currentPb != null && timeSolving > 0 ? (((firstPb - currentPb) / 1000)) / (timeSolving / 3_600_000): null
   const colors = useMemo(getChartColors, [theme])
@@ -126,13 +126,12 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
         grid: { color: colors.surface, tickColor: colors.surface },
         border: { color: colors.surface },
         title: {
-          display: true, text: 'Words per Minute',
+          display: true, text: 'Time',
           color: colors.muted,
         },
         ticks: {
           color: colors.muted,
-          precision: 0,
-          callback: (value) => formatTime(Number(value)),
+          callback: formatTimeAxisTick,
         },
       },
     },
@@ -156,7 +155,7 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
         <p className="account-progression-empty">Your progression will appear after your first completed solve.</p>
       )}
       <div className="account-progression-footer">
-        <span className="account-progression-caption">PB improvement per hour spent solving: -{improvementPerHour?.toFixed(2)}s</span>
+        <span className="account-progression-caption">PB improvement per hour spent solving: {improvementPerHour === null ? '—' : `-${improvementPerHour.toFixed(2)}s`}</span>
         <div className="account-progression-controls" role="group" aria-label="Progression series">
           {SERIES.map(({ key, label }) => (
             <button

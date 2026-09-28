@@ -7,6 +7,7 @@ import {
   PointElement,
   Tooltip,
   type ChartOptions,
+  type Tick,
 } from 'chart.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, LineController, Tooltip)
@@ -38,6 +39,25 @@ export function getLineChartOptions(): ChartOptions<'line'> {
     normalized: true,
     plugins: { legend: { display: false } },
   }
+}
+
+export function formatTimeAxisTick(value: number | string, _index: number, ticks: Tick[]): string {
+  const valueMs = Number(value)
+  const tickValues = ticks.map((tick) => tick.value)
+  const allTicksOnStep = (stepMs: number) => tickValues.every((tickMs) =>
+    Math.abs(tickMs - Math.round(tickMs / stepMs) * stepMs) < 0.001,
+  )
+  // Show only the precision needed to represent every tick on this axis.
+  const decimals = allTicksOnStep(1_000) ? 0 : allTicksOnStep(100) ? 1 : 2
+
+  const roundedSeconds = Math.round(Math.abs(valueMs) / (1_000 / 10 ** decimals)) / 10 ** decimals
+  const minutes = Math.floor(roundedSeconds / 60)
+  const seconds = roundedSeconds - minutes * 60
+  const secondText = seconds.toFixed(decimals)
+  const time = minutes > 0
+    ? `${minutes}:${secondText.padStart(decimals ? decimals + 3 : 2, '0')}`
+    : secondText
+  return valueMs < 0 ? `-${time}` : time
 }
 
 export function getTooltipOptions(colors: ChartColors) {

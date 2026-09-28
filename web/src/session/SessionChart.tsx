@@ -1,6 +1,6 @@
 import type { ChartData, ChartOptions } from 'chart.js'
 import { Line } from 'react-chartjs-2'
-import { getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
+import { formatTimeAxisTick, getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
 import { solveHistory } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Solve } from '../types'
@@ -97,7 +97,7 @@ export function SessionChart({
           color: colors.muted,
           font: { size: 9 },
           maxTicksLimit: 3,
-          callback: (value) => formatTime(Number(value)),
+          callback: formatTimeAxisTick,
         },
       },
     },
