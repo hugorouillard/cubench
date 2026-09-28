@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { ChartData, ChartOptions } from 'chart.js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Solve } from '../../types'
-import { AccountProgression } from '../HistoryChart'
+import { AccountProgression } from '../ProgressionChart'
 
 const lineChart = vi.hoisted(() => vi.fn())
 vi.mock('react-chartjs-2', () => ({

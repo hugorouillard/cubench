@@ -11,7 +11,7 @@ import { RecentSolves } from './RecentSolves'
 import './AccountPage.css'
 
 const AccountProgression = lazy(() =>
-  import('./HistoryChart').then((module) => ({ default: module.AccountProgression })),
+  import('./ProgressionChart').then((module) => ({ default: module.AccountProgression })),
 )
 
 export type AccountPageProps = {

@@ -35,6 +35,10 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
   const plotted = history.flatMap((point, index) =>
     point.singleMs === null ? [] : [{ point, solveNumber: index + 1 }],
   )
+  const firstPb = plotted[0].point.pbSingleMs
+  const currentPb = plotted.at(-1).point.pbSingleMs
+  const timeSolving = solves.reduce((sum, solve) => sum + solve.duration_ms, 0)
+  const improvementPerHour = firstPb != null && currentPb != null && timeSolving > 0 ? (((firstPb - currentPb) / 1000)) / (timeSolving / 3_600_000): null
   const colors = useMemo(getChartColors, [theme])
   const baseOptions = getLineChartOptions()
   const visibleAverages = AVERAGE_SERIES.filter(({ key }) => visible[key])
@@ -121,10 +125,13 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
         beginAtZero: false,
         grid: { color: colors.surface, tickColor: colors.surface },
         border: { color: colors.surface },
-        title: { display: true, text: 'time', color: colors.muted },
-        ticks: {
-          font: {family: getComputedStyle(document.documentElement).fontFamily} ,
+        title: {
+          display: true, text: 'Words per Minute',
           color: colors.muted,
+        },
+        ticks: {
+          color: colors.muted,
+          precision: 0,
           callback: (value) => formatTime(Number(value)),
         },
       },
@@ -149,7 +156,7 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
         <p className="account-progression-empty">Your progression will appear after your first completed solve.</p>
       )}
       <div className="account-progression-footer">
-        <span className="account-progression-caption">Time change per hour spent solving: </span>
+        <span className="account-progression-caption">PB improvement per hour spent solving: -{improvementPerHour?.toFixed(2)}s</span>
         <div className="account-progression-controls" role="group" aria-label="Progression series">
           {SERIES.map(({ key, label }) => (
             <button

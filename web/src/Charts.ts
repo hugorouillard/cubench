@@ -10,6 +10,7 @@ import {
 } from 'chart.js'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, LineController, Tooltip)
+ChartJS.defaults.font.family = getComputedStyle(document.documentElement).fontFamily
 
 export function getChartColors() {
   const style = getComputedStyle(document.documentElement)
@@ -31,7 +32,6 @@ type ChartColors = ReturnType<typeof getChartColors>
 
 export function getLineChartOptions(): ChartOptions<'line'> {
   return {
-    font: { family: getComputedStyle(document.documentElement).fontFamily },
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
