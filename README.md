@@ -30,16 +30,11 @@ when the page is closed. The preview's sample data is separate from your solves.
 
 Accounts save new solves across visits and devices, and provide a personal
 dashboard and JSON export. Registration is currently invite-only during this
-small feedback phase. **[Request an invite from Hugo](mailto:rouillard.hugo1@gmail.com?subject=Cubench%20invite%20request)**
+small feedback phase. **[Request an invite](mailto:rouillard.hugo1@gmail.com?subject=Cubench%20invite%20request)**
 if you'd like to use an account. Signing in starts a fresh timer session;
 guest solves are not transferred.
 
-<details>
-<summary>See the account dashboard (fictional sample data)</summary>
-
 ![Account preview showing sample personal bests, activity, and progress charts](docs/account-preview.png)
-
-</details>
 
 ## What's implemented
 
@@ -94,16 +89,7 @@ Notes:
 The frontend uses plain CSS and Chart.js. The live app runs on a VPS with Caddy
 serving the frontend and proxying API requests to Uvicorn.
 
-## Planned
-
-- [ ] Finer tracking: support other puzzles/events, named sessions and trainer mode (algs, cross only, LL, BLD execution, etc.).
-- [ ] Timer and profile UIs customization. Behavior and visual customization will become
-      the focus once the main features are stable.
-- [ ] Stackmat / Smartcubes integration.
-- [ ] Export/import solve stats.
-- [ ] Share/import config settings.
-
-## Run locally
+## Development
 
 ### Requirements
 
