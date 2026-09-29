@@ -53,6 +53,66 @@ class Solve(SolveCreate):
     created_at: datetime
 
 
+class SolveSummary(BaseModel):
+    revision: int
+    solve_count: int
+    completed_count: int
+    total_duration_ms: int
+    effective_duration_ms: int
+    mean_ms: int | None
+    best_single_ms: int | None
+    best_single_at: datetime | None
+    best_single_id: UUID | None
+    best_ao5_ms: int | None
+    best_ao5_at: datetime | None
+    best_ao5_id: UUID | None
+    best_ao12_ms: int | None
+    best_ao12_at: datetime | None
+    best_ao12_id: UUID | None
+    best_ao50_ms: int | None
+    best_ao50_at: datetime | None
+    best_ao50_id: UUID | None
+    first_completed_ms: int | None
+    earliest_solve_at: datetime | None
+    active_days: int
+    current_streak: int
+    longest_streak: int
+
+
+class ActivityDay(BaseModel):
+    day: str
+    attempts: int
+
+
+class ProgressionPoint(BaseModel):
+    id: UUID
+    recorded_at: datetime
+    attempt_number: int
+    single_ms: int
+    pb_single_ms: int
+    mean_5_ms: int | None
+    mean_12_ms: int | None
+    mean_50_ms: int | None
+
+
+class RecentSolve(Solve):
+    is_pb: bool
+
+
+class RecentPage(BaseModel):
+    revision: int
+    solves: list[RecentSolve]
+    next_cursor: UUID | None
+
+
+class AccountDashboard(BaseModel):
+    profile: Profile
+    summary: SolveSummary
+    activity: list[ActivityDay]
+    progression: list[ProgressionPoint]
+    recent: RecentPage
+
+
 class ExportData(BaseModel):
     version: int
     exported_at: datetime

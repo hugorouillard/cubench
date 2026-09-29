@@ -44,6 +44,7 @@ export type LifetimeProfileSummary = {
   bestSingle: DatedSolveRecord | null
   bestAo5: DatedSolveRecord | null
   bestAo12: DatedSolveRecord | null
+  bestAo50: DatedSolveRecord | null
 }
 
 export type SolveHistoryPoint = {
@@ -169,21 +170,22 @@ export function summarizeSolves(solves: Solve[]): SolveSummary {
   }
 }
 
-function localDateKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+function utcDateKey(date: Date): string {
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
-function localDaySerial(date: Date): number {
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS
+function utcDaySerial(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / DAY_MS
 }
 
 function dateLabel(key: string): string {
-  return new Date(`${key}T12:00:00`).toLocaleDateString([], {
+  return new Date(`${key}T12:00:00Z`).toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
@@ -193,7 +195,7 @@ export function dailyProgress(solves: Solve[]): DailyProgress[] {
   for (const solve of solves) {
     const duration = completedDuration(solve)
     if (duration === null) continue
-    const key = localDateKey(new Date(solve.recorded_at))
+    const key = utcDateKey(new Date(solve.recorded_at))
     days.set(key, [...(days.get(key) ?? []), duration])
   }
 
@@ -241,7 +243,7 @@ export function lifetimeProfileSummary(
   now: Date = new Date(),
 ): LifetimeProfileSummary {
   const chronological = chronologicalSolves(solves)
-  const activeDays = [...new Set(solves.map((solve) => localDaySerial(new Date(solve.recorded_at))))]
+  const activeDays = [...new Set(solves.map((solve) => utcDaySerial(new Date(solve.recorded_at))))]
     .sort((left, right) => left - right)
   let longestStreak = 0
   let streak = 0
@@ -253,7 +255,7 @@ export function lifetimeProfileSummary(
     previousDay = day
   }
 
-  const today = localDaySerial(now)
+  const today = utcDaySerial(now)
   const latestDay = activeDays.at(-1)
   let currentStreak = 0
   if (latestDay === today || latestDay === today - 1) {
@@ -267,6 +269,7 @@ export function lifetimeProfileSummary(
   let bestSingle: DatedSolveRecord | null = null
   let bestAo5: DatedSolveRecord | null = null
   let bestAo12: DatedSolveRecord | null = null
+  let bestAo50: DatedSolveRecord | null = null
 
   for (let index = 0; index < chronological.length; index += 1) {
     const solve = chronological[index]
@@ -288,6 +291,12 @@ export function lifetimeProfileSummary(
         bestAo12 = datedRecord(average, solve)
       }
     }
+    if (index >= 49) {
+      const average = trimmedAverage(chronological.slice(index - 49, index + 1))
+      if (average !== null && (bestAo50 === null || average < bestAo50.durationMs)) {
+        bestAo50 = datedRecord(average, solve)
+      }
+    }
   }
 
   return {
@@ -301,6 +310,7 @@ export function lifetimeProfileSummary(
     bestSingle,
     bestAo5,
     bestAo12,
+    bestAo50,
   }
 }
 
@@ -336,7 +346,7 @@ export function dailyAnalytics(solves: Solve[]): DailyAnalyticsPoint[] {
   const days = new Map<string, { attempts: number; dnfCount: number; durations: number[] }>()
 
   for (const solve of solves) {
-    const key = localDateKey(new Date(solve.recorded_at))
+    const key = utcDateKey(new Date(solve.recorded_at))
     const day = days.get(key) ?? { attempts: 0, dnfCount: 0, durations: [] }
     const duration = completedDuration(solve)
     day.attempts += 1

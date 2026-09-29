@@ -1,10 +1,14 @@
 import type {
   Account,
+  AccountDashboard,
+  ActivityDay,
   ExportData,
   LoginInput,
   RegistrationInput,
+  RecentPage,
   Solve,
   SolveInput,
+  SolveSummary,
   UserProfile,
   UserProfileInput,
 } from './types'
@@ -83,6 +87,22 @@ export function updateProfile(profile: UserProfileInput): Promise<UserProfile> {
 
 export function getSolves(): Promise<Solve[]> {
   return request('/api/solves')
+}
+
+export function getSolveSummary(): Promise<SolveSummary> {
+  return request('/api/solves/summary')
+}
+
+export function getAccountDashboard(): Promise<AccountDashboard> {
+  return request('/api/account/dashboard')
+}
+
+export function getAccountActivity(year: number, revision: number): Promise<ActivityDay[]> {
+  return request(`/api/account/activity?year=${year}&revision=${revision}`)
+}
+
+export function getAccountRecent(cursor: string, revision: number): Promise<RecentPage> {
+  return request(`/api/account/recent?cursor=${encodeURIComponent(cursor)}&revision=${revision}`)
 }
 
 export function createSolve(solve: SolveInput): Promise<Solve> {

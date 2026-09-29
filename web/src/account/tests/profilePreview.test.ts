@@ -34,14 +34,14 @@ describe('profile preview', () => {
   })
 
   it('keeps today and yesterday active even just after midnight', () => {
-    const now = new Date(2026, 8, 24, 0, 0, 1)
+    const now = new Date(Date.UTC(2026, 8, 24, 0, 0, 1))
     const { solves } = createProfilePreview(now)
-    const today = now.toDateString()
-    const yesterday = new Date(2026, 8, 23).toDateString()
+    const today = now.toISOString().slice(0, 10)
+    const yesterday = '2026-09-23'
 
-    expect(solves.filter((solve) => new Date(solve.recorded_at).toDateString() === today))
+    expect(solves.filter((solve) => solve.recorded_at.slice(0, 10) === today))
       .toHaveLength(1)
-    expect(solves.some((solve) => new Date(solve.recorded_at).toDateString() === yesterday))
+    expect(solves.some((solve) => solve.recorded_at.slice(0, 10) === yesterday))
       .toBe(true)
     expect(solves.every((solve) => new Date(solve.recorded_at) <= now)).toBe(true)
     expect(lifetimeProfileSummary(solves, now).currentStreak).toBeGreaterThanOrEqual(2)

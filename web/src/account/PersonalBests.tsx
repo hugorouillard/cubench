@@ -8,13 +8,13 @@ export function PersonalBests({ single, ao5, ao12, ao50 }: {
   single: DatedSolveRecord | null
   ao5: DatedSolveRecord | null
   ao12: DatedSolveRecord | null
-  ao50: number | null
+  ao50: DatedSolveRecord | null
 }) {
   const bests: Best[] = [
     { label: 'single', value: single?.durationMs ?? null, achievedAt: single?.achievedAt },
-    { label: 'ao5', value: ao5?.durationMs ?? null, achievedAt: ao5?.achievedAt },
-    { label: 'ao12', value: ao12?.durationMs ?? null, achievedAt: ao12?.achievedAt },
-    { label: 'ao50', value: ao50, context: '50 attempts' },
+    { label: 'WCA ao5', value: ao5?.durationMs ?? null, achievedAt: ao5?.achievedAt },
+    { label: 'WCA ao12', value: ao12?.durationMs ?? null, achievedAt: ao12?.achievedAt },
+    { label: 'WCA ao50', value: ao50?.durationMs ?? null, achievedAt: ao50?.achievedAt, context: '50 attempts' },
   ]
 
   return (

@@ -77,10 +77,21 @@ Notes:
   [`solveStore.ts`](web/src/solves/solveStore.ts) keeps the timer flow the same for both.
   Failed saves retain the result for retry, and client-generated solve IDs let
   the API recognize repeated submissions.
-- **Statistics are pure TypeScript functions.**
+- **Guest/session statistics and the fictional preview use pure TypeScript functions.**
   [`stats.ts`](web/src/solves/stats.ts) calculates averages and chart data from solves,
-  with tests for penalty handling, date ranges, and personal bests. The account
-  preview uses the same dashboard and calculations as a real account.
+  with tests for penalty handling, date ranges, and personal bests. The preview
+  shares the real account UI but derives its data locally instead of calling the API.
+- **Account views use transactionally maintained projections.** The API persists
+  lifetime totals and non-DNF mean, WCA-style best single/ao5/ao12/ao50, UTC daily
+  activity, and per-solve progression and PB markers. Chronological inserts update
+  the lifetime aggregates and new windows using recent attempts/completed solves;
+  backdated inserts, edits, and deletions reconcile from authoritative solves.
+  Existing accounts are backfilled on migration. A single-snapshot dashboard API
+  returns the summary, bounded chart points, current activity and the first page
+  of recent solves. Older activity and solves are fetched on demand, with a revision
+  check for stale pages. The chart's means of 5/12/50 use completed solves without
+  trimming; the personal-best cards use WCA-style trimmed attempt windows. The
+  fictional account preview stays entirely client-side.
 - **A small backend fits the current scope.** FastAPI uses Python's `sqlite3`
   module directly. Queries are scoped to the signed-in account. Passwords are
   hashed with scrypt. Authentication uses an HttpOnly session cookie and hashed

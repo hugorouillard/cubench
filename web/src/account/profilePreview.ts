@@ -39,7 +39,7 @@ export function createProfilePreview(now = new Date()): ProfilePreview {
   const random = randomGenerator()
   const practiceDays = new Set([0, 1])
   const midnight = new Date(now)
-  midnight.setHours(0, 0, 0, 0)
+  midnight.setUTCHours(0, 0, 0, 0)
 
   // A few irregular sessions in each part of the year leave most calendar days empty.
   for (let period = 0; period < 12; period += 1) {
@@ -64,9 +64,9 @@ export function createProfilePreview(now = new Date()): ProfilePreview {
     const typicalMs = 38_000 - 21_000 * progress ** 0.8 +
       Math.sin(day * 0.19) * 850 + Math.sin(day * 0.53) * 450
     const sessionStart = new Date(now)
-    sessionStart.setDate(sessionStart.getDate() - day)
+    sessionStart.setUTCDate(sessionStart.getUTCDate() - day)
     if (day === 0) sessionStart.setTime(now.getTime() - (attempts - 1) * 90_000)
-    else sessionStart.setHours(18, 0, 0, 0)
+    else sessionStart.setUTCHours(18, 0, 0, 0)
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const index = solves.length
@@ -87,7 +87,7 @@ export function createProfilePreview(now = new Date()): ProfilePreview {
   }
 
   const accountStart = new Date(now)
-  accountStart.setDate(accountStart.getDate() - PRACTICE_DAYS - 7)
+  accountStart.setUTCDate(accountStart.getUTCDate() - PRACTICE_DAYS - 7)
 
   return {
     profile: {
