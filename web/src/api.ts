@@ -5,6 +5,7 @@ import type {
   RegistrationInput,
   Solve,
   SolveInput,
+  SolveSummary,
   UserProfile,
   UserProfileInput,
 } from './types'
@@ -83,6 +84,10 @@ export function updateProfile(profile: UserProfileInput): Promise<UserProfile> {
 
 export function getSolves(): Promise<Solve[]> {
   return request('/api/solves')
+}
+
+export function getSolveSummary(): Promise<SolveSummary> {
+  return request('/api/solves/summary')
 }
 
 export function createSolve(solve: SolveInput): Promise<Solve> {

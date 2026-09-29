@@ -15,7 +15,14 @@ from cubench_api.schemas import (
     ProfileUpdate,
     Solve,
     SolveCreate,
+    SolveSummary,
     SolveUpdate,
+)
+from cubench_api.summary import (
+    added_solve,
+    normalize_recorded_at,
+    read_summary,
+    rebuild_summary,
 )
 
 
@@ -80,6 +87,12 @@ def list_solves(account: AccountDependency) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+@app.get("/api/solves/summary", response_model=SolveSummary)
+def get_solve_summary(account: AccountDependency) -> dict:
+    with connect() as connection:
+        return read_summary(connection, account.id)
+
+
 @app.post(
     "/api/solves", response_model=Solve, status_code=status.HTTP_201_CREATED
 )
@@ -88,6 +101,7 @@ def create_solve(payload: SolveCreate, account: AccountDependency) -> dict:
         **payload.model_dump(mode="json"),
         "created_at": datetime.now(UTC).isoformat(),
     }
+    solve["recorded_at"] = normalize_recorded_at(payload.recorded_at)
     try:
         with connect() as connection:
             connection.execute(
@@ -99,6 +113,7 @@ def create_solve(payload: SolveCreate, account: AccountDependency) -> dict:
                 """,
                 (account.id, *solve.values()),
             )
+            added_solve(connection, account.id, str(payload.id))
             connection.commit()
     except sqlite3.IntegrityError as error:
         if "UNIQUE constraint failed" in str(error):
@@ -111,6 +126,7 @@ def create_solve(payload: SolveCreate, account: AccountDependency) -> dict:
                     (account.id, str(payload.id)),
                 ).fetchone()
             expected = payload.model_dump(mode="json")
+            expected["recorded_at"] = solve["recorded_at"]
             if row and all(row[key] == value for key, value in expected.items()):
                 return dict(row)
         raise HTTPException(status_code=409, detail="Solve already exists") from error
@@ -140,6 +156,7 @@ def update_solve(
             """,
             (account.id, str(solve_id)),
         ).fetchone()
+        rebuild_summary(connection, account.id)
         connection.commit()
     return dict(row)
 
@@ -153,6 +170,7 @@ def delete_solve(solve_id: UUID, account: AccountDependency) -> Response:
         )
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Solve not found")
+        rebuild_summary(connection, account.id)
         connection.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

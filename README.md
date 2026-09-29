@@ -86,6 +86,12 @@ Notes:
   [`stats.ts`](web/src/solves/stats.ts) calculates averages and chart data from solves,
   with tests for penalty handling, date ranges, and personal bests. The account
   preview uses the same dashboard and calculations as a real account.
+- **Account headline stats are maintained transactionally.** The API persists per-account
+  totals and best single/ao5/ao12 records. Chronological inserts extend the summary
+  using only the last 11 attempts; historical inserts, penalty/duration edits and
+  deletions rebuild it from solves. Existing databases are backfilled on migration.
+  `/api/solves/summary` returns the compact projection; charts and the activity
+  calendar still use the full solve history and the preview stays client-side.
 - **A small backend fits the current scope.** FastAPI uses Python's `sqlite3`
   module directly. Queries are scoped to the signed-in account. Passwords are
   hashed with scrypt. Authentication uses an HttpOnly session cookie and hashed

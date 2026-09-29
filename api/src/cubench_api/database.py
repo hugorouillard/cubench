@@ -1,11 +1,12 @@
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 from cubench_api.config import load_runtime_config
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 
 class SchemaError(RuntimeError):
@@ -47,7 +48,7 @@ def initialize_database(path: Path) -> None:
             raise SchemaError(
                 "This pre-release database is not supported; reset it and restart"
             )
-        if version not in {0, CURRENT_SCHEMA_VERSION}:
+        if version not in {0, 1, CURRENT_SCHEMA_VERSION}:
             raise SchemaError(
                 f"Database schema version {version} is not supported; "
                 f"expected {CURRENT_SCHEMA_VERSION}"
@@ -55,50 +56,97 @@ def initialize_database(path: Path) -> None:
         if version == CURRENT_SCHEMA_VERSION:
             return
 
-        connection.execute("PRAGMA journal_mode = WAL")
-        connection.executescript(
-            f"""
-            BEGIN IMMEDIATE;
+        if version == 0:
+            connection.execute("PRAGMA journal_mode = WAL")
+            connection.executescript(
+                """
+                BEGIN IMMEDIATE;
 
-            CREATE TABLE accounts (
-                id INTEGER PRIMARY KEY,
-                username TEXT NOT NULL UNIQUE COLLATE NOCASE
-                    CHECK (length(username) BETWEEN 3 AND 32),
-                password_hash TEXT NOT NULL,
-                display_name TEXT NOT NULL
-                    CHECK (length(trim(display_name)) BETWEEN 1 AND 40),
-                bio TEXT NOT NULL DEFAULT ''
-                    CHECK (length(trim(bio)) <= 160),
-                created_at TEXT NOT NULL
-            );
+                CREATE TABLE accounts (
+                    id INTEGER PRIMARY KEY,
+                    username TEXT NOT NULL UNIQUE COLLATE NOCASE
+                        CHECK (length(username) BETWEEN 3 AND 32),
+                    password_hash TEXT NOT NULL,
+                    display_name TEXT NOT NULL
+                        CHECK (length(trim(display_name)) BETWEEN 1 AND 40),
+                    bio TEXT NOT NULL DEFAULT ''
+                        CHECK (length(trim(bio)) <= 160),
+                    created_at TEXT NOT NULL
+                );
 
-            CREATE TABLE auth_sessions (
-                token_hash TEXT PRIMARY KEY,
-                account_id INTEGER NOT NULL REFERENCES accounts(id)
-                    ON DELETE CASCADE,
-                expires_at INTEGER NOT NULL
-            );
+                CREATE TABLE auth_sessions (
+                    token_hash TEXT PRIMARY KEY,
+                    account_id INTEGER NOT NULL REFERENCES accounts(id)
+                        ON DELETE CASCADE,
+                    expires_at INTEGER NOT NULL
+                );
 
-            CREATE TABLE solves (
-                account_id INTEGER NOT NULL REFERENCES accounts(id)
-                    ON DELETE CASCADE,
-                id TEXT NOT NULL,
-                duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
-                penalty TEXT NOT NULL DEFAULT 'none'
-                    CHECK (penalty IN ('none', 'plus2', 'dnf')),
-                scramble TEXT NOT NULL CHECK (length(trim(scramble)) > 0),
-                recorded_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                PRIMARY KEY (account_id, id)
-            );
+                CREATE TABLE solves (
+                    account_id INTEGER NOT NULL REFERENCES accounts(id)
+                        ON DELETE CASCADE,
+                    id TEXT NOT NULL,
+                    duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
+                    penalty TEXT NOT NULL DEFAULT 'none'
+                        CHECK (penalty IN ('none', 'plus2', 'dnf')),
+                    scramble TEXT NOT NULL CHECK (length(trim(scramble)) > 0),
+                    recorded_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY (account_id, id)
+                );
 
-            CREATE INDEX solves_account_recorded_at
-            ON solves(account_id, recorded_at DESC, id DESC);
+                CREATE INDEX solves_account_recorded_at
+                ON solves(account_id, recorded_at DESC, id DESC);
 
-            PRAGMA user_version = {CURRENT_SCHEMA_VERSION};
-            COMMIT;
-            """
-        )
+                PRAGMA user_version = 1;
+                COMMIT;
+                """
+            )
+
+        from cubench_api.summary import normalize_recorded_at, rebuild_summary
+
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            connection.execute(
+                """CREATE TABLE solve_summaries (
+                    account_id INTEGER PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+                    solve_count INTEGER NOT NULL,
+                    completed_count INTEGER NOT NULL,
+                    total_duration_ms INTEGER NOT NULL,
+                    effective_duration_ms INTEGER NOT NULL,
+                    best_single_ms INTEGER,
+                    best_single_at TEXT,
+                    best_single_id TEXT,
+                    best_ao5_ms INTEGER,
+                    best_ao5_at TEXT,
+                    best_ao5_id TEXT,
+                    best_ao12_ms INTEGER,
+                    best_ao12_at TEXT,
+                    best_ao12_id TEXT,
+                    last_recorded_at TEXT,
+                    last_id TEXT
+                )"""
+            )
+            if version == 1:
+                # Earlier releases preserved the client's timezone and precision.
+                # Normalize before sorting/backfilling the chronological projection.
+                for solve in connection.execute(
+                    "SELECT account_id, id, recorded_at FROM solves"
+                ).fetchall():
+                    connection.execute(
+                        "UPDATE solves SET recorded_at = ? WHERE account_id = ? AND id = ?",
+                        (
+                            normalize_recorded_at(datetime.fromisoformat(solve["recorded_at"])),
+                            solve["account_id"],
+                            solve["id"],
+                        ),
+                    )
+            for account in connection.execute("SELECT id FROM accounts"):
+                rebuild_summary(connection, account["id"])
+            connection.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
     finally:
         connection.close()
 

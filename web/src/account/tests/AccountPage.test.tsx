@@ -62,6 +62,14 @@ describe('account page', () => {
       if (String(input) === '/api/profile' && init?.method === 'PATCH') return Response.json({ ...profile, display_name: 'Updated Cuber' })
       if (String(input) === '/api/profile') return Response.json(profile)
       if (String(input) === '/api/solves') return Response.json([solve])
+      if (String(input) === '/api/solves/summary') return Response.json({
+        solve_count: 1, completed_count: 1, total_duration_ms: 12_340,
+        effective_duration_ms: 12_340, mean_ms: 12_340,
+        best_single_ms: 12_340, best_single_at: recorded_at,
+        best_single_id: solve.id,
+        best_ao5_ms: null, best_ao5_at: null, best_ao12_ms: null, best_ao12_at: null,
+        best_ao5_id: null, best_ao12_id: null,
+      })
       throw new Error(`Unexpected request: ${input}`)
     })
     const callbacks = props()
@@ -90,7 +98,39 @@ describe('account page', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'save profile' }))
     await screen.findByRole('heading', { name: 'Updated Cuber' })
     expect(callbacks.onProfileChange).toHaveBeenCalledWith({ ...profile, display_name: 'Updated Cuber' })
-    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/profile', '/api/solves', '/api/profile'])
+    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/profile', '/api/solves', '/api/solves/summary', '/api/profile'])
+  })
+
+  it('uses the stored headline summary and discards it after a historical edit', async () => {
+    const recorded_at = '2026-01-02T12:00:00Z'
+    const solve: Solve = {
+      id: 'solve-1', duration_ms: 12_340, penalty: 'none', scramble: 'R U',
+      recorded_at, created_at: recorded_at,
+    }
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/profile') return Response.json({
+        id: 1, display_name: 'Solver', bio: '', created_at: recorded_at,
+      })
+      if (String(input) === '/api/solves') return Response.json([solve])
+      if (String(input) === '/api/solves/summary') return Response.json({
+        solve_count: 2, completed_count: 2, total_duration_ms: 25_000,
+        effective_duration_ms: 25_000, mean_ms: 12_500,
+        best_single_ms: 10_000, best_single_at: recorded_at,
+        best_single_id: solve.id,
+        best_ao5_ms: null, best_ao5_at: null, best_ao12_ms: null, best_ao12_at: null,
+        best_ao5_id: null, best_ao12_id: null,
+      })
+      throw new Error(`Unexpected request: ${input}`)
+    })
+    const callbacks = props()
+    callbacks.onPenalty.mockResolvedValue({ ...solve, penalty: 'plus2' })
+    render(<AccountPage {...callbacks} />)
+
+    const totals = await screen.findByRole('group', { name: 'Lifetime totals' })
+    await waitFor(() => expect(within(totals).getByText('total solves').nextElementSibling?.textContent).toBe('2'))
+    expect(within(screen.getByRole('region', { name: 'Personal bests' })).getByText('single').nextElementSibling?.textContent).toBe('10.00')
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle +2 penalty for 12.34 solve' }))
+    await waitFor(() => expect(within(totals).getByText('total solves').nextElementSibling?.textContent).toBe('1'))
   })
 
   it('switches calendar ranges and shows a leap-year calendar with 54 weeks', () => {

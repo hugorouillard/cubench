@@ -53,6 +53,23 @@ class Solve(SolveCreate):
     created_at: datetime
 
 
+class SolveSummary(BaseModel):
+    solve_count: int
+    completed_count: int
+    total_duration_ms: int
+    effective_duration_ms: int
+    mean_ms: int | None
+    best_single_ms: int | None
+    best_single_at: datetime | None
+    best_single_id: UUID | None
+    best_ao5_ms: int | None
+    best_ao5_at: datetime | None
+    best_ao5_id: UUID | None
+    best_ao12_ms: int | None
+    best_ao12_at: datetime | None
+    best_ao12_id: UUID | None
+
+
 class ExportData(BaseModel):
     version: int
     exported_at: datetime

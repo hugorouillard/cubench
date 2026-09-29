@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useState } from 'react'
-import { getProfile, getSolves } from '../api'
+import { getProfile, getSolves, getSolveSummary } from '../api'
 import type { ProfilePreview } from './profilePreview'
 import { bestAverage, lifetimeProfileSummary, newestSolvesFirst } from '../solves/stats'
-import type { Penalty, Solve, UserProfile } from '../types'
+import type { Penalty, Solve, SolveSummary, UserProfile } from '../types'
 import { AccountSummary } from './AccountSummary'
 import { ActivityCalendar } from './DailyActivityChart'
 import { PersonalBests } from './PersonalBests'
@@ -30,6 +30,7 @@ function errorMessage(error: unknown): string {
 export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, onDelete, onError, onProfileChange }: AccountPageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(preview?.profile ?? null)
   const [solves, setSolves] = useState<Solve[]>(preview?.solves ?? [])
+  const [storedSummary, setStoredSummary] = useState<SolveSummary | null>(null)
   const [loading, setLoading] = useState(!preview)
   const [loadFailed, setLoadFailed] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -39,12 +40,14 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
     if (preview) return
     let cancelled = false
 
-    void Promise.allSettled([getProfile(), getSolves()]).then(([profileResult, solvesResult]) => {
+    void Promise.allSettled([getProfile(), getSolves(), getSolveSummary()]).then(([profileResult, solvesResult, summaryResult]) => {
       if (cancelled) return
       if (profileResult.status === 'fulfilled') setProfile(profileResult.value)
       else reportLoadError(`Could not load profile: ${errorMessage(profileResult.reason)}`)
       if (solvesResult.status === 'fulfilled') setSolves(solvesResult.value)
       else reportLoadError(`Could not load solve history: ${errorMessage(solvesResult.reason)}`)
+      if (summaryResult.status === 'fulfilled') setStoredSummary(summaryResult.value)
+      else reportLoadError(`Could not load solve summary: ${errorMessage(summaryResult.reason)}`)
       setLoadFailed(profileResult.status === 'rejected' || solvesResult.status === 'rejected')
       setLoading(false)
     })
@@ -53,12 +56,30 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
   }, [preview])
 
   const lifetime = useMemo(() => lifetimeProfileSummary(solves), [solves])
+  const headline = storedSummary ? {
+    ...lifetime,
+    loggedCount: storedSummary.solve_count,
+    successfulCount: storedSummary.completed_count,
+    totalRawDurationMs: storedSummary.total_duration_ms,
+    bestSingle: storedSummary.best_single_ms === null ? null : {
+      durationMs: storedSummary.best_single_ms, achievedAt: storedSummary.best_single_at!, solveId: storedSummary.best_single_id!,
+    },
+    bestAo5: storedSummary.best_ao5_ms === null ? null : {
+      durationMs: storedSummary.best_ao5_ms, achievedAt: storedSummary.best_ao5_at!, solveId: storedSummary.best_ao5_id!,
+    },
+    bestAo12: storedSummary.best_ao12_ms === null ? null : {
+      durationMs: storedSummary.best_ao12_ms, achievedAt: storedSummary.best_ao12_at!, solveId: storedSummary.best_ao12_id!,
+    },
+  } : lifetime
   const ao50 = useMemo(() => bestAverage(newestSolvesFirst(solves), 50), [solves])
 
   async function changePenalty(solve: Solve, penalty: Penalty) {
     try {
       const updated = await onPenalty(solve, penalty)
-      if (updated) setSolves((current) => current.map((item) => item.id === solve.id ? updated : item))
+      if (updated) {
+        setStoredSummary(null)
+        setSolves((current) => current.map((item) => item.id === solve.id ? updated : item))
+      }
     } catch (error) {
       onError(`Could not update solve: ${errorMessage(error)}`)
     }
@@ -66,7 +87,10 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
 
   async function deleteSolve(solve: Solve) {
     try {
-      if (await onDelete(solve)) setSolves((current) => current.filter((item) => item.id !== solve.id))
+      if (await onDelete(solve)) {
+        setStoredSummary(null)
+        setSolves((current) => current.filter((item) => item.id !== solve.id))
+      }
     } catch (error) {
       onError(`Could not delete solve: ${errorMessage(error)}`)
     }
@@ -82,8 +106,8 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
 
   return (
     <main className="account-page page-width">
-      <AccountSummary profile={profile} lifetime={lifetime} onEdit={preview ? undefined : () => setEditorOpen(true)} />
-      <PersonalBests single={lifetime.bestSingle} ao5={lifetime.bestAo5} ao12={lifetime.bestAo12} ao50={ao50} />
+      <AccountSummary profile={profile} lifetime={headline} onEdit={preview ? undefined : () => setEditorOpen(true)} />
+      <PersonalBests single={headline.bestSingle} ao5={headline.bestAo5} ao12={headline.bestAo12} ao50={ao50} />
       <ActivityCalendar profile={profile} solves={solves} activeDays={lifetime.totalActiveDays} currentStreak={lifetime.currentStreak} longestStreak={lifetime.longestStreak} />
       <Suspense fallback={<p className="account-progression-loading" role="status">loading progression...</p>}>
         <AccountProgression solves={solves} theme={theme} />
