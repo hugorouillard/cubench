@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -6,7 +6,10 @@ from fastapi.testclient import TestClient
 
 from cubench_api import main as main_module
 from cubench_api import summary as summary_module
+from cubench_api.account_views import MAX_CHART_POINTS
 from cubench_api.auth import SESSION_COOKIE
+from cubench_api.database import connect
+from cubench_api.summary import rebuild_summary
 
 
 def solve_payload(solve_id: str | None = None) -> dict:
@@ -108,6 +111,9 @@ def test_solves_are_isolated_by_account(account_client: TestClient) -> None:
 def test_solve_routes_require_authentication(client: TestClient) -> None:
     assert client.get("/api/solves").status_code == 401
     assert client.get("/api/solves/summary").status_code == 401
+    assert client.get("/api/account/dashboard").status_code == 401
+    assert client.get("/api/account/activity?year=2025&revision=0").status_code == 401
+    assert client.get(f"/api/account/recent?cursor={uuid4()}&revision=0").status_code == 401
     assert client.post("/api/solves", json=solve_payload()).status_code == 401
     update = client.patch(f"/api/solves/{uuid4()}", json={"penalty": "dnf"})
     assert update.status_code == 401
@@ -187,6 +193,7 @@ def test_summary_is_account_scoped(account_client: TestClient) -> None:
         "username": "another", "password": "test-password", "invite_code": "test-invite"
     })
     assert account_client.get("/api/solves/summary").json()["solve_count"] == 0
+    assert account_client.get("/api/account/dashboard").json()["recent"]["solves"] == []
 
 
 def test_chronological_insert_does_not_rebuild_and_offsets_sort_by_instant(
@@ -226,3 +233,117 @@ def test_failed_summary_write_rolls_back_the_solve(
 
     assert account_client.get("/api/solves").json() == []
     assert account_client.get("/api/solves/summary").json()["solve_count"] == 0
+
+
+def test_dashboard_matches_full_history_and_pages_without_losing_prefixes(
+    account_client: TestClient,
+) -> None:
+    for index in range(120):
+        solve = solve_payload()
+        solve.update(
+            duration_ms=9_000 + index * 31,
+            penalty="dnf" if index in (9, 90) else "plus2" if index % 13 == 0 else "none",
+            recorded_at=(datetime(2025, 1, 1, tzinfo=UTC) + timedelta(hours=index * 11)).isoformat(),
+        )
+        assert account_client.post("/api/solves", json=solve).status_code == 201
+
+    dashboard = account_client.get("/api/account/dashboard")
+    assert dashboard.status_code == 200
+    data = dashboard.json()
+    assert len(data["recent"]["solves"]) == 10
+    assert len(data["progression"]) == 118
+    assert data["summary"]["solve_count"] == 120
+    history = list(reversed(account_client.get("/api/solves").json()))
+    completed = [solve["duration_ms"] + (2000 if solve["penalty"] == "plus2" else 0)
+                 for solve in history if solve["penalty"] != "dnf"]
+    assert data["summary"]["mean_ms"] == (sum(completed) * 2 + len(completed)) // (2 * len(completed))
+    assert data["summary"]["best_single_ms"] == min(completed)
+
+    def full_average(window: list[dict]) -> int | None:
+        values = sorted(float("inf") if solve["penalty"] == "dnf" else
+                        solve["duration_ms"] + (2000 if solve["penalty"] == "plus2" else 0)
+                        for solve in window)[1:-1]
+        return None if float("inf") in values else int(sum(values) / len(values) + 0.5)
+
+    for size in (5, 12, 50):
+        valid = [average for index in range(size, len(history) + 1)
+                 if (average := full_average(history[index - size:index])) is not None]
+        assert data["summary"][f"best_ao{size}_ms"] == min(valid)
+    assert data["progression"][-1]["mean_50_ms"] == (2 * sum(completed[-50:]) + 50) // 100
+    assert data["summary"]["active_days"] == len({solve["recorded_at"][:10] for solve in history})
+    assert sum(day["attempts"] for day in account_client.get(
+        f"/api/account/activity?year=2025&revision={data['summary']['revision']}"
+    ).json()) == 120
+
+    cursor = data["recent"]["next_cursor"]
+    seen = {solve["id"] for solve in data["recent"]["solves"]}
+    while cursor:
+        page = account_client.get(
+            f"/api/account/recent?cursor={cursor}&revision={data['summary']['revision']}"
+        ).json()
+        assert not seen.intersection(solve["id"] for solve in page["solves"])
+        seen.update(solve["id"] for solve in page["solves"])
+        cursor = page["next_cursor"]
+    assert len(seen) == 120
+
+    account_client.patch(f"/api/solves/{history[2]['id']}", json={"penalty": "dnf"})
+    assert account_client.get(
+        f"/api/account/recent?cursor={data['recent']['next_cursor']}&revision={data['summary']['revision']}"
+    ).status_code == 409
+    assert account_client.get("/api/account/dashboard").json()["summary"]["completed_count"] == 117
+
+
+def test_large_history_chart_is_bounded_without_truncating_account_totals(
+    account_client: TestClient,
+) -> None:
+    account_id = account_client.get("/api/profile").json()["id"]
+    start = datetime(2025, 1, 1, tzinfo=UTC)
+    with connect() as connection:
+        connection.executemany(
+            """INSERT INTO solves
+               (account_id, id, duration_ms, penalty, scramble, recorded_at, created_at)
+               VALUES (?, ?, ?, 'none', 'R U', ?, ?)""",
+            (
+                (account_id, str(uuid4()), 10_000 + index,
+                 (start + timedelta(minutes=index)).isoformat(timespec="microseconds"),
+                 start.isoformat())
+                for index in range(2_000)
+            ),
+        )
+        rebuild_summary(connection, account_id)
+        connection.commit()
+
+    response = account_client.get("/api/account/dashboard")
+    assert response.status_code == 200
+    dashboard = response.json()
+    assert dashboard["summary"]["solve_count"] == 2_000
+    assert dashboard["summary"]["best_single_ms"] == 10_000
+    assert dashboard["summary"]["best_ao50_ms"] == 10_025
+    assert len(dashboard["progression"]) <= MAX_CHART_POINTS
+    assert dashboard["progression"][0]["attempt_number"] == 1
+    assert dashboard["progression"][-1]["attempt_number"] == 2_000
+    assert len(dashboard["recent"]["solves"]) == 10
+
+
+def test_activity_uses_utc_days_and_reconciles_historical_mutations(
+    account_client: TestClient,
+) -> None:
+    first = solve_payload()
+    first.update(recorded_at="2026-01-02T18:59:00-05:00", duration_ms=10000)
+    second = solve_payload()
+    second.update(recorded_at="2026-01-03T02:01:00+02:00", duration_ms=11000)
+    for solve in (first, second):
+        assert account_client.post("/api/solves", json=solve).status_code == 201
+    data = account_client.get("/api/account/dashboard").json()
+    assert data["summary"]["active_days"] == 2
+    assert data["summary"]["longest_streak"] == 2
+    assert account_client.get(
+        f"/api/account/activity?year=2026&revision={data['summary']['revision']}"
+    ).json() == [
+        {"day": "2026-01-02", "attempts": 1},
+        {"day": "2026-01-03", "attempts": 1},
+    ]
+    assert account_client.delete(f"/api/solves/{first['id']}").status_code == 204
+    data = account_client.get("/api/account/dashboard").json()
+    assert data["summary"]["active_days"] == 1
+    assert data["summary"]["longest_streak"] == 1

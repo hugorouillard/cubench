@@ -12,6 +12,7 @@ export type Solve = {
 export type SolveInput = Omit<Solve, 'created_at'>
 
 export type SolveSummary = {
+  revision: number
   solve_count: number
   completed_count: number
   total_duration_ms: number
@@ -26,6 +27,41 @@ export type SolveSummary = {
   best_ao12_ms: number | null
   best_ao12_at: string | null
   best_ao12_id: string | null
+  best_ao50_ms: number | null
+  best_ao50_at: string | null
+  best_ao50_id: string | null
+  first_completed_ms: number | null
+  earliest_solve_at: string | null
+  active_days: number
+  current_streak: number
+  longest_streak: number
+}
+
+export type ActivityDay = { day: string; attempts: number }
+
+export type ProgressionPoint = {
+  id: string
+  recorded_at: string
+  attempt_number: number
+  single_ms: number
+  pb_single_ms: number
+  mean_5_ms: number | null
+  mean_12_ms: number | null
+  mean_50_ms: number | null
+}
+
+export type RecentPage = {
+  revision: number
+  solves: (Solve & { is_pb: boolean })[]
+  next_cursor: string | null
+}
+
+export type AccountDashboard = {
+  profile: UserProfile
+  summary: SolveSummary
+  activity: ActivityDay[]
+  progression: ProgressionPoint[]
+  recent: RecentPage
 }
 
 export type UserProfile = {

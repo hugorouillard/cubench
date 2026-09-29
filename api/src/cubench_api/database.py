@@ -6,7 +6,7 @@ from pathlib import Path
 
 from cubench_api.config import load_runtime_config
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 
 class SchemaError(RuntimeError):
@@ -48,7 +48,7 @@ def initialize_database(path: Path) -> None:
             raise SchemaError(
                 "This pre-release database is not supported; reset it and restart"
             )
-        if version not in {0, 1, CURRENT_SCHEMA_VERSION}:
+        if version not in {0, 1, 2, CURRENT_SCHEMA_VERSION}:
             raise SchemaError(
                 f"Database schema version {version} is not supported; "
                 f"expected {CURRENT_SCHEMA_VERSION}"
@@ -104,42 +104,84 @@ def initialize_database(path: Path) -> None:
 
         from cubench_api.summary import normalize_recorded_at, rebuild_summary
 
+        if version in (0, 1):
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                connection.execute(
+                    """CREATE TABLE solve_summaries (
+                        account_id INTEGER PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+                        solve_count INTEGER NOT NULL,
+                        completed_count INTEGER NOT NULL,
+                        total_duration_ms INTEGER NOT NULL,
+                        effective_duration_ms INTEGER NOT NULL,
+                        best_single_ms INTEGER,
+                        best_single_at TEXT,
+                        best_single_id TEXT,
+                        best_ao5_ms INTEGER,
+                        best_ao5_at TEXT,
+                        best_ao5_id TEXT,
+                        best_ao12_ms INTEGER,
+                        best_ao12_at TEXT,
+                        best_ao12_id TEXT,
+                        last_recorded_at TEXT,
+                        last_id TEXT
+                    )"""
+                )
+                if version == 1:
+                    # Earlier releases preserved client timezone and precision.
+                    for solve in connection.execute(
+                        "SELECT account_id, id, recorded_at FROM solves"
+                    ).fetchall():
+                        connection.execute(
+                            "UPDATE solves SET recorded_at = ? WHERE account_id = ? AND id = ?",
+                            (
+                                normalize_recorded_at(datetime.fromisoformat(solve["recorded_at"])),
+                                solve["account_id"],
+                                solve["id"],
+                            ),
+                        )
+                connection.execute("PRAGMA user_version = 2")
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
+
         connection.execute("BEGIN IMMEDIATE")
         try:
+            for column, definition in (
+                ("revision", "INTEGER NOT NULL DEFAULT 0"),
+                ("best_ao50_ms", "INTEGER"),
+                ("best_ao50_at", "TEXT"),
+                ("best_ao50_id", "TEXT"),
+                ("first_completed_ms", "INTEGER"),
+                ("earliest_solve_at", "TEXT"),
+                ("active_days", "INTEGER NOT NULL DEFAULT 0"),
+                ("longest_streak", "INTEGER NOT NULL DEFAULT 0"),
+                ("last_active_day", "TEXT"),
+                ("ending_streak", "INTEGER NOT NULL DEFAULT 0"),
+            ):
+                connection.execute(f"ALTER TABLE solve_summaries ADD COLUMN {column} {definition}")
             connection.execute(
-                """CREATE TABLE solve_summaries (
-                    account_id INTEGER PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
-                    solve_count INTEGER NOT NULL,
-                    completed_count INTEGER NOT NULL,
-                    total_duration_ms INTEGER NOT NULL,
-                    effective_duration_ms INTEGER NOT NULL,
-                    best_single_ms INTEGER,
-                    best_single_at TEXT,
-                    best_single_id TEXT,
-                    best_ao5_ms INTEGER,
-                    best_ao5_at TEXT,
-                    best_ao5_id TEXT,
-                    best_ao12_ms INTEGER,
-                    best_ao12_at TEXT,
-                    best_ao12_id TEXT,
-                    last_recorded_at TEXT,
-                    last_id TEXT
+                """CREATE TABLE daily_activity (
+                    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    day TEXT NOT NULL, attempts INTEGER NOT NULL,
+                    PRIMARY KEY (account_id, day)
                 )"""
             )
-            if version == 1:
-                # Earlier releases preserved the client's timezone and precision.
-                # Normalize before sorting/backfilling the chronological projection.
-                for solve in connection.execute(
-                    "SELECT account_id, id, recorded_at FROM solves"
-                ).fetchall():
-                    connection.execute(
-                        "UPDATE solves SET recorded_at = ? WHERE account_id = ? AND id = ?",
-                        (
-                            normalize_recorded_at(datetime.fromisoformat(solve["recorded_at"])),
-                            solve["account_id"],
-                            solve["id"],
-                        ),
-                    )
+            connection.execute(
+                """CREATE TABLE solve_progression (
+                    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    id TEXT NOT NULL, recorded_at TEXT NOT NULL,
+                    attempt_number INTEGER NOT NULL,
+                    single_ms INTEGER, pb_single_ms INTEGER,
+                    mean_5_ms INTEGER, mean_12_ms INTEGER, mean_50_ms INTEGER,
+                    is_pb INTEGER NOT NULL,
+                    PRIMARY KEY (account_id, id)
+                )"""
+            )
+            connection.execute(
+                "CREATE INDEX progression_account_order ON solve_progression(account_id, recorded_at, id)"
+            )
             for account in connection.execute("SELECT id FROM accounts"):
                 rebuild_summary(connection, account["id"])
             connection.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")

@@ -5,11 +5,13 @@ import { faUserCircle as legacyUserCircle } from 'free-solid-svg-icons-v5'
 import { faPen } from '@fortawesome/free-solid-svg-icons'
 import type { LifetimeProfileSummary } from '../solves/stats'
 import type { UserProfile } from '../types'
+import { formatTime } from '../timer/timer'
 import { formatAccountDate, formatSolvingTime } from './format'
 
 type AccountSummaryProps = {
   profile: UserProfile
   lifetime: LifetimeProfileSummary
+  meanMs: number | null
   onEdit?: () => void
 }
 
@@ -45,7 +47,7 @@ function FittedName({ name }: { name: string }) {
   return <h1 id="account-name" ref={nameRef}>{name}</h1>
 }
 
-export function AccountSummary({ profile, lifetime, onEdit }: AccountSummaryProps) {
+export function AccountSummary({ profile, lifetime, meanMs, onEdit }: AccountSummaryProps) {
   return (
     <section className={`account-summary${profile.bio ? ' has-bio' : ''}`} aria-labelledby="account-name">
       <div className="account-summary-body">
@@ -77,6 +79,7 @@ export function AccountSummary({ profile, lifetime, onEdit }: AccountSummaryProp
           <div><span>total solves</span><strong>{lifetime.loggedCount.toLocaleString()}</strong></div>
           <div><span>time solving</span><strong>{formatSolvingTime(lifetime.totalRawDurationMs)}</strong></div>
           <div><span>active days</span><strong>{lifetime.totalActiveDays.toLocaleString()}</strong></div>
+          <div><span>lifetime mean (non-DNF)</span><strong>{meanMs === null ? '—' : formatTime(meanMs)}</strong></div>
         </div>
       </div>
       {onEdit && (

@@ -2,21 +2,43 @@ import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCrown, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { newestSolvesFirst, personalBestHistory } from '../solves/stats'
+import { ApiError, getAccountRecent } from '../api'
 import { formatTime } from '../timer/timer'
-import type { Penalty, Solve } from '../types'
+import type { Penalty, RecentPage, Solve } from '../types'
 import { formatAccountDate } from './format'
 
 const PAGE_SIZE = 10
 
-export function RecentSolves({ solves, onPenalty, onDelete }: {
-  solves: Solve[]
+export function RecentSolves({ solves, page, onError, onStale, onPenalty, onDelete }: {
+  solves?: Solve[]
+  page?: RecentPage
+  onError?: (error: string) => void
+  onStale?: () => void
   onPenalty?: (solve: Solve, penalty: Penalty) => Promise<void>
   onDelete?: (solve: Solve) => Promise<void>
 }) {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [pendingIds, setPendingIds] = useState<string[]>([])
-  const recent = useMemo(() => newestSolvesFirst(solves), [solves])
-  const bestIds = useMemo(() => new Set(personalBestHistory(solves).map(({ solve }) => solve.id)), [solves])
+  const [extra, setExtra] = useState<RecentPage['solves']>([])
+  const [cursor, setCursor] = useState(page?.next_cursor ?? null)
+  const [loading, setLoading] = useState(false)
+  const recent = useMemo(() => solves ? newestSolvesFirst(solves) : [...(page?.solves ?? []), ...extra], [solves, page, extra])
+  const bestIds = useMemo(() => solves ? new Set(personalBestHistory(solves).map(({ solve }) => solve.id)) : new Set(recent.filter((solve) => 'is_pb' in solve && solve.is_pb).map((solve) => solve.id)), [solves, recent])
+
+  async function loadMore() {
+    if (!cursor || !page || loading) return
+    setLoading(true)
+    try {
+      const next = await getAccountRecent(cursor, page.revision)
+      setExtra((current) => [...current, ...next.solves])
+      setCursor(next.next_cursor)
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) onStale?.()
+      else onError?.(error instanceof Error ? error.message : 'Could not load solves')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function withPending(solve: Solve, action: () => Promise<void>) {
     setPendingIds((current) => [...current, solve.id])
@@ -45,7 +67,7 @@ export function RecentSolves({ solves, onPenalty, onDelete }: {
                 {onPenalty && onDelete && <th scope="col"><span className="account-visually-hidden">actions</span></th>}
               </tr></thead>
               <tbody>
-                {recent.slice(0, limit).map((solve) => (
+                {(solves ? recent.slice(0, limit) : recent).map((solve) => (
                   <tr key={solve.id}>
                     <td className="account-recent-pb">
                       {bestIds.has(solve.id) && <FontAwesomeIcon icon={faCrown} title="personal best" aria-label="personal best" />}
@@ -71,7 +93,7 @@ export function RecentSolves({ solves, onPenalty, onDelete }: {
               </tbody>
             </table>
           </div>
-          {limit < recent.length && <button className="account-load-more" type="button" onClick={() => setLimit((current) => current + PAGE_SIZE)}>load more</button>}
+          {(solves ? limit < recent.length : cursor !== null) && <button className="account-load-more" type="button" disabled={loading} onClick={() => solves ? setLimit((current) => current + PAGE_SIZE) : void loadMore()}>load more</button>}
         </>
       )}
     </section>

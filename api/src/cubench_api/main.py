@@ -3,16 +3,20 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 
+from cubench_api.account_views import activity, dashboard, recent_page
 from cubench_api.auth import AccountDependency, router as auth_router
 from cubench_api.config import ConfigDependency, load_runtime_config
 from cubench_api.database import connect, database_is_ready, initialize_database
 from cubench_api.schemas import (
+    AccountDashboard,
+    ActivityDay,
     ExportData,
     Profile,
     ProfileUpdate,
+    RecentPage,
     Solve,
     SolveCreate,
     SolveSummary,
@@ -91,6 +95,36 @@ def list_solves(account: AccountDependency) -> list[dict]:
 def get_solve_summary(account: AccountDependency) -> dict:
     with connect() as connection:
         return read_summary(connection, account.id)
+
+
+@app.get("/api/account/dashboard", response_model=AccountDashboard)
+def get_account_dashboard(account: AccountDependency) -> dict:
+    with connect() as connection:
+        connection.execute("BEGIN")
+        return dashboard(connection, account.id)
+
+
+@app.get("/api/account/activity", response_model=list[ActivityDay])
+def get_account_activity(
+    account: AccountDependency, year: int = Query(ge=1970, le=9999),
+    revision: int = Query(ge=0),
+) -> list[dict]:
+    with connect() as connection:
+        connection.execute("BEGIN")
+        if read_summary(connection, account.id)["revision"] != revision:
+            raise HTTPException(status_code=409, detail="History changed; refresh the account")
+        return activity(connection, account.id, year)
+
+
+@app.get("/api/account/recent", response_model=RecentPage)
+def get_account_recent(
+    account: AccountDependency, cursor: UUID, revision: int = Query(ge=0),
+) -> dict:
+    with connect() as connection:
+        connection.execute("BEGIN")
+        if read_summary(connection, account.id)["revision"] != revision:
+            raise HTTPException(status_code=409, detail="History changed; refresh the account")
+        return recent_page(connection, account.id, revision, str(cursor))
 
 
 @app.post(

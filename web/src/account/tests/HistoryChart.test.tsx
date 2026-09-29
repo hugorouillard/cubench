@@ -77,7 +77,7 @@ describe('account progression', () => {
   it('toggles PB and each average independently without hiding solve dots', () => {
     render(<AccountProgression solves={Array.from({ length: 50 }, (_, index) => solve(index))} theme="catppuccin-mocha" />)
     const controls = screen.getByRole('group', { name: 'Progression series' })
-    const buttons = ['PB', 'Avg of 5', 'Avg of 12', 'Avg of 50'].map((label) => within(controls).getByRole('button', { name: label }))
+    const buttons = ['PB', 'Mean of 5', 'Mean of 12', 'Mean of 50'].map((label) => within(controls).getByRole('button', { name: label }))
 
     expect(chartData().data.datasets[4].data.at(-1)).not.toBeNull()
     for (const button of buttons) {
