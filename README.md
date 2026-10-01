@@ -21,7 +21,7 @@ The goal is a speedcubing timer with two main benefits:
 - **Time solves:** hold **Space** until the timer says “release to start,”
   release to start, then press **Space** again to stop. You can try the timer
   without a cube. **Escape** stops a running solve as a DNF (did not finish).
-- **Explore progress tracking:** open the **sign in** dialog and choose
+- **Explore progress tracking:** open the **sign-in page** and choose
   **preview account features** to browse a read-only profile with fictional
   solves. Date filters, chart series, and sortable history work without signing in.
 
