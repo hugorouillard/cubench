@@ -132,7 +132,11 @@ describe('current session', () => {
 
     await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
     expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/auth/session'])
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeTruthy()
+    const accountNav = within(screen.getByRole('navigation', { name: 'Account' }))
+    const signIn = accountNav.getByRole('button', { name: 'Sign in' })
+    expect(accountNav.getAllByRole('button')).toHaveLength(1)
+    expect(signIn.textContent).toBe('')
+    expect(signIn.querySelector('[data-prefix="far"]')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'clear times' }))
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
   })
@@ -283,9 +287,11 @@ describe('current session', () => {
     })
     fireEvent.click(signIn.getByRole('button', { name: 'sign in' }))
 
-    await screen.findByText('Speed Cuber')
+    await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
     expect(location.pathname).toBe('/')
-    expect(screen.getByRole('button', { name: 'Open profile for Speed Cuber' })).toBeTruthy()
+    const accountNav = within(screen.getByRole('navigation', { name: 'Account' }))
+    expect(accountNav.getAllByRole('button')).toHaveLength(1)
+    expect(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }).textContent).toBe('')
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
     await act(async () => {
       timer.onComplete?.(11_000, 'none')
@@ -293,7 +299,8 @@ describe('current session', () => {
     await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
     expect(fetch.mock.calls.map(([path]) => String(path))).toContain('/api/solves')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open profile for Speed Cuber' }))
+    fireEvent.click(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }))
+    fireEvent.click(accountNav.getByRole('button', { name: 'profile' }))
     await screen.findByRole('heading', { name: 'Lifetime profile' })
     fireEvent.click(screen.getByRole('link', { name: 'Cubench home' }))
     expect(screen.getByTestId('solve-count').textContent).toBe('1')
@@ -315,11 +322,13 @@ describe('current session', () => {
     expect(screen.queryByRole('heading', { name: 'Lifetime profile' })).toBeNull()
 
     confirm.mockReturnValueOnce(false)
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    fireEvent.click(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }))
+    fireEvent.click(screen.getByRole('button', { name: 'sign out' }))
     expect(screen.getByRole('button', { name: 'Retry saving result' })).toBeTruthy()
 
     confirm.mockReturnValueOnce(true)
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    fireEvent.click(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }))
+    fireEvent.click(screen.getByRole('button', { name: 'sign out' }))
     await screen.findByRole('button', { name: /sign in/i })
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
   })
@@ -351,7 +360,7 @@ describe('current session', () => {
     expect(screen.getByRole('button', { name: 'Timer' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: 'preview account features' }).hasAttribute('disabled')).toBe(true)
     resolveLogin(jsonResponse(account))
-    await screen.findByText('Speed Cuber')
+    await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
   })
 
   it('redirects signed-in visitors away from /login', async () => {
@@ -359,7 +368,7 @@ describe('current session', () => {
     vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
     render(<App initialTheme="catppuccin-mocha" />)
 
-    await screen.findByText('Speed Cuber')
+    await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
     expect(location.pathname).toBe('/')
     expect(screen.queryByRole('heading', { name: 'create account' })).toBeNull()
   })
@@ -369,27 +378,50 @@ describe('current session', () => {
 
     render(<App initialTheme="catppuccin-mocha" />)
 
-    await screen.findByText('Speed Cuber')
+    await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
     expect(fetch).toHaveBeenCalledWith('/api/auth/session', expect.anything())
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
+  })
+
+  it('closes account actions with Escape or an outside press', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
+    render(<App initialTheme="catppuccin-mocha" />)
+
+    const accountButton = await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
+    fireEvent.click(accountButton)
+    expect(accountButton.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(accountButton.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(accountButton)
+
+    fireEvent.click(accountButton)
+    fireEvent.pointerDown(document.body)
+    expect(accountButton.getAttribute('aria-expanded')).toBe('false')
   })
 
   it('switches between the timer and account profile', async () => {
     vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
     render(<App initialTheme="catppuccin-mocha" />)
 
-    const profileButton = await screen.findByRole('button', {
-      name: 'Open profile for Speed Cuber',
+    const accountButton = await screen.findByRole('button', {
+      name: 'Account menu for Speed Cuber',
     })
+    expect(accountButton.textContent).toBe('')
+    expect(accountButton.querySelector('[data-prefix="fas"]')).toBeTruthy()
+    expect(within(screen.getByRole('navigation', { name: 'Account' })).getAllByRole('button')).toHaveLength(1)
+    fireEvent.click(accountButton)
+    const profileButton = screen.getByRole('button', { name: 'profile' })
     fireEvent.click(profileButton)
 
     await screen.findByRole('heading', { name: 'Lifetime profile' })
     expect(location.hash).toBe('#profile')
-    expect(profileButton.getAttribute('aria-current')).toBe('page')
+    fireEvent.click(accountButton)
+    expect(screen.getByRole('button', { name: 'profile' }).getAttribute('aria-current')).toBe('page')
+    fireEvent.click(accountButton)
     expect(screen.getByRole('button', { name: 'Timer' }).getAttribute('aria-current')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'update profile' }))
-    expect(screen.getByRole('button', { name: 'Open profile for Updated Cuber' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Account menu for Updated Cuber' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
     expect(location.hash).toBe('')

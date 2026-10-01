@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { faUser as faUserRegular } from '@fortawesome/free-regular-svg-icons'
 import { faDiscord as legacyDiscord } from 'free-brands-svg-icons-v5'
 import {
   faCode as legacyCode,
@@ -18,16 +19,15 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
-  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
-  faArrowRightFromBracket,
   faCircleExclamation,
   faCube,
   faEyeSlash,
   faRotateRight,
   faSliders,
   faStopwatch,
+  faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
@@ -46,7 +46,6 @@ import './App.css'
 
 declare const __CUBENCH_VERSION__: string
 
-const accountIcon = legacyUser as unknown as IconDefinition
 const aboutIcon = legacyInfo as unknown as IconDefinition
 const optionsIcon = legacyCog as unknown as IconDefinition
 
@@ -161,6 +160,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [authChecking, setAuthChecking] = useState(true)
   const [authBusy, setAuthBusy] = useState(false)
   const [authSubmitting, setAuthSubmitting] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
@@ -174,6 +174,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [inspectionEnabled, setInspectionEnabled] = useState(false)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const latestResultIdRef = useRef(latestResultId)
+  const accountMenuRef = useRef<HTMLElement>(null)
+  const accountButtonRef = useRef<HTMLButtonElement>(null)
   latestResultIdRef.current = latestResultId
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
 
@@ -277,6 +279,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       !pendingSolve &&
       !authChecking &&
       !authBusy &&
+      !accountMenuOpen &&
       !practiceSettingsOpen,
     ),
     inspectionEnabled,
@@ -313,6 +316,30 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [account, controlsDisabled, view])
+
+  useEffect(() => {
+    if (!accountMenuOpen) return
+
+    function handlePointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && !accountMenuRef.current?.contains(event.target)) {
+        setAccountMenuOpen(false)
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false)
+        accountButtonRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [accountMenuOpen])
 
   function resetCurrentSession() {
     setSolves([])
@@ -501,41 +528,56 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             </button>
           </nav>
 
-          <nav className="account-nav" aria-label="Account">
+          <nav
+            className="account-nav"
+            aria-label="Account"
+            ref={accountMenuRef}
+            onBlur={(event) => {
+              if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) {
+                setAccountMenuOpen(false)
+              }
+            }}
+          >
             {account ? (
               <>
                 <button
-                  className={`account-identity${view === 'profile' ? ' is-active' : ''}`}
+                  ref={accountButtonRef}
+                  className={view === 'profile' || accountMenuOpen ? 'is-active' : ''}
                   type="button"
-                  onClick={() => navigate('profile')}
-                  disabled={controlsDisabled}
-                  aria-label={`Open profile for ${account.display_name}`}
-                  aria-current={view === 'profile' ? 'page' : undefined}
-                  title="Profile"
-                >
-                  <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
-                  <span className="account-name">{account.display_name}</span>
-                  <span
-                    className="account-solve-count"
-                    title={`${solves.length} current ${solves.length === 1 ? 'solve' : 'solves'}`}
-                  >
-                    {solves.length}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleLogout()}
+                  onClick={() => setAccountMenuOpen((open) => !open)}
                   disabled={accountActionDisabled}
-                  aria-label="Sign out"
-                  title="Sign out"
+                  aria-label={`Account menu for ${account.display_name}`}
+                  aria-expanded={accountMenuOpen}
+                  aria-controls={accountMenuOpen ? 'account-menu' : undefined}
+                  title="Account"
                 >
-                  <FontAwesomeIcon
-                    className="app-icon"
-                    icon={faArrowRightFromBracket}
-                    fixedWidth
-                    aria-hidden="true"
-                  />
+                  <FontAwesomeIcon className="app-icon" icon={faUser} fixedWidth aria-hidden="true" />
                 </button>
+                {accountMenuOpen && (
+                  <div className="account-menu" id="account-menu" role="group" aria-label="Account actions">
+                    <button
+                      type="button"
+                      disabled={controlsDisabled}
+                      onClick={() => {
+                        setAccountMenuOpen(false)
+                        navigate('profile')
+                      }}
+                      aria-current={view === 'profile' ? 'page' : undefined}
+                    >
+                      profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAccountMenuOpen(false)
+                        void handleLogout()
+                      }}
+                      disabled={accountActionDisabled}
+                    >
+                      sign out
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <button
@@ -546,8 +588,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 aria-current={view === 'login' ? 'page' : undefined}
                 title="Sign in"
               >
-                <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
-                <span className="account-name">sign in</span>
+                <FontAwesomeIcon className="app-icon" icon={faUserRegular} fixedWidth aria-hidden="true" />
               </button>
             )}
           </nav>

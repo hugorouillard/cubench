@@ -148,61 +148,44 @@ select:disabled {
 }
 
 .account-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  position: relative;
   margin-left: auto;
 }
 
-.account-identity {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  padding: 0.5em;
-  color: var(--sub-readable-color);
-  line-height: 1.25;
-}
-
-.account-identity .app-icon {
-  width: 1.25rem;
-  font-size: 0.875rem;
-}
-
 .account-nav button {
-  width: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5em;
-  padding: 0.5em;
+  width: 2.25rem;
   color: var(--account-icon-color);
-  line-height: 1.25;
 }
 
 .account-nav .app-icon {
   width: 1.25rem;
-  font-size: 0.875rem;
+  font-size: 1.05rem;
 }
 
-.account-name {
-  font-size: 0.75em;
-  line-height: 1rem;
-}
-
-.account-solve-count {
-  padding: 0.1em 0.5em;
-  border-radius: calc(var(--roundness) / 2);
-  color: var(--sub-readable-color);
+.account-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 1;
+  min-width: 9rem;
+  padding: 0.25rem;
+  border-radius: var(--roundness);
   background: var(--sub-alt-color);
-  font-size: 0.7em;
-  line-height: 1.25;
-  transition: background-color 125ms ease;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.25);
 }
 
-.account-nav button:hover .account-solve-count,
-.account-nav button.is-active .account-solve-count {
-  color: var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 10%, var(--sub-alt-color));
+.account-menu button {
+  width: 100%;
+  height: auto;
+  display: block;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.account-menu button:hover {
+  background: color-mix(in srgb, var(--main-color) 12%, var(--sub-alt-color));
 }
 
 .notification {
@@ -1113,23 +1096,6 @@ select:disabled {
 
   .main-nav {
     margin-left: 0.65rem;
-  }
-
-  .account-name {
-    display: none;
-  }
-
-  .account-identity .account-name {
-    display: inline;
-    max-width: 6rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .account-nav button {
-    width: auto;
-    padding-inline: 0.5rem;
   }
 
   .timer-stage {
