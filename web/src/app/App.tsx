@@ -144,14 +144,18 @@ function pathForView(view: AppView): string {
   return `${path}${location.search}${hash}`
 }
 
+function isLoginPath(): boolean {
+  return location.pathname === '/login' || location.pathname === '/login/'
+}
+
 function requestedView(account: Account | null): AppView {
-  if (location.pathname === '/login') return account ? 'timer' : 'login'
+  if (isLoginPath()) return account ? 'timer' : 'login'
   if (location.hash === '#preview') return 'preview'
   return account && location.hash === '#profile' ? 'profile' : 'timer'
 }
 
 function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
-  const [view, setView] = useState<AppView>('timer')
+  const [view, setView] = useState<AppView>(() => isLoginPath() ? 'login' : 'timer')
   const [profilePreview] = useState(createProfilePreview)
   const [account, setAccount] = useState<Account | null>(null)
   const [authChecking, setAuthChecking] = useState(true)
@@ -292,7 +296,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
   useEffect(() => {
     if (authChecking) return
-    if (account && location.pathname === '/login') navigate('timer', true)
+    if (account && isLoginPath()) navigate('timer', true)
     else setView(requestedView(account))
   }, [account, authChecking])
 
@@ -719,11 +723,17 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           </div>
         </main>
       ) : view === 'login' ? (
-        <AuthPage
-          onAuthenticated={handleAuthenticated}
-          onSubmittingChange={setAuthSubmitting}
-          onPreview={() => navigate('preview')}
-        />
+        authChecking || account ? (
+          <main className="auth-page page-width" aria-busy="true">
+            <p role="status">checking account...</p>
+          </main>
+        ) : (
+          <AuthPage
+            onAuthenticated={handleAuthenticated}
+            onSubmittingChange={setAuthSubmitting}
+            onPreview={() => navigate('preview')}
+          />
+        )
       ) : view === 'preview' || account ? (
         <AccountPage
           key={view}

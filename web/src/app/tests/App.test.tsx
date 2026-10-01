@@ -192,8 +192,8 @@ describe('current session', () => {
     expect(screen.getByRole('heading', { name: 'Sample profile' })).toBeTruthy()
   })
 
-  it('opens /login directly and returns to the timer with browser navigation', async () => {
-    window.history.replaceState(null, '', '/login')
+  it.each(['/login', '/login/'])('opens %s directly and returns to the timer with browser navigation', async (path) => {
+    window.history.replaceState(null, '', path)
     render(<App initialTheme="catppuccin-mocha" />)
     await screen.findByRole('heading', { name: 'create account' })
     expect(screen.getByRole('heading', { name: 'sign in' })).toBeTruthy()

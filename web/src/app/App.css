@@ -780,6 +780,11 @@ select:disabled {
   align-self: center;
 }
 
+.auth-page > [role='status'] {
+  color: var(--sub-readable-color);
+  text-align: center;
+}
+
 .auth-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
