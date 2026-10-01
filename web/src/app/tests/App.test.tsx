@@ -294,7 +294,7 @@ describe('current session', () => {
     expect(location.pathname).toBe('/')
     const accountNav = within(screen.getByRole('navigation', { name: 'Account' }))
     expect(accountNav.getAllByRole('button')).toHaveLength(1)
-    expect(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }).textContent).toBe('')
+    expect(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }).textContent).toBe('Speed Cuber')
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
     await act(async () => {
       timer.onComplete?.(11_000, 'none')
@@ -427,7 +427,7 @@ describe('current session', () => {
     const accountButton = await screen.findByRole('button', {
       name: 'Account menu for Speed Cuber',
     })
-    expect(accountButton.textContent).toBe('')
+    expect(accountButton.textContent).toBe('Speed Cuber')
     expect(accountButton.querySelector('[data-prefix="fas"]')).toBeTruthy()
     expect(within(screen.getByRole('navigation', { name: 'Account' })).getAllByRole('button')).toHaveLength(1)
     fireEvent.click(accountButton)
@@ -442,7 +442,7 @@ describe('current session', () => {
     expect(screen.getByRole('button', { name: 'Timer' }).getAttribute('aria-current')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'update profile' }))
-    expect(screen.getByRole('button', { name: 'Account menu for Updated Cuber' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Account menu for Updated Cuber' }).textContent).toBe('Updated Cuber')
 
     fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
     expect(location.hash).toBe('')

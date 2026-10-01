@@ -569,7 +569,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
               <>
                 <button
                   ref={accountButtonRef}
-                  className={view === 'profile' || accountMenuOpen ? 'is-active' : ''}
+                  className={`account-identity${view === 'profile' || accountMenuOpen ? ' is-active' : ''}`}
                   type="button"
                   onPointerDown={(event) => {
                     if (event.pointerType === 'touch') accountMenuDismissedRef.current = true
@@ -594,6 +594,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                   title="Account"
                 >
                   <FontAwesomeIcon className="app-icon account-icon--signed-in" icon={signedInIcon} fixedWidth aria-hidden="true" />
+                  <span className="account-name">{account.display_name}</span>
                 </button>
                 {accountMenuOpen && (
                   <div className="account-menu" id="account-menu" role="group" aria-label="Account actions">
