@@ -979,7 +979,7 @@ select:disabled {
 }
 
 @media (min-width: 849px) {
-  .app:has(.practice-view) {
+  .app {
     row-gap: 0.5rem;
     padding-block: 1.5rem;
   }
