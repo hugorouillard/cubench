@@ -158,8 +158,10 @@ describe('current session', () => {
     await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'preview account features' }))
+    expect(location.pathname).toBe('/login')
+    fireEvent.click(screen.getByRole('button', { name: 'preview account features' }))
     expect(screen.getByRole('heading', { name: 'Sample profile' })).toBeTruthy()
+    expect(location.pathname).toBe('/')
     expect(location.hash).toBe('#preview')
 
     fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
@@ -177,16 +179,32 @@ describe('current session', () => {
     expect(location.hash).toBe('#preview')
   })
 
-  it('offers the preview from the account dialog before requesting credentials', async () => {
+  it('offers the preview and invitation below the two account forms', async () => {
     render(<App initialTheme="catppuccin-mocha" />)
     await screen.findByText("R U R'")
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByRole('link', { name: 'Request an invite from Hugo' }).getAttribute('href'))
+    expect(screen.getByRole('heading', { name: 'create account' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'sign in' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Request an invite' }).getAttribute('href'))
       .toContain('mailto:rouillard.hugo1@gmail.com')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'preview account features' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'preview account features' }))
+    expect(screen.queryByRole('heading', { name: 'create account' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Sample profile' })).toBeTruthy()
+  })
+
+  it('opens /login directly and returns to the timer with browser navigation', async () => {
+    window.history.replaceState(null, '', '/login')
+    render(<App initialTheme="catppuccin-mocha" />)
+    await screen.findByRole('heading', { name: 'create account' })
+    expect(screen.getByRole('heading', { name: 'sign in' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Timer' }))
+    expect(location.pathname).toBe('/')
+    expect(screen.getByText("R U R'")).toBeTruthy()
+
+    window.history.replaceState(null, '', '/login')
+    await act(async () => window.dispatchEvent(new PopStateEvent('popstate')))
+    expect(screen.getByRole('heading', { name: 'create account' })).toBeTruthy()
   })
 
   it('keeps upcoming header buttons on the timer view', async () => {
@@ -256,16 +274,17 @@ describe('current session', () => {
     await waitFor(() => expect(screen.getByTestId('solve-count').textContent).toBe('1'))
 
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
-    const dialog = screen.getByRole('dialog')
-    fireEvent.change(within(dialog).getByLabelText('username'), {
+    const signIn = within(screen.getByRole('region', { name: 'sign in' }))
+    fireEvent.change(signIn.getByLabelText('username'), {
       target: { value: 'speedcuber' },
     })
-    fireEvent.change(within(dialog).getByLabelText('password'), {
+    fireEvent.change(signIn.getByLabelText('password'), {
       target: { value: 'test-password' },
     })
-    fireEvent.click(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!)
+    fireEvent.click(signIn.getByRole('button', { name: 'sign in' }))
 
     await screen.findByText('Speed Cuber')
+    expect(location.pathname).toBe('/')
     expect(screen.getByRole('button', { name: 'Open profile for Speed Cuber' })).toBeTruthy()
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
     await act(async () => {
@@ -305,7 +324,7 @@ describe('current session', () => {
     expect(screen.getByTestId('solve-count').textContent).toBe('0')
   })
 
-  it('keeps the account dialog open while sign in is pending', async () => {
+  it('keeps the login page open and blocks navigation while sign in is pending', async () => {
     let resolveLogin!: (response: Response) => void
     vi.mocked(globalThis.fetch).mockImplementation((input) => {
       if (String(input) === '/api/auth/session') {
@@ -319,19 +338,30 @@ describe('current session', () => {
     await screen.findByText("R U R'")
 
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
-    const dialog = screen.getByRole('dialog')
-    fireEvent.change(within(dialog).getByLabelText('username'), {
+    const signIn = within(screen.getByRole('region', { name: 'sign in' }))
+    fireEvent.change(signIn.getByLabelText('username'), {
       target: { value: 'speedcuber' },
     })
-    fireEvent.change(within(dialog).getByLabelText('password'), {
+    fireEvent.change(signIn.getByLabelText('password'), {
       target: { value: 'test-password' },
     })
-    fireEvent.click(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!)
-    fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }))
+    fireEvent.click(signIn.getByRole('button', { name: 'sign in' }))
 
-    expect(dialog.hasAttribute('open')).toBe(true)
+    expect(location.pathname).toBe('/login')
+    expect(screen.getByRole('button', { name: 'Timer' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'preview account features' }).hasAttribute('disabled')).toBe(true)
     resolveLogin(jsonResponse(account))
     await screen.findByText('Speed Cuber')
+  })
+
+  it('redirects signed-in visitors away from /login', async () => {
+    window.history.replaceState(null, '', '/login')
+    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
+    render(<App initialTheme="catppuccin-mocha" />)
+
+    await screen.findByText('Speed Cuber')
+    expect(location.pathname).toBe('/')
+    expect(screen.queryByRole('heading', { name: 'create account' })).toBeNull()
   })
 
   it('restores an account session', async () => {

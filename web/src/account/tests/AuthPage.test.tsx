@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AuthPanel } from '../AuthPanel'
+import { AuthPage } from '../AuthPage'
 
 describe('account access', () => {
   afterEach(() => {
@@ -26,26 +26,25 @@ describe('account access', () => {
     )
     const authenticated = vi.fn()
     const submittingChanged = vi.fn()
-    const { container } = render(
-      <AuthPanel
+    render(
+      <AuthPage
         onAuthenticated={authenticated}
-        onClose={vi.fn()}
         onSubmittingChange={submittingChanged}
         onPreview={vi.fn()}
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'create account' }))
-    fireEvent.change(screen.getByLabelText('username'), {
+    const register = within(screen.getByRole('region', { name: 'create account' }))
+    fireEvent.change(register.getByLabelText('username'), {
       target: { value: 'speedcuber' },
     })
-    fireEvent.change(screen.getByLabelText('password'), {
+    fireEvent.change(register.getByLabelText('password'), {
       target: { value: 'test-password' },
     })
-    fireEvent.change(screen.getByLabelText('invite code'), {
+    fireEvent.change(register.getByLabelText('invite code'), {
       target: { value: 'shared-code' },
     })
-    fireEvent.click(container.querySelector<HTMLButtonElement>('button[type="submit"]')!)
+    fireEvent.click(register.getByRole('button', { name: 'create account' }))
 
     await vi.waitFor(() => expect(authenticated).toHaveBeenCalledWith(account))
     expect(submittingChanged.mock.calls).toEqual([[true], [false]])
@@ -69,23 +68,38 @@ describe('account access', () => {
         { status: 422, headers: { 'Content-Type': 'application/json' } },
       ),
     )
-    const { container } = render(
-      <AuthPanel
+    render(
+      <AuthPage
         onAuthenticated={vi.fn()}
-        onClose={vi.fn()}
         onSubmittingChange={vi.fn()}
         onPreview={vi.fn()}
       />,
     )
-    fireEvent.change(screen.getByLabelText('username'), {
+    const signIn = within(screen.getByRole('region', { name: 'sign in' }))
+    fireEvent.change(signIn.getByLabelText('username'), {
       target: { value: 'speedcuber' },
     })
-    fireEvent.change(screen.getByLabelText('password'), {
+    fireEvent.change(signIn.getByLabelText('password'), {
       target: { value: 'incorrect' },
     })
 
-    fireEvent.click(container.querySelector<HTMLButtonElement>('button[type="submit"]')!)
+    fireEvent.click(signIn.getByRole('button', { name: 'sign in' }))
 
     expect((await screen.findByRole('alert')).textContent).toBe('Password is too short')
+  })
+
+  it('shares the invitation and preview below both forms', () => {
+    const onPreview = vi.fn()
+    const { container } = render(
+      <AuthPage onAuthenticated={vi.fn()} onSubmittingChange={vi.fn()} onPreview={onPreview} />,
+    )
+
+    const invite = screen.getByRole('link', { name: 'Request an invite' })
+    expect(invite.getAttribute('href')).toContain('mailto:rouillard.hugo1@gmail.com')
+    expect(container.querySelector('.auth-footer')?.lastElementChild?.contains(invite)).toBe(true)
+    expect(screen.getByLabelText('invite code').getAttribute('aria-describedby')).toBe('invite-code-help')
+    expect(screen.queryByText('Request an invite from Hugo')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'preview account features' }))
+    expect(onPreview).toHaveBeenCalledOnce()
   })
 })
