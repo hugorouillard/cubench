@@ -94,7 +94,10 @@ vi.mock('../../account/AccountPage', () => ({
 import App from '../App'
 
 describe('current session', () => {
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
 
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -300,7 +303,6 @@ describe('current session', () => {
     expect(fetch.mock.calls.map(([path]) => String(path))).toContain('/api/solves')
 
     fireEvent.click(accountNav.getByRole('button', { name: 'Account menu for Speed Cuber' }))
-    fireEvent.click(accountNav.getByRole('button', { name: 'profile' }))
     await screen.findByRole('heading', { name: 'Lifetime profile' })
     fireEvent.click(screen.getByRole('link', { name: 'Cubench home' }))
     expect(screen.getByTestId('solve-count').textContent).toBe('1')
@@ -388,15 +390,34 @@ describe('current session', () => {
     render(<App initialTheme="catppuccin-mocha" />)
 
     const accountButton = await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
-    fireEvent.click(accountButton)
+    const accountNav = screen.getByRole('navigation', { name: 'Account' })
+    fireEvent.pointerEnter(accountNav, { pointerType: 'mouse' })
     expect(accountButton.getAttribute('aria-expanded')).toBe('true')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(accountButton.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(accountButton)
 
-    fireEvent.click(accountButton)
+    fireEvent.pointerLeave(accountNav, { pointerType: 'mouse' })
+    fireEvent.focus(accountButton)
+    const signOut = screen.getByRole('button', { name: 'sign out' })
+    fireEvent.focus(signOut)
+    expect(accountButton.getAttribute('aria-expanded')).toBe('true')
     fireEvent.pointerDown(document.body)
     expect(accountButton.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('opens account actions with a touch tap', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account))
+    render(<App initialTheme="catppuccin-mocha" />)
+
+    const accountButton = await screen.findByRole('button', { name: 'Account menu for Speed Cuber' })
+    fireEvent.click(accountButton)
+    expect(location.hash).toBe('')
+    expect(screen.getByRole('button', { name: 'profile' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'sign out' })).toBeTruthy()
+    fireEvent.click(accountButton)
+    expect(screen.queryByRole('button', { name: 'sign out' })).toBeNull()
   })
 
   it('switches between the timer and account profile', async () => {
@@ -410,14 +431,14 @@ describe('current session', () => {
     expect(accountButton.querySelector('[data-prefix="fas"]')).toBeTruthy()
     expect(within(screen.getByRole('navigation', { name: 'Account' })).getAllByRole('button')).toHaveLength(1)
     fireEvent.click(accountButton)
-    const profileButton = screen.getByRole('button', { name: 'profile' })
-    fireEvent.click(profileButton)
 
     await screen.findByRole('heading', { name: 'Lifetime profile' })
     expect(location.hash).toBe('#profile')
-    fireEvent.click(accountButton)
+    const accountNav = screen.getByRole('navigation', { name: 'Account' })
+    fireEvent.pointerLeave(accountNav, { pointerType: 'mouse' })
+    fireEvent.pointerEnter(accountNav, { pointerType: 'mouse' })
     expect(screen.getByRole('button', { name: 'profile' }).getAttribute('aria-current')).toBe('page')
-    fireEvent.click(accountButton)
+    fireEvent.pointerLeave(accountNav, { pointerType: 'mouse' })
     expect(screen.getByRole('button', { name: 'Timer' }).getAttribute('aria-current')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'update profile' }))
