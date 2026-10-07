@@ -23,6 +23,10 @@ sudo ./bootstrap.sh cubench.hugorouillard.dev /path/to/deploy-key.pub
 Future applications add their own user, directories, services, and file under
 `/etc/caddy/sites/`. They share only Caddy and public ports 80/443.
 
+Python and production dependencies are provisioned with `uv`. The systemd
+service launches Uvicorn directly from the prepared release's virtualenv, so
+restarts do not resolve dependencies or require network access.
+
 ## Release
 
 Merge changes into `master`, then release from a clean checkout synchronized
@@ -58,5 +62,5 @@ These tests use disposable local Git repositories, without contacting GitHub
 or deploying anything:
 
 ```bash
-python3 -m unittest discover -s ops/tests -v
+uv run --directory api python -m unittest discover -s ../ops/tests -v
 ```

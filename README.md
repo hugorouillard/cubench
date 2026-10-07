@@ -94,9 +94,12 @@ serving the frontend and proxying API requests to Uvicorn.
 ### Requirements
 
 - Node.js 24 or newer
-- Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
 - [just](https://just.systems/)
+
+`uv` manages Python 3.12 (selected by `api/.python-version`) and the backend's
+virtualenv and dependencies. No separate Python installation or virtualenv
+activation is required. Run Python tools through `uv run --directory api`.
 
 ### Setup
 

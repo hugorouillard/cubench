@@ -10,13 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  release-helper:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - run: bash -n ops/release.sh
-      - run: python3 -m unittest discover -s ops/tests -v
-
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +19,9 @@ jobs:
           enable-cache: true
           python-version: "3.12"
       - run: uv sync --directory api --frozen
-      - run: uv run --directory api pytest
+      - run: bash -n ops/release.sh
+      - run: uv run --directory api --frozen python -m unittest discover -s ../ops/tests -v
+      - run: uv run --directory api --frozen pytest
 
   frontend:
     runs-on: ubuntu-latest
