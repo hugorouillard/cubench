@@ -38,7 +38,14 @@ dev:
 
     wait -n "$api_pid" "$web_pid"
 
-# Run all backend and frontend checks.
+# Tag and push the next release (patch by default; also accepts minor or major).
+[positional-arguments]
+release bump="patch":
+    bash ops/release.sh "$1"
+
+# Run release-helper, backend, and frontend checks.
 check:
+    bash -n ops/release.sh
+    cd api && uv run python -m unittest discover -s ../ops/tests -v
     cd api && uv run pytest
     cd web && npm run lint && npm run test && npm run build

@@ -124,6 +124,14 @@ just dev
 just check
 ```
 
-This runs the pytest API/database tests, Oxlint, Vitest/React Testing Library
-tests, TypeScript checking, and the Vite production build. GitHub Actions runs
-the same checks on pull requests and pushes to `master`.
+This runs the release-helper tests, pytest API/database tests, Oxlint,
+Vitest/React Testing Library tests, TypeScript checking, and the Vite production
+build. GitHub Actions runs the same checks on pull requests and pushes to
+`master`.
+
+### Releases
+
+From a clean `master` synchronized with `origin/master`, run `just release` to
+confirm and push the next patch tag. Use `just release minor` or
+`just release major` for larger bumps. GitHub Actions validates and deploys the
+tagged release. See [operations](ops/README.md#release) for details.
