@@ -48,6 +48,16 @@ describe('solve repository', () => {
     expect(persistence.delete).not.toHaveBeenCalled()
   })
 
+  it('refreshes remote edits and deletions of session members without importing history', async () => {
+    const edited = { ...solve('edited'), penalty: 'dnf' as const }
+    const repository = createSolveRepository(guestSolveStore, async () => [edited, solve('older')])
+    await repository.create(solve('edited'))
+    await repository.create(solve('deleted'))
+    await repository.loadHistory()
+    expect(repository.getSnapshot().session).toEqual([edited])
+    expect(repository.getSnapshot().history).toHaveLength(2)
+  })
+
   it('deduplicates concurrent loads, then refreshes on subsequent page entries', async () => {
     const request = deferred<Solve[]>()
     const load = vi.fn().mockReturnValueOnce(request.promise).mockResolvedValueOnce([solve('other')])

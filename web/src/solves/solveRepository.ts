@@ -44,7 +44,15 @@ export function createSolveRepository(persistence: SolveStore, fetchHistory = ge
           if (solve) merged.set(id, solve)
           else merged.delete(id)
         }
-        publish({ ...snapshot, history: newestSolvesFirst([...merged.values()]) })
+        publish({
+          // Reconcile existing session members with remote edits/deletions, but
+          // never import older history into the current timer session.
+          session: snapshot.session.flatMap((solve) => {
+            const current = merged.get(solve.id)
+            return current ? [current] : []
+          }),
+          history: newestSolvesFirst([...merged.values()]),
+        })
       }).finally(() => {
         pendingLoad = null
         loadChanges = null

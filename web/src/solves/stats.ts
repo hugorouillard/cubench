@@ -1,7 +1,7 @@
 import { effectiveDuration } from '../timer/timer'
 import type { Solve } from '../types'
 import { localDate, localDateKey } from '../dates/localCalendar'
-import { aggregateDailyActivity, summarizeActivity, type ActivitySummary } from './activity'
+import { aggregateDailyActivity, summarizeActivity, type ActivitySummary, type DailyActivity } from './activity'
 
 export type SolveSummary = {
   count: number
@@ -35,14 +35,11 @@ export type DatedSolveRecord = {
   solveId: string
 }
 
-export type LifetimeProfileSummary = {
+export type LifetimeProfileSummary = ActivitySummary & {
   loggedCount: number
   successfulCount: number
   totalRawDurationMs: number
   earliestSolveAt: string | null
-  totalActiveDays: number
-  currentStreak: number
-  longestStreak: number
   bestSingle: DatedSolveRecord | null
   bestAo5: DatedSolveRecord | null
   bestAo12: DatedSolveRecord | null
@@ -58,14 +55,7 @@ export type SolveHistoryPoint = {
   pbSingleMs: number | null
 }
 
-export type DailyAnalyticsPoint = {
-  dateKey: string
-  label: string
-  attemptCount: number
-  dnfCount: number
-  nonDnfMeanMs: number | null
-  nonDnfBestMs: number | null
-}
+export type DailyAnalyticsPoint = DailyActivity & { label: string }
 
 export type DurationHistogramBucket = {
   startMs: number
