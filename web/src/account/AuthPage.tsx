@@ -128,7 +128,7 @@ export function AuthPage({ onAuthenticated, onSubmittingChange, onPreview }: Aut
       </div>
       <div className="auth-footer">
         <button type="button" onClick={onPreview} disabled={submitting}>preview account features</button>
-        <p id="invite-code-help">Accounts are invite-only for now. <a href={INVITE_REQUEST_URL}>Request an invite</a>.</p>
+        <p id="invite-code-help">accounts are invite-only during the beta period (<a href={INVITE_REQUEST_URL}>request an invite</a>).</p>
       </div>
     </main>
   )

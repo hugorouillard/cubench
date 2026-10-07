@@ -47,7 +47,7 @@ describe('SessionPanel', () => {
     render(<SessionPanel {...defaultProps} solves={[]} />)
 
     expect(screen.getByRole('heading', { name: 'history' })).toBeTruthy()
-    expect(screen.getByText('Your solves will appear here.')).toBeTruthy()
+    expect(screen.getByText('your solves will appear here.')).toBeTruthy()
     expect(screen.queryByText('current solves')).toBeNull()
     expect(screen.queryByText('newest first')).toBeNull()
     expect(screen.getByRole('button', { name: 'Clear times' })).toBeTruthy()

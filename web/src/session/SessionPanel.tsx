@@ -70,7 +70,7 @@ export function SessionPanel({
 
       {solves.length === 0 ? (
         <div className="session-panel-empty">
-          <p>Your solves will appear here.</p>
+          <p>your solves will appear here.</p>
         </div>
       ) : (
         <>

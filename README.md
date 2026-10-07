@@ -1,11 +1,11 @@
 # Cubench
 
-A visually pleasing, keyboard-first 3×3 speedcubing timer with solve history and progress
+A visually pleasing 3×3 speedcubing timer with solve history and progress
 tracking. Built with React, TypeScript, FastAPI, and SQLite.
 
 **[Try it](https://cubench.hugorouillard.dev/)** ·
 **[Explore account features](https://cubench.hugorouillard.dev/#preview)** ·
-[Report a bug or share feedback](https://github.com/hugorouillard/cubench/issues)
+**[Report a bug or share feedback](https://github.com/hugorouillard/cubench/issues)**
 
 ![Cubench's timer in the Catppuccin Mocha theme, with a scramble, statistics, and solve history](docs/timer.png)
 
@@ -16,7 +16,7 @@ The goal is a speedcubing timer with two main benefits:
 1. works immediately without requiring you to set up a particular workflow to get useful progression stats.
 2. its behavior and visuals are highly configurable while still having sensible defaults.
 
-## Try it without an account
+## Try it now
 
 - **Time solves:** hold **Space** until the timer says “release to start,”
   release to start, then press **Space** again to stop. You can try the timer
@@ -36,22 +36,37 @@ guest solves are not transferred.
 
 ![Account preview showing sample personal bests, activity, and progress charts](docs/account-preview.png)
 
-## What's implemented
+## Development
 
-- Random-state 3×3 scrambles using **cubing.js**.
-- Hold-to-start timer, optional inspection with automatic penalties, and a
-  hide-timer option.
-- Solve history with mutually exclusive `+2` / `DNF` penalties and deletion.
-- Mean, best single, and current/best averages of 5 and 12 solves (`ao5` / `ao12`).
-  Averages discard one best and one worst result; a remaining DNF invalidates
-  the average.
-- Account profiles with personal bests, activity heatmap, streaks, history
-  charts, time distribution, and daily summaries.
-- Date filtering, sortable solve history, editable profile details, and JSON
-  account-data export.
-- Theming.
+### Requirements
 
-## How it's built
+- Node.js 24 or newer
+- Python 3.12 or newer
+- [uv](https://docs.astral.sh/uv/)
+- [just](https://just.systems/)
+
+### Setup & Useful commands
+
+```bash
+git clone https://github.com/hugorouillard/cubench.git
+cd cubench
+cp .env.example .env
+```
+
+In `.env`, replace `CUBENCH_INVITE_CODE` with a code of your choosing to enable
+local registration. Enter that same code in the app's **create account** form.
+
+For testing with a real account, development mode automatically creates one
+with the **same sample solve history as the preview**. Run the app and sign in
+at `/login` with username `cubench_dev` and password `dev-password`.
+
+```bash
+just install   # install deps
+just dev       # start dev instance
+just check     # run code checks
+```
+
+### App structure
 
 ```text
 React + TypeScript
@@ -69,7 +84,7 @@ account UI. Feature tests live in their respective `tests/` directories.
 
 Notes:
 
-- **Timing stays in the browser.** [`useTimer.ts`](web/src/timer/useTimer.ts) uses
+- **Timing is in the browser.** [`useTimer.ts`](web/src/timer/useTimer.ts) uses
   explicit timer phases and `performance.now()` for elapsed time;
   `requestAnimationFrame` updates the display. The API only receives completed
   solves.
@@ -85,46 +100,4 @@ Notes:
   module directly. Queries are scoped to the signed-in account. Passwords are
   hashed with scrypt. Authentication uses an HttpOnly session cookie and hashed
   session tokens stored in SQLite.
-
-The frontend uses plain CSS and Chart.js. The live app runs on a VPS with Caddy
-serving the frontend and proxying API requests to Uvicorn.
-
-## Development
-
-### Requirements
-
-- Node.js 24 or newer
-- Python 3.12 or newer
-- [uv](https://docs.astral.sh/uv/)
-- [just](https://just.systems/)
-
-### Setup
-
-From a fresh clone:
-
-```bash
-git clone https://github.com/hugorouillard/cubench.git
-cd cubench
-cp .env.example .env
-```
-
-In `.env`, replace `CUBENCH_INVITE_CODE` with a code of your choosing to enable
-local registration. Enter that same code in the app's **create account** form.
-The placeholder value leaves account registration disabled; the guest timer
-and sample preview still work.
-
-```bash
-just install
-just dev
-```
-
-### Useful commands
-
-```bash
-just check
-just release # Confirm and push the next patch release from master; accepts minor or major.
-```
-
-`just check` runs the pytest API/database tests, Oxlint, Vitest/React Testing Library
-tests, TypeScript checking, and the Vite production build. GitHub Actions runs
-the same checks on pull requests and pushes to `master`.
+- **Prod runs on a VPS with Caddy serving the frontend and proxying API requests to Uvicorn.**
