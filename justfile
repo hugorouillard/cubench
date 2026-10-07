@@ -5,12 +5,12 @@ default:
 
 # Install backend and frontend dependencies.
 install:
-    cd api && uv sync
+    uv sync --directory api
     cd web && npm install
 
 # Run the FastAPI development server.
 api:
-    cd api && uv run fastapi dev src/cubench_api/main.py
+    uv run --directory api fastapi dev src/cubench_api/main.py
 
 # Run the Vite development server.
 web:
@@ -31,14 +31,19 @@ dev:
     }
     trap cleanup EXIT INT TERM
 
-    (cd api && exec uv run fastapi dev src/cubench_api/main.py) &
+    uv run --directory api fastapi dev src/cubench_api/main.py &
     api_pid=$!
     (cd web && exec npm run dev) &
     web_pid=$!
 
     wait -n "$api_pid" "$web_pid"
 
+# Tag and push the next release (patch by default; also accepts minor or major).
+[positional-arguments]
+release bump="patch":
+    bash ops/release.sh "$1"
+
 # Run all backend and frontend checks.
 check:
-    cd api && uv run pytest
+    uv run --directory api pytest
     cd web && npm run lint && npm run test && npm run build

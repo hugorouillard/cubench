@@ -19,7 +19,7 @@ jobs:
           enable-cache: true
           python-version: "3.12"
       - run: uv sync --directory api --frozen
-      - run: uv run --directory api pytest
+      - run: uv run --directory api --frozen pytest
 
   frontend:
     runs-on: ubuntu-latest

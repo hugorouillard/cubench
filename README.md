@@ -118,12 +118,13 @@ just install
 just dev
 ```
 
-### Checks
+### Useful commands
 
 ```bash
 just check
+just release # Confirm and push the next patch release from master; accepts minor or major.
 ```
 
-This runs the pytest API/database tests, Oxlint, Vitest/React Testing Library
+`just check` runs the pytest API/database tests, Oxlint, Vitest/React Testing Library
 tests, TypeScript checking, and the Vite production build. GitHub Actions runs
 the same checks on pull requests and pushes to `master`.
