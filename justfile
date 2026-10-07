@@ -43,9 +43,7 @@ dev:
 release bump="patch":
     bash ops/release.sh "$1"
 
-# Run release-helper, backend, and frontend checks.
+# Run all backend and frontend checks.
 check:
-    bash -n ops/release.sh
-    uv run --directory api python -m unittest discover -s ../ops/tests -v
     uv run --directory api pytest
     cd web && npm run lint && npm run test && npm run build

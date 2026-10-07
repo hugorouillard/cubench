@@ -94,12 +94,9 @@ serving the frontend and proxying API requests to Uvicorn.
 ### Requirements
 
 - Node.js 24 or newer
+- Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
 - [just](https://just.systems/)
-
-`uv` manages Python 3.12 (selected by `api/.python-version`) and the backend's
-virtualenv and dependencies. No separate Python installation or virtualenv
-activation is required. Run Python tools through `uv run --directory api`.
 
 ### Setup
 
@@ -121,20 +118,13 @@ just install
 just dev
 ```
 
-### Checks
+### Useful commands
 
 ```bash
 just check
+just release # Confirm and push the next patch release from master; accepts minor or major.
 ```
 
-This runs the release-helper tests, pytest API/database tests, Oxlint,
-Vitest/React Testing Library tests, TypeScript checking, and the Vite production
-build. GitHub Actions runs the same checks on pull requests and pushes to
-`master`.
-
-### Releases
-
-From a clean `master` synchronized with `origin/master`, run `just release` to
-confirm and push the next patch tag. Use `just release minor` or
-`just release major` for larger bumps. GitHub Actions validates and deploys the
-tagged release. See [operations](ops/README.md#release) for details.
+`just check` runs the pytest API/database tests, Oxlint, Vitest/React Testing Library
+tests, TypeScript checking, and the Vite production build. GitHub Actions runs
+the same checks on pull requests and pushes to `master`.

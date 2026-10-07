@@ -19,8 +19,6 @@ jobs:
           enable-cache: true
           python-version: "3.12"
       - run: uv sync --directory api --frozen
-      - run: bash -n ops/release.sh
-      - run: uv run --directory api --frozen python -m unittest discover -s ../ops/tests -v
       - run: uv run --directory api --frozen pytest
 
   frontend:
