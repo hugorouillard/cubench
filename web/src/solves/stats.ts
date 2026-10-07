@@ -1,5 +1,7 @@
 import { effectiveDuration } from '../timer/timer'
 import type { Solve } from '../types'
+import { localDate, localDateKey } from '../dates/localCalendar'
+import { aggregateDailyActivity, summarizeActivity, type ActivitySummary } from './activity'
 
 export type SolveSummary = {
   count: number
@@ -169,45 +171,23 @@ export function summarizeSolves(solves: Solve[]): SolveSummary {
   }
 }
 
-function localDateKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function localDaySerial(date: Date): number {
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS
-}
-
 function dateLabel(key: string): string {
-  return new Date(`${key}T12:00:00`).toLocaleDateString([], {
+  return localDate(key).toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
   })
 }
 
 export function dailyProgress(solves: Solve[]): DailyProgress[] {
-  const days = new Map<string, number[]>()
-
-  for (const solve of solves) {
-    const duration = completedDuration(solve)
-    if (duration === null) continue
-    const key = localDateKey(new Date(solve.recorded_at))
-    days.set(key, [...(days.get(key) ?? []), duration])
-  }
-
-  return [...days.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, durations]) => ({
-      key,
-      label: dateLabel(key),
-      count: durations.length,
-      mean: Math.round(
-        durations.reduce((sum, duration) => sum + duration, 0) / durations.length,
-      ),
-      best: Math.min(...durations),
-    }))
+  return [...aggregateDailyActivity(solves).values()].flatMap((day) =>
+    day.nonDnfMeanMs === null || day.nonDnfBestMs === null ? [] : [{
+      key: day.dateKey,
+      label: dateLabel(day.dateKey),
+      count: day.attemptCount - day.dnfCount,
+      mean: day.nonDnfMeanMs,
+      best: day.nonDnfBestMs,
+    }],
+  )
 }
 
 export function personalBestHistory(solves: Solve[]): PersonalBest[] {
@@ -240,30 +220,15 @@ export function lifetimeProfileSummary(
   solves: Solve[],
   now: Date = new Date(),
 ): LifetimeProfileSummary {
+  return {
+    ...lifetimeSolveSummary(solves),
+    ...summarizeActivity(aggregateDailyActivity(solves), localDateKey(now)),
+  }
+}
+
+/** Time-independent records can be memoized separately from today's streak. */
+export function lifetimeSolveSummary(solves: Solve[]): Omit<LifetimeProfileSummary, keyof ActivitySummary> {
   const chronological = chronologicalSolves(solves)
-  const activeDays = [...new Set(solves.map((solve) => localDaySerial(new Date(solve.recorded_at))))]
-    .sort((left, right) => left - right)
-  let longestStreak = 0
-  let streak = 0
-  let previousDay: number | null = null
-
-  for (const day of activeDays) {
-    streak = previousDay !== null && day === previousDay + 1 ? streak + 1 : 1
-    longestStreak = Math.max(longestStreak, streak)
-    previousDay = day
-  }
-
-  const today = localDaySerial(now)
-  const latestDay = activeDays.at(-1)
-  let currentStreak = 0
-  if (latestDay === today || latestDay === today - 1) {
-    currentStreak = 1
-    for (let index = activeDays.length - 2; index >= 0; index -= 1) {
-      if (activeDays[index] !== activeDays[index + 1] - 1) break
-      currentStreak += 1
-    }
-  }
-
   let bestSingle: DatedSolveRecord | null = null
   let bestAo5: DatedSolveRecord | null = null
   let bestAo12: DatedSolveRecord | null = null
@@ -295,9 +260,6 @@ export function lifetimeProfileSummary(
     successfulCount: solves.filter((solve) => solve.penalty !== 'dnf').length,
     totalRawDurationMs: solves.reduce((sum, solve) => sum + solve.duration_ms, 0),
     earliestSolveAt: chronological[0]?.recorded_at ?? null,
-    totalActiveDays: activeDays.length,
-    currentStreak,
-    longestStreak,
     bestSingle,
     bestAo5,
     bestAo12,
@@ -333,32 +295,9 @@ export function solveHistory(solves: Solve[]): SolveHistoryPoint[] {
 }
 
 export function dailyAnalytics(solves: Solve[]): DailyAnalyticsPoint[] {
-  const days = new Map<string, { attempts: number; dnfCount: number; durations: number[] }>()
-
-  for (const solve of solves) {
-    const key = localDateKey(new Date(solve.recorded_at))
-    const day = days.get(key) ?? { attempts: 0, dnfCount: 0, durations: [] }
-    const duration = completedDuration(solve)
-    day.attempts += 1
-    if (duration === null) day.dnfCount += 1
-    else day.durations.push(duration)
-    days.set(key, day)
-  }
-
-  return [...days.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([dateKey, day]) => ({
-      dateKey,
-      label: dateLabel(dateKey),
-      attemptCount: day.attempts,
-      dnfCount: day.dnfCount,
-      nonDnfMeanMs: day.durations.length
-        ? Math.round(
-          day.durations.reduce((sum, duration) => sum + duration, 0) / day.durations.length,
-        )
-        : null,
-      nonDnfBestMs: day.durations.length ? Math.min(...day.durations) : null,
-    }))
+  return [...aggregateDailyActivity(solves).values()].map((day) => ({
+    ...day, label: dateLabel(day.dateKey),
+  }))
 }
 
 function wholeSecondBucketSize(rangeMs: number): number {

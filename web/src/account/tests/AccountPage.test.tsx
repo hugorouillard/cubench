@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProfilePreview, type ProfilePreview } from '../profilePreview'
 import { lifetimeProfileSummary } from '../../solves/stats'
@@ -106,6 +106,37 @@ describe('account page', () => {
     expect(within(activity).getByRole('img', { name: /^0 solves in 2028\./ })).toBeTruthy()
     expect(activity.querySelector<HTMLElement>('.account-calendar-grid')?.style.gridTemplateColumns)
       .toBe('repeat(54, minmax(0, 1fr))')
+  })
+
+  it('refreshes both the calendar and streak at midnight without a solve change', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 21, 23, 59, 59))
+    const timestamp = new Date(2026, 7, 20, 12).toISOString()
+    render(<AccountPage preview={{
+      profile: { id: 1, display_name: 'Solver', bio: '', created_at: timestamp },
+      solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
+    }} {...props()} />)
+    expect(screen.getByText('Current streak 1 day')).toBeTruthy()
+    expect(screen.queryByTitle('22 Aug 2026: 0 solves')).toBeTruthy() // hidden padding today
+    const activity = screen.getByRole('region', { name: 'Activity' })
+    const before = within(activity).getByTitle('22 Aug 2026: 0 solves')
+    expect(before.classList.contains('is-outside')).toBe(true)
+    act(() => vi.advanceTimersByTime(1000))
+    expect(screen.queryByText('Current streak 1 day')).toBeNull()
+    expect(within(activity).getByTitle('22 Aug 2026: 0 solves').classList.contains('is-outside')).toBe(false)
+    expect(within(activity).getByRole('img').getAttribute('aria-label')).toContain('0 day current streak')
+  })
+
+  it('offers years containing attempts recorded before account creation', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 7, 21, 12))
+    const timestamp = new Date(2023, 0, 1, 12).toISOString()
+    render(<AccountPage preview={{
+      profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2025, 0, 1, 12).toISOString() },
+      solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
+    }} {...props()} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Activity range' }), { target: { value: '2023' } })
+    expect(screen.getByRole('img', { name: /^1 solves in 2023/ })).toBeTruthy()
   })
 
   it('shows dated records and pages recent solves without affecting lifetime bests', () => {

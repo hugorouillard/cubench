@@ -1,10 +1,13 @@
 import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { getProfile, getSolves } from '../api'
 import type { ProfilePreview } from './profilePreview'
-import { bestAverage, lifetimeProfileSummary, newestSolvesFirst } from '../solves/stats'
+import { bestAverage, lifetimeSolveSummary, newestSolvesFirst } from '../solves/stats'
+import { aggregateDailyActivity, summarizeActivity } from '../solves/activity'
+import { useToday } from '../dates/useToday'
+import { localDate } from '../dates/localCalendar'
 import type { Penalty, Solve, UserProfile } from '../types'
 import { AccountSummary } from './AccountSummary'
-import { ActivityCalendar } from './DailyActivityChart'
+import { DailyActivityChart } from './DailyActivityChart'
 import { PersonalBests } from './PersonalBests'
 import { ProfileEditor } from './ProfileEditor'
 import { RecentSolves } from './RecentSolves'
@@ -52,7 +55,11 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
     return () => { cancelled = true }
   }, [preview])
 
-  const lifetime = useMemo(() => lifetimeProfileSummary(solves), [solves])
+  const today = useToday()
+  const activity = useMemo(() => aggregateDailyActivity(solves), [solves])
+  const activitySummary = useMemo(() => summarizeActivity(activity, today), [activity, today])
+  const records = useMemo(() => lifetimeSolveSummary(solves), [solves])
+  const lifetime = { ...records, ...activitySummary }
   const ao50 = useMemo(() => bestAverage(newestSolvesFirst(solves), 50), [solves])
 
   async function changePenalty(solve: Solve, penalty: Penalty) {
@@ -80,11 +87,18 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
     )
   }
 
+  // Imported/backdated attempts remain selectable even if they predate account creation.
+  const firstYear = Math.min(
+    new Date(profile.created_at).getFullYear(),
+    records.earliestSolveAt ? new Date(records.earliestSolveAt).getFullYear() : Infinity,
+    localDate(today).getFullYear(),
+  )
+
   return (
     <main className="account-page page-width">
       <AccountSummary profile={profile} lifetime={lifetime} onEdit={preview ? undefined : () => setEditorOpen(true)} />
       <PersonalBests single={lifetime.bestSingle} ao5={lifetime.bestAo5} ao12={lifetime.bestAo12} ao50={ao50} />
-      <ActivityCalendar profile={profile} solves={solves} activeDays={lifetime.totalActiveDays} currentStreak={lifetime.currentStreak} longestStreak={lifetime.longestStreak} />
+      <DailyActivityChart activity={activity} firstYear={firstYear} today={today} summary={activitySummary} />
       <Suspense fallback={<p className="account-progression-loading" role="status">loading progression...</p>}>
         <AccountProgression solves={solves} theme={theme} />
       </Suspense>

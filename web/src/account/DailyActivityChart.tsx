@@ -1,26 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Solve, UserProfile } from '../types'
+import { localDate } from '../dates/localCalendar'
+import type { ActivityByDay, ActivitySummary } from '../solves/activity'
+import { activityLevel, activityThresholds, buildActivityCalendar, type ActivityRange } from './activityCalendar'
 
-import { activityLevel, activityThresholds, buildActivityCalendar, countActivityDays, localDateKey, type ActivityRange } from './activityCalendar'
-
-export function ActivityCalendar({ profile, solves, activeDays, currentStreak, longestStreak }: {
-  profile: UserProfile
-  solves: Solve[]
-  activeDays: number
-  currentStreak: number
-  longestStreak: number
+export function DailyActivityChart({ activity, firstYear, today, summary }: {
+  activity: ActivityByDay
+  firstYear: number
+  today: string
+  summary: ActivitySummary
 }) {
   const [range, setRange] = useState<ActivityRange>({ kind: 'rolling' })
   const scrollRef = useRef<HTMLDivElement>(null)
-  const now = new Date()
-  const todayKey = localDateKey(now)
-  const currentYear = now.getFullYear()
-  const joinedYear = Math.min(new Date(profile.created_at).getFullYear(), currentYear)
-  const years = Array.from({ length: currentYear - joinedYear + 1 }, (_, index) => currentYear - index)
-  const counts = useMemo(() => countActivityDays(solves), [solves])
+  const currentYear = localDate(today).getFullYear()
+  const years = Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index)
   const { weeks, cells, months, totalAttempts } = useMemo(
-    () => buildActivityCalendar(counts, range, new Date(`${todayKey}T12:00:00`)),
-    [counts, range, todayKey],
+    () => buildActivityCalendar(activity, range, today),
+    [activity, range, today],
   )
   const thresholds = activityThresholds(cells.filter((cell) => cell.inRange).map((cell) => cell.count))
   const columns = { gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }
@@ -53,7 +48,7 @@ export function ActivityCalendar({ profile, solves, activeDays, currentStreak, l
           </div>
         </div>
         <div className="account-calendar-scroll" ref={scrollRef}>
-          <div className="account-calendar-layout" role="img" aria-label={`${totalAttempts} solves in ${period}. ${activeDays} lifetime active days, ${currentStreak} day current streak, and ${longestStreak} day longest streak.`}>
+          <div className="account-calendar-layout" role="img" aria-label={`${totalAttempts} solves in ${period}. ${summary.totalActiveDays} lifetime active days, ${summary.currentStreak} day current streak, and ${summary.longestStreak} day longest streak.`}>
             <div className="account-calendar-days" aria-hidden="true"><span>mon</span><span>wed</span><span>fri</span></div>
             <div className="account-calendar-grid" style={columns} aria-hidden="true">
               {cells.map((cell) => {

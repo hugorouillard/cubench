@@ -1,36 +1,18 @@
-import type { Solve } from '../types'
+import { addCalendarDays, localDate, localDateKey, previousYearDate } from '../dates/localCalendar'
+import type { ActivityByDay } from '../solves/activity'
 
 export type ActivityRange = { kind: 'rolling' } | { kind: 'year'; year: number }
 export type ActivityDay = { date: Date; key: string; count: number; inRange: boolean }
 export type ActivityLevel = 0 | 1 | 2 | 3 | 4
 
-export function localDateKey(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-export function countActivityDays(solves: readonly Solve[]): ReadonlyMap<string, number> {
-  const counts = new Map<string, number>()
-  for (const solve of solves) {
-    const key = localDateKey(new Date(solve.recorded_at))
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return counts
-}
-
 /** Sunday-first weeks, with invisible padding outside the inclusive selected range. */
-export function buildActivityCalendar(counts: ReadonlyMap<string, number>, range: ActivityRange, now: Date) {
-  const today = new Date(now)
-  today.setHours(12, 0, 0, 0)
-  const start = range.kind === 'rolling' ? new Date(today) : new Date(range.year, 0, 1, 12)
+export function buildActivityCalendar(activity: ActivityByDay, range: ActivityRange, todayKey: string) {
+  const today = localDate(todayKey)
+  // The day after last year's clamped anniversary through today, inclusively.
+  const start = range.kind === 'rolling' ? addCalendarDays(previousYearDate(today), 1) : new Date(range.year, 0, 1, 12)
   const end = range.kind === 'rolling' ? new Date(today) : new Date(range.year, 11, 31, 12)
-  if (range.kind === 'rolling') {
-    start.setFullYear(start.getFullYear() - 1)
-    start.setDate(start.getDate() + 1)
-  }
   if (end > today) end.setTime(today.getTime())
+  if (start > end) return { weeks: [], cells: [], months: [], totalAttempts: 0 }
 
   const calendarStart = new Date(start)
   calendarStart.setDate(calendarStart.getDate() - calendarStart.getDay())
@@ -42,7 +24,7 @@ export function buildActivityCalendar(counts: ReadonlyMap<string, number>, range
     const date = new Date(cursor)
     const key = localDateKey(date)
     const inRange = date >= start && date <= end
-    cells.push({ date, key, count: inRange ? counts.get(key) ?? 0 : 0, inRange })
+    cells.push({ date, key, count: inRange ? activity.get(key)?.attemptCount ?? 0 : 0, inRange })
   }
   const weeks: ActivityDay[][] = []
   for (let index = 0; index < cells.length; index += 7) weeks.push(cells.slice(index, index + 7))
