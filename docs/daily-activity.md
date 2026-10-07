@@ -11,6 +11,13 @@
 - Current streaks remain active through yesterday. Activity summaries exclude future-dated days, so an incorrect future timestamp cannot interrupt today's streak or inflate the longest streak.
 - `useToday` refreshes at local midnight and on focus/returning to a visible tab. Account summary and calendar share that date; personal bests are memoized independently.
 
+## Intensity and viewport
+
+- Empty days always use level zero. The other four colours are relative to **active days in the selected period**, not all days in the calendar.
+- Thresholds use a 10%-trimmed active-day mean at 0.5×, 1×, and 1.5×. Bounds are positive, strictly increasing integers. This avoids collapsing sparse histories into the strongest colour while retaining the existing adaptive scale. Colours are not absolute comparisons between different periods.
+- The viewport starts at the latest week on mount and deliberate range changes. Penalty edits, deletions, midnight refreshes, and unrelated renders preserve the user's scroll position.
+- Deleting the last solve in a selected historical year keeps that year selectable until the user changes ranges.
+
 ## Ownership
 
 - `web/src/dates/`: local-calendar primitives and the reactive clock.

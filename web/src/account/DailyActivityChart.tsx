@@ -12,7 +12,9 @@ export function DailyActivityChart({ activity, firstYear, today, summary }: {
   const [range, setRange] = useState<ActivityRange>({ kind: 'rolling' })
   const scrollRef = useRef<HTMLDivElement>(null)
   const currentYear = localDate(today).getFullYear()
-  const years = Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index)
+  // Keep a selected historical year available if its last solve is deleted.
+  const earliestYear = Math.min(firstYear, range.kind === 'year' ? range.year : currentYear)
+  const years = Array.from({ length: currentYear - earliestYear + 1 }, (_, index) => currentYear - index)
   const { weeks, cells, months, totalAttempts } = useMemo(
     () => buildActivityCalendar(activity, range, today),
     [activity, range, today],
@@ -25,7 +27,7 @@ export function DailyActivityChart({ activity, firstYear, today, summary }: {
   useEffect(() => {
     const scroll = scrollRef.current
     if (scroll && scroll.scrollWidth > scroll.clientWidth) scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth
-  }, [weeks])
+  }, [rangeValue])
 
   return (
     <section className="account-calendar" aria-labelledby="account-calendar-title">

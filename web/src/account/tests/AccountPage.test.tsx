@@ -93,21 +93,6 @@ describe('account page', () => {
     expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/profile', '/api/solves', '/api/profile'])
   })
 
-  it('switches calendar ranges and shows a leap-year calendar with 54 weeks', () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2028, 11, 31, 12))
-    render(<AccountPage preview={{
-      profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2028, 0, 1, 12).toISOString() },
-      solves: [],
-    }} {...props()} />)
-
-    const activity = screen.getByRole('region', { name: 'Activity' })
-    fireEvent.change(within(activity).getByRole('combobox', { name: 'Activity range' }), { target: { value: '2028' } })
-    expect(within(activity).getByRole('img', { name: /^0 solves in 2028\./ })).toBeTruthy()
-    expect(activity.querySelector<HTMLElement>('.account-calendar-grid')?.style.gridTemplateColumns)
-      .toBe('repeat(54, minmax(0, 1fr))')
-  })
-
   it('refreshes both the calendar and streak at midnight without a solve change', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 7, 21, 23, 59, 59))

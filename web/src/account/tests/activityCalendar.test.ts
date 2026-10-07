@@ -64,8 +64,33 @@ describe('activity calendar layout', () => {
 })
 
 describe('activity intensity', () => {
+  it('ignores empty days when scaling sparse histories', () => {
+    const counts = [1, 2, 4, 6, 8]
+    expect(activityThresholds([...Array<number>(360).fill(0), ...counts])).toEqual(activityThresholds(counts))
+    const levels = counts.map((count) => activityLevel(count, activityThresholds(counts)))
+    expect(new Set(levels).size).toBeGreaterThan(1)
+    expect(levels).toEqual([...levels].sort((a, b) => a - b))
+  })
+
+  it('has strictly increasing positive thresholds for empty and uniform histories', () => {
+    for (const counts of [[], [0, 0], [1], [1, 1, 1], [10, 10, 10]]) {
+      const [low, medium, high] = activityThresholds(counts)
+      expect(low).toBeGreaterThan(0)
+      expect(medium).toBeGreaterThan(low)
+      expect(high).toBeGreaterThan(medium)
+    }
+    expect(activityLevel(1, activityThresholds([1]))).toBe(1)
+  })
+
+  it('trims isolated outliers without changing its input', () => {
+    const counts = [1000, 4, 4, 4, 4, 4, 4, 4, 4, 1]
+    const original = [...counts]
+    expect(activityThresholds(counts)).toEqual([2, 4, 6])
+    expect(counts).toEqual(original)
+  })
+
   it('keeps empty days at level zero and classifies counts by thresholds', () => {
-    expect(activityThresholds([])).toEqual([0, 0, 0])
+    expect(activityThresholds([])).toEqual([1, 2, 3])
     expect(activityThresholds([2, 4, 6])).toEqual([2, 4, 6])
     expect([0, 1, 3, 5, 7].map((count) => activityLevel(count, [2, 4, 6]))).toEqual([0, 1, 2, 3, 4])
   })

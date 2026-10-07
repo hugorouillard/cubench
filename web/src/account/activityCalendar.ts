@@ -4,6 +4,7 @@ import type { ActivityByDay } from '../solves/activity'
 export type ActivityRange = { kind: 'rolling' } | { kind: 'year'; year: number }
 export type ActivityDay = { date: Date; key: string; count: number; inRange: boolean }
 export type ActivityLevel = 0 | 1 | 2 | 3 | 4
+export type ActivityThresholds = readonly [number, number, number]
 
 /** Sunday-first weeks, with invisible padding outside the inclusive selected range. */
 export function buildActivityCalendar(activity: ActivityByDay, range: ActivityRange, todayKey: string) {
@@ -37,16 +38,26 @@ export function buildActivityCalendar(activity: ActivityByDay, range: ActivityRa
   return { weeks, cells, months, totalAttempts: cells.reduce((total, cell) => total + cell.count, 0) }
 }
 
-export function activityThresholds(counts: readonly number[]): number[] {
-  const sorted = [...counts].sort((a, b) => a - b)
+/**
+ * Scale relative to active days in the selected period, not empty calendar space.
+ * Trim 10% from each tail to reduce outlier influence; distinct positive bounds
+ * keep all four nonzero buckets meaningful even for very small counts.
+ */
+export function activityThresholds(counts: readonly number[]): ActivityThresholds {
+  const sorted = counts.filter((count) => count > 0).sort((a, b) => a - b)
   const trim = Math.round(sorted.length * 0.1)
   const middle = trim ? sorted.slice(trim, -trim) : sorted
   const mean = middle.length ? middle.reduce((total, count) => total + count, 0) / middle.length : 0
-  return [Math.floor(mean / 2), Math.round(mean), Math.round(mean * 1.5)]
+  const low = Math.max(1, Math.floor(mean / 2))
+  const medium = Math.max(low + 1, Math.round(mean))
+  const high = Math.max(medium + 1, Math.round(mean * 1.5))
+  return [low, medium, high]
 }
 
-export function activityLevel(count: number, thresholds: readonly number[]): ActivityLevel {
+export function activityLevel(count: number, thresholds: ActivityThresholds): ActivityLevel {
   if (count === 0) return 0
-  const threshold = thresholds.findIndex((value) => count <= value)
-  return (threshold === -1 ? 4 : threshold + 1) as ActivityLevel
+  if (count <= thresholds[0]) return 1
+  if (count <= thresholds[1]) return 2
+  if (count <= thresholds[2]) return 3
+  return 4
 }
