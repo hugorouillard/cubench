@@ -37,12 +37,12 @@ export function RecentSolves({ solves, onPenalty, onDelete }: {
           <div className="account-recent-scroll">
             <table className="account-recent-table">
               <thead><tr>
-                <th scope="col"><span className="account-visually-hidden">personal best</span></th>
+                <th scope="col"><span className="sr-only">personal best</span></th>
                 <th scope="col">result</th>
                 <th scope="col">penalty</th>
                 <th scope="col">scramble</th>
                 <th scope="col">date</th>
-                {onPenalty && onDelete && <th scope="col"><span className="account-visually-hidden">actions</span></th>}
+                {onPenalty && onDelete && <th scope="col"><span className="sr-only">actions</span></th>}
               </tr></thead>
               <tbody>
                 {recent.slice(0, limit).map((solve) => (

@@ -51,6 +51,20 @@ describe('daily activity chart', () => {
     expect(scroll.scrollLeft).toBe(800)
   })
 
+  it('provides exact daily values without hundreds of keyboard stops', () => {
+    const { container, rerender } = render(<DailyActivityChart {...props([attempt('a', undefined, 'dnf')])} />)
+    const details = container.querySelector('details')!
+    details.open = true
+    const table = screen.getByRole('table', { name: 'Daily solve counts in the last 12 months' })
+    expect(within(table).getAllByRole('row')).toHaveLength(366)
+    expect(within(table).getByRole('row', { name: '21 Aug 2026 1' })).toBeTruthy()
+    expect(within(table).getByRole('row', { name: '20 Aug 2026 0' })).toBeTruthy()
+    expect(container.querySelectorAll('[tabindex="0"]')).toHaveLength(1)
+    rerender(<DailyActivityChart {...props([])} />)
+    expect(within(table).getByRole('row', { name: '21 Aug 2026 0' })).toBeTruthy()
+    expect(details.open).toBe(true)
+  })
+
   it('retains the selected year when its last backdated solve is deleted', () => {
     const { rerender } = render(<DailyActivityChart {...props([attempt('a', new Date(2023, 0, 1, 12))], '2026-08-21', 2023)} />)
     const range = screen.getByRole('combobox', { name: 'Activity range' })

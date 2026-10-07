@@ -18,6 +18,28 @@
 - The viewport starts at the latest week on mount and deliberate range changes. Penalty edits, deletions, midnight refreshes, and unrelated renders preserve the user's scroll position.
 - Deleting the last solve in a selected historical year keeps that year selectable until the user changes ranges.
 
+## Accessibility and layout
+
+- The heatmap retains its concise image summary. Native hover titles are supplemental, not the only way to retrieve counts.
+- The “daily counts” disclosure contains all in-range dates (newest first), including zero-count days, in a table with row/column headers. It works with keyboard and touch without creating hundreds of tab stops. The bounded table region itself is keyboard-scrollable.
+- Intensity rules and numeric bounds are explained in the disclosure; colour alone is not needed to retrieve values.
+- Calendar width scales with its actual week count, so short year-to-date ranges do not stretch one week across the entire chart. Weekday labels remain sticky whenever it scrolls.
+
+## Validation
+
+From `web/`:
+
+```sh
+npm test
+npm run test:timezones
+npm run lint
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+The timezone suite covers local day boundaries and DST in America/New_York and Pacific/Auckland. Playwright covers mobile/desktop layouts, short years, 54-week leap years, keyboard/touch table access, and scroll preservation during deletion. Browser API responses are mocked; no live account or backend is required. To use an existing Chromium installation, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+
 ## Ownership
 
 - `web/src/dates/`: local-calendar primitives and the reactive clock.

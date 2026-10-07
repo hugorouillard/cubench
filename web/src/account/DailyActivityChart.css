@@ -1,0 +1,111 @@
+.account-calendar {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+}
+
+.account-calendar-inner { width: 100%; max-width: 80rem; min-width: 0; }
+
+.account-calendar-top {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 1rem;
+  color: var(--sub-readable-color);
+}
+
+.account-calendar-top select {
+  min-width: 0;
+  border: 0.2em solid var(--bg-color);
+  border-radius: var(--roundness);
+  padding: 0.4rem;
+  color: var(--sub-readable-color);
+  background: var(--sub-alt-color);
+  cursor: pointer;
+}
+
+.account-calendar-legend { display: flex; align-items: center; gap: 0.25rem; }
+.account-calendar-legend span:first-child { margin-right: 0.25rem; }
+.account-calendar-legend span:last-child { margin-left: 0.25rem; }
+.account-calendar-legend i { width: 1rem; height: 1rem; flex: 0 0 1rem; }
+
+.account-calendar-scroll {
+  margin-top: 1rem;
+  overflow-x: auto;
+  scrollbar-color: var(--sub-color) transparent;
+}
+
+.account-calendar-layout {
+  /* Scale width with actual week count: January must not produce giant cells. */
+  width: min(100%, calc(var(--calendar-weeks) * 1.5rem + 3rem));
+  min-width: calc(var(--calendar-weeks) * 1rem + 3rem);
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  grid-template-areas: 'days grid' '. months';
+  gap: 0.75rem 1rem;
+}
+
+.account-calendar-days {
+  grid-area: days;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  align-items: center;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--sub-alt-color);
+  color: var(--sub-readable-color);
+  font-size: 0.875rem;
+}
+
+.account-calendar-days span:nth-child(1) { grid-row: 2; }
+.account-calendar-days span:nth-child(2) { grid-row: 4; }
+.account-calendar-days span:nth-child(3) { grid-row: 6; }
+
+.account-calendar-grid {
+  grid-area: grid;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.account-calendar-grid i,
+.account-calendar-legend i { aspect-ratio: 1; border-radius: 0.25rem; }
+.account-calendar-grid i { width: 100%; }
+
+.account-activity-level-0 { background: var(--bg-color); }
+.account-activity-level-1 { background: color-mix(in srgb, var(--main-color) 20%, var(--sub-alt-color)); }
+.account-activity-level-2 { background: color-mix(in srgb, var(--main-color) 50%, var(--sub-alt-color)); }
+.account-activity-level-3 { background: color-mix(in srgb, var(--main-color) 75%, var(--sub-alt-color)); }
+.account-activity-level-4 { background: var(--main-color); }
+.account-calendar-grid .is-outside { visibility: hidden; }
+
+.account-calendar-months {
+  grid-area: months;
+  display: grid;
+  column-gap: 0.25rem;
+  color: var(--sub-readable-color);
+  font-size: 0.75rem;
+}
+
+.account-calendar-details { margin-top: 1rem; color: var(--sub-readable-color); font-size: 0.875rem; }
+.account-calendar-details summary { width: fit-content; cursor: pointer; padding: 0.25rem 0; }
+.account-calendar-details p { max-width: 60ch; }
+.account-calendar-table-scroll { position: relative; max-height: 18rem; overflow: auto; scrollbar-color: var(--sub-color) transparent; }
+.account-calendar-table-scroll table { width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums; }
+.account-calendar-table-scroll th,
+.account-calendar-table-scroll td { padding: 0.5rem; border-bottom: 1px solid var(--bg-color); }
+.account-calendar-table-scroll thead th { position: sticky; top: 0; background: var(--sub-alt-color); }
+.account-calendar-table-scroll th { font-weight: 400; }
+.account-calendar-table-scroll td { color: var(--text-color); }
+.account-calendar summary:focus-visible,
+.account-calendar [tabindex]:focus-visible { outline: 2px solid var(--text-color); outline-offset: -2px; }
+
+@media (max-width: 640px) {
+  .account-calendar-top { grid-template-columns: minmax(0, 1fr) auto; }
+  .account-calendar-legend { grid-column: 1 / -1; justify-content: flex-end; }
+}

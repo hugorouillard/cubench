@@ -102,7 +102,6 @@ describe('account page', () => {
       solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
     }} {...props()} />)
     expect(screen.getByText('Current streak 1 day')).toBeTruthy()
-    expect(screen.queryByTitle('22 Aug 2026: 0 solves')).toBeTruthy() // hidden padding today
     const activity = screen.getByRole('region', { name: 'Activity' })
     const before = within(activity).getByTitle('22 Aug 2026: 0 solves')
     expect(before.classList.contains('is-outside')).toBe(true)
@@ -121,7 +120,7 @@ describe('account page', () => {
       solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
     }} {...props()} />)
     fireEvent.change(screen.getByRole('combobox', { name: 'Activity range' }), { target: { value: '2023' } })
-    expect(screen.getByRole('img', { name: /^1 solves in 2023/ })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /^1 solve in 2023/ })).toBeTruthy()
   })
 
   it('shows dated records and pages recent solves without affecting lifetime bests', () => {

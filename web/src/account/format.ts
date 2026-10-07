@@ -1,4 +1,4 @@
-export function formatAccountDate(value: string): string {
+export function formatAccountDate(value: string | Date): string {
   return new Date(value).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   })
