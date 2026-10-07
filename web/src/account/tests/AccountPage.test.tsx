@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProfilePreview, type ProfilePreview } from '../profilePreview'
 import { lifetimeProfileSummary } from '../../solves/stats'
 import type { Solve } from '../../types'
+import { createSolveRepository } from '../../solves/solveRepository'
+import { accountSolveStore } from '../../solves/solveStore'
 import { AccountPage } from '../AccountPage'
 
 vi.mock('react-chartjs-2', () => ({
@@ -12,7 +14,7 @@ vi.mock('react-chartjs-2', () => ({
 }))
 
 function props() {
-  return { onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }
+  return { repository: createSolveRepository(accountSolveStore), onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }
 }
 
 describe('account page', () => {
@@ -62,11 +64,13 @@ describe('account page', () => {
       if (String(input) === '/api/profile' && init?.method === 'PATCH') return Response.json({ ...profile, display_name: 'Updated Cuber' })
       if (String(input) === '/api/profile') return Response.json(profile)
       if (String(input) === '/api/solves') return Response.json([solve])
+      if (String(input) === '/api/solves/solve-1' && init?.method === 'PATCH') return Response.json({ ...solve, penalty: 'plus2' })
+      if (String(input) === '/api/solves/solve-1' && init?.method === 'DELETE') return new Response(null, { status: 204 })
       throw new Error(`Unexpected request: ${input}`)
     })
     const callbacks = props()
-    callbacks.onPenalty.mockResolvedValue({ ...solve, penalty: 'plus2' })
-    callbacks.onDelete.mockResolvedValue(true)
+    callbacks.onPenalty.mockImplementation((solve, penalty) => callbacks.repository.update(solve, { penalty }))
+    callbacks.onDelete.mockImplementation(async (solve) => { await callbacks.repository.delete(solve); return true })
     render(<AccountPage {...callbacks} />)
 
     await screen.findByRole('heading', { name: 'Speed Cuber' })
@@ -90,7 +94,21 @@ describe('account page', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'save profile' }))
     await screen.findByRole('heading', { name: 'Updated Cuber' })
     expect(callbacks.onProfileChange).toHaveBeenCalledWith({ ...profile, display_name: 'Updated Cuber' })
-    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/profile', '/api/solves', '/api/profile'])
+    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
+      '/api/profile', '/api/solves', '/api/solves/solve-1', '/api/solves/solve-1', '/api/profile',
+    ])
+  })
+
+  it('reports failed history loads rather than presenting an empty activity chart', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/profile') return Response.json({ id: 1, display_name: 'Solver', bio: '', created_at: '2026-01-01T12:00:00Z' })
+      return Response.json({ detail: 'offline' }, { status: 503 })
+    })
+    const callbacks = props()
+    render(<AccountPage {...callbacks} />)
+    await screen.findByText('Account unavailable. Try opening this page again.')
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull()
+    expect(callbacks.onError).toHaveBeenCalledWith('Could not load solve history: offline')
   })
 
   it('refreshes both the calendar and streak at midnight without a solve change', () => {

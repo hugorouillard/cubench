@@ -44,6 +44,8 @@ The timezone suite covers local day boundaries and DST in America/New_York and P
 
 - `web/src/dates/`: local-calendar primitives and the reactive clock.
 - `web/src/solves/activity.ts`: daily aggregation and activity summaries, without presentation labels.
+- `web/src/solves/solveStore.ts`: persistence adapters (guest memory/API).
+- `web/src/solves/solveRepository.ts`: an auth-scoped, subscribable cache with distinct session and lifetime projections. Successful mutations update both in one place. Clearing a session never deletes saved history; loading history never adds historical solves to the session. Page entry refreshes history, concurrent requests are deduplicated, and mutations completed during a request take precedence over stale responses. Changing auth identity creates a fresh repository; old responses cannot populate another account's cache.
 - `web/src/account/activityCalendar.ts`: pure range/layout and intensity calculations.
 - `web/src/account/DailyActivityChart.tsx`: chart presentation and interaction.
 

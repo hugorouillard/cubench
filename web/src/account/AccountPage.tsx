@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useState } from 'react'
-import { getProfile, getSolves } from '../api'
+import { lazy, Suspense, useEffect, useEffectEvent, useMemo, useState, useSyncExternalStore } from 'react'
+import { getProfile } from '../api'
+import type { SolveRepository } from '../solves/solveRepository'
 import type { ProfilePreview } from './profilePreview'
 import { bestAverage, lifetimeSolveSummary, newestSolvesFirst } from '../solves/stats'
 import { aggregateDailyActivity, summarizeActivity } from '../solves/activity'
@@ -18,6 +19,7 @@ const AccountProgression = lazy(() =>
 )
 
 export type AccountPageProps = {
+  repository: SolveRepository
   preview?: ProfilePreview
   theme?: string
   onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>
@@ -30,9 +32,10 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
 }
 
-export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, onDelete, onError, onProfileChange }: AccountPageProps) {
+export function AccountPage({ repository, preview, theme = 'catppuccin-mocha', onPenalty, onDelete, onError, onProfileChange }: AccountPageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(preview?.profile ?? null)
-  const [solves, setSolves] = useState<Solve[]>(preview?.solves ?? [])
+  const { history } = useSyncExternalStore(repository.subscribe, repository.getSnapshot)
+  const solves = preview?.solves ?? history
   const [loading, setLoading] = useState(!preview)
   const [loadFailed, setLoadFailed] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -42,18 +45,17 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
     if (preview) return
     let cancelled = false
 
-    void Promise.allSettled([getProfile(), getSolves()]).then(([profileResult, solvesResult]) => {
+    void Promise.allSettled([getProfile(), repository.loadHistory()]).then(([profileResult, solvesResult]) => {
       if (cancelled) return
       if (profileResult.status === 'fulfilled') setProfile(profileResult.value)
       else reportLoadError(`Could not load profile: ${errorMessage(profileResult.reason)}`)
-      if (solvesResult.status === 'fulfilled') setSolves(solvesResult.value)
-      else reportLoadError(`Could not load solve history: ${errorMessage(solvesResult.reason)}`)
+      if (solvesResult.status === 'rejected') reportLoadError(`Could not load solve history: ${errorMessage(solvesResult.reason)}`)
       setLoadFailed(profileResult.status === 'rejected' || solvesResult.status === 'rejected')
       setLoading(false)
     })
 
     return () => { cancelled = true }
-  }, [preview])
+  }, [preview, repository])
 
   const today = useToday()
   const activity = useMemo(() => aggregateDailyActivity(solves), [solves])
@@ -64,8 +66,7 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
 
   async function changePenalty(solve: Solve, penalty: Penalty) {
     try {
-      const updated = await onPenalty(solve, penalty)
-      if (updated) setSolves((current) => current.map((item) => item.id === solve.id ? updated : item))
+      await onPenalty(solve, penalty)
     } catch (error) {
       onError(`Could not update solve: ${errorMessage(error)}`)
     }
@@ -73,7 +74,7 @@ export function AccountPage({ preview, theme = 'catppuccin-mocha', onPenalty, on
 
   async function deleteSolve(solve: Solve) {
     try {
-      if (await onDelete(solve)) setSolves((current) => current.filter((item) => item.id !== solve.id))
+      await onDelete(solve)
     } catch (error) {
       onError(`Could not delete solve: ${errorMessage(error)}`)
     }
