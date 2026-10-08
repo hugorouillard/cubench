@@ -94,11 +94,11 @@ describe('account access', () => {
       <AuthPage onAuthenticated={vi.fn()} onSubmittingChange={vi.fn()} onPreview={onPreview} />,
     )
 
-    const invite = screen.getByRole('link', { name: 'Request an invite' })
+    const invite = screen.getByRole('link', { name: 'request an invite' })
     expect(invite.getAttribute('href')).toContain('mailto:rouillard.hugo1@gmail.com')
     expect(container.querySelector('.auth-footer')?.lastElementChild?.contains(invite)).toBe(true)
     expect(screen.getByLabelText('invite code').getAttribute('aria-describedby')).toBe('invite-code-help')
-    expect(screen.queryByText('Request an invite from Hugo')).toBeNull()
+    expect(screen.queryByText('request an invite from Hugo')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'preview account features' }))
     expect(onPreview).toHaveBeenCalledOnce()
   })

@@ -192,7 +192,7 @@ describe('current session', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(screen.getByRole('heading', { name: 'create account' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'sign in' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Request an invite' }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: 'request an invite' }).getAttribute('href'))
       .toContain('mailto:rouillard.hugo1@gmail.com')
     fireEvent.click(screen.getByRole('button', { name: 'preview account features' }))
     expect(screen.queryByRole('heading', { name: 'create account' })).toBeNull()
