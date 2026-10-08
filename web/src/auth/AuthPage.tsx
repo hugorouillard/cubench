@@ -1,33 +1,29 @@
 import { useState, type FormEvent } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRightToBracket, faUserPlus } from '@fortawesome/free-solid-svg-icons'
-import { login, register } from '../api'
 import { INVITE_REQUEST_URL } from './project'
-import type { Account } from '../types'
+import { useAuth } from './useAuth'
 
 type AuthPageProps = {
-  onAuthenticated: (account: Account) => void
-  onSubmittingChange: (submitting: boolean) => void
   onPreview: () => void
 }
 
 type AuthFormProps = {
   mode: 'login' | 'register'
-  busy: boolean
-  onAuthenticated: (account: Account) => void
-  onSubmittingChange: (submitting: boolean) => void
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong'
 }
 
-function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormProps) {
+function AuthForm({ mode }: AuthFormProps) {
+  const { login, register, checking, pending } = useAuth()
+  const busy = checking || pending !== null
+  const submitting = pending === mode
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const isRegister = mode === 'register'
   const action = isRegister ? 'create account' : 'sign in'
 
@@ -35,18 +31,11 @@ function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormP
     event.preventDefault()
     if (busy) return
     setError('')
-    setSubmitting(true)
-    onSubmittingChange(true)
     try {
-      const account = isRegister
-        ? await register({ username, password, invite_code: inviteCode })
-        : await login({ username, password })
-      onAuthenticated(account)
+      if (isRegister) await register({ username, password, invite_code: inviteCode })
+      else await login({ username, password })
     } catch (authError) {
       setError(errorMessage(authError))
-    } finally {
-      setSubmitting(false)
-      onSubmittingChange(false)
     }
   }
 
@@ -58,13 +47,13 @@ function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormP
       </h2>
       <form className="auth-form" onSubmit={(event) => void submit(event)}>
         <label>
-          <span className="sr-only">username</span>
           <input
             required
             minLength={isRegister ? 3 : 1}
             maxLength={32}
             pattern={isRegister ? '[\\-A-Za-z0-9_]+' : undefined}
             autoComplete="username"
+            aria-label="username"
             placeholder="username"
             disabled={busy}
             value={username}
@@ -72,13 +61,13 @@ function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormP
           />
         </label>
         <label>
-          <span className="sr-only">password</span>
           <input
             required
             minLength={isRegister ? 8 : 1}
             maxLength={128}
             type="password"
             autoComplete={isRegister ? 'new-password' : 'current-password'}
+            aria-label="password"
             placeholder="password"
             disabled={busy}
             value={password}
@@ -87,13 +76,13 @@ function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormP
         </label>
         {isRegister && (
           <label>
-            <span className="sr-only">invite code</span>
             <input
               required
               maxLength={256}
               type="password"
               autoComplete="off"
               aria-describedby="invite-code-help"
+              aria-label="invite code"
               placeholder="invite code"
               disabled={busy}
               value={inviteCode}
@@ -111,23 +100,18 @@ function AuthForm({ mode, busy, onAuthenticated, onSubmittingChange }: AuthFormP
   )
 }
 
-export function AuthPage({ onAuthenticated, onSubmittingChange, onPreview }: AuthPageProps) {
-  const [submitting, setSubmitting] = useState(false)
-
-  function handleSubmittingChange(next: boolean) {
-    setSubmitting(next)
-    onSubmittingChange(next)
-  }
+export function AuthPage({ onPreview }: AuthPageProps) {
+  const { checking, pending } = useAuth()
+  const busy = checking || pending !== null
 
   return (
     <main className="auth-page page-width">
-      <h1 className="sr-only">Account access</h1>
       <div className="auth-columns">
-        <AuthForm mode="register" busy={submitting} onAuthenticated={onAuthenticated} onSubmittingChange={handleSubmittingChange} />
-        <AuthForm mode="login" busy={submitting} onAuthenticated={onAuthenticated} onSubmittingChange={handleSubmittingChange} />
+        <AuthForm mode="register" />
+        <AuthForm mode="login" />
       </div>
       <div className="auth-footer">
-        <button type="button" onClick={onPreview} disabled={submitting}>preview account features</button>
+        <button type="button" onClick={onPreview} disabled={busy}>preview account features</button>
         <p id="invite-code-help">accounts are invite-only during the beta period (<a href={INVITE_REQUEST_URL}>request an invite</a>).</p>
       </div>
     </main>

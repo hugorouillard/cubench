@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -7,7 +9,6 @@ import {
 } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faUser as legacyUserRegular } from 'free-regular-svg-icons-v5'
 import { faDiscord as legacyDiscord } from 'free-brands-svg-icons-v5'
 import {
   faCode as legacyCode,
@@ -19,11 +20,8 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
-  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
-  faArrowRightFromBracket,
-  faChartLine,
   faCircleExclamation,
   faCube,
   faEyeSlash,
@@ -33,8 +31,10 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import { ApiError, getAuthSession, logout } from '../api'
-import { AuthPage } from '../account/AuthPage'
+import { AuthProvider } from '../auth/AuthProvider'
+import { useAuth } from '../auth/useAuth'
+import { AccountNavigation } from './AccountNavigation'
+import { AuthPage } from '../auth/AuthPage'
 import { AccountPage } from '../account/AccountPage'
 import { createProfilePreview } from '../account/profilePreview'
 import { SessionPanel } from '../session/SessionPanel'
@@ -42,7 +42,7 @@ import { accountSolveStore, guestSolveStore, type SolveStore } from '../solves/s
 import { newestSolvesFirst, summarizeSolves } from '../solves/stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from '../timer/timer'
-import type { Account, Penalty, Solve, SolveInput, UserProfile } from '../types'
+import type { Account, Penalty, Solve, SolveInput } from '../types'
 import { useTimer, type TimerPhase } from '../timer/useTimer'
 import './App.css'
 
@@ -50,8 +50,6 @@ declare const __CUBENCH_VERSION__: string
 
 const aboutIcon = legacyInfo as unknown as IconDefinition
 const optionsIcon = legacyCog as unknown as IconDefinition
-const signedInIcon = legacyUser as unknown as IconDefinition
-const signedOutIcon = legacyUserRegular as unknown as IconDefinition
 
 const footerIcons = {
   code: legacyCode,
@@ -157,13 +155,11 @@ function requestedView(account: Account | null): AppView {
   return account && location.hash === '#profile' ? 'profile' : 'timer'
 }
 
-function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
+function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
+  const { account, checking: authChecking, pending, sessionError, dismissSessionError, applyProfile } = useAuth()
+  const authBusy = pending !== null
   const [view, setView] = useState<AppView>(() => isLoginPath() ? 'login' : 'timer')
   const [profilePreview] = useState(createProfilePreview)
-  const [account, setAccount] = useState<Account | null>(null)
-  const [authChecking, setAuthChecking] = useState(true)
-  const [authBusy, setAuthBusy] = useState(false)
-  const [authSubmitting, setAuthSubmitting] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
@@ -178,9 +174,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [inspectionEnabled, setInspectionEnabled] = useState(false)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const latestResultIdRef = useRef(latestResultId)
-  const accountMenuRef = useRef<HTMLElement>(null)
-  const accountButtonRef = useRef<HTMLButtonElement>(null)
-  const accountMenuDismissedRef = useRef(false)
+  const previousAccountId = useRef<number | null | undefined>(undefined)
   latestResultIdRef.current = latestResultId
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
 
@@ -191,25 +185,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     }
     setView(nextView)
   }
-
-  useEffect(() => {
-    let cancelled = false
-    void getAuthSession()
-      .then((restoredAccount) => {
-        if (!cancelled) setAccount(restoredAccount)
-      })
-      .catch((sessionError: unknown) => {
-        if (!cancelled && !(sessionError instanceof ApiError && sessionError.status === 401)) {
-          setError(`Could not restore account; continuing as guest: ${errorMessage(sessionError)}`)
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setAuthChecking(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -293,7 +268,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const controlsDisabled =
     authChecking ||
     authBusy ||
-    authSubmitting ||
     Boolean(pendingSolve) ||
     phase === 'holding' ||
     phase === 'ready' ||
@@ -302,11 +276,21 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     phase === 'inspection-ready' ||
     phase === 'running'
 
-  useEffect(() => {
-    if (authChecking) return
-    if (account && isLoginPath()) navigate('timer', true)
+  const synchronizeIdentity = useEffectEvent((changed: boolean) => {
+    if (changed) resetCurrentSession()
+    if (changed || (account && isLoginPath())) navigate('timer', true)
     else setView(requestedView(account))
-  }, [account, authChecking])
+  })
+
+  const accountId = account?.id ?? null
+  useLayoutEffect(() => {
+    if (authChecking) return
+    // Restore deep links on startup, but clear practice data before painting
+    // a different identity. Profile edits must not reset the current session.
+    const changed = previousAccountId.current !== undefined && previousAccountId.current !== accountId
+    previousAccountId.current = accountId
+    synchronizeIdentity(changed)
+  }, [accountId, authChecking])
 
   useEffect(() => {
     function handlePopState() {
@@ -322,32 +306,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [account, controlsDisabled, view])
 
-  useEffect(() => {
-    if (!accountMenuOpen) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (event.target instanceof Node && !accountMenuRef.current?.contains(event.target)) {
-        accountMenuDismissedRef.current = true
-        setAccountMenuOpen(false)
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        accountMenuDismissedRef.current = true
-        setAccountMenuOpen(false)
-        accountButtonRef.current?.focus()
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [accountMenuOpen])
-
   function resetCurrentSession() {
     setSolves([])
     setPendingSolve(null)
@@ -358,25 +316,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     resetTimer()
   }
 
-  function handleAuthenticated(authenticatedAccount: Account) {
-    setAccount(authenticatedAccount)
-    navigate('timer', true)
-    resetCurrentSession()
-  }
-
-  async function handleLogout() {
-    if (pendingSolve && !window.confirm('Sign out and discard the unsaved result?')) return
-    setAuthBusy(true)
-    try {
-      await logout()
-      setAccount(null)
-      navigate('timer', true)
-      resetCurrentSession()
-    } catch (logoutError) {
-      setError(`Could not sign out: ${errorMessage(logoutError)}`)
-    } finally {
-      setAuthBusy(false)
-    }
+  function confirmLogout(): boolean {
+    return !pendingSolve || window.confirm('Sign out and discard the unsaved result?')
   }
 
   async function handlePenalty(
@@ -444,14 +385,11 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     applyTheme(nextTheme)
   }
 
-  function handleProfileChange(profile: UserProfile) {
-    setAccount((current) => current ? { ...current, ...profile } : current)
-  }
-
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
   const summary = summarizeSolves(solves)
   const accountActionDisabled = authBusy || (controlsDisabled && saveState !== 'failed')
+  const notificationError = error || sessionError
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
   const inspectionActive =
@@ -535,125 +473,35 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             </button>
           </nav>
 
-          <nav
-            className="account-nav"
-            aria-label="Account"
-            ref={accountMenuRef}
-            onPointerEnter={(event) => {
-              if (account && event.pointerType === 'mouse' && !accountMenuDismissedRef.current && !accountActionDisabled) {
-                setAccountMenuOpen(true)
-              }
-            }}
-            onPointerLeave={(event) => {
-              if (event.pointerType !== 'mouse') return
-              accountMenuDismissedRef.current = false
-              if (!(document.activeElement instanceof HTMLElement &&
-                event.currentTarget.contains(document.activeElement) &&
-                document.activeElement.matches(':focus-visible'))) {
-                setAccountMenuOpen(false)
-              }
-            }}
-            onFocusCapture={() => {
-              if (account && !accountMenuDismissedRef.current && !accountActionDisabled) {
-                setAccountMenuOpen(true)
-              }
-            }}
-            onBlur={(event) => {
-              if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) {
-                accountMenuDismissedRef.current = false
-                setAccountMenuOpen(false)
-              }
-            }}
-          >
-            {account ? (
-              <>
-                <button
-                  ref={accountButtonRef}
-                  className={`account-identity${view === 'profile' || accountMenuOpen ? ' is-active' : ''}`}
-                  type="button"
-                  onPointerDown={(event) => {
-                    if (event.pointerType === 'touch') accountMenuDismissedRef.current = true
-                  }}
-                  onClick={() => {
-                    if (window.matchMedia?.('(pointer: coarse)').matches) {
-                      accountMenuDismissedRef.current = accountMenuOpen
-                      setAccountMenuOpen(!accountMenuOpen)
-                    } else if (controlsDisabled) {
-                      accountMenuDismissedRef.current = false
-                      setAccountMenuOpen(true)
-                    } else {
-                      accountMenuDismissedRef.current = true
-                      setAccountMenuOpen(false)
-                      navigate('profile')
-                    }
-                  }}
-                  disabled={accountActionDisabled}
-                  aria-label={`Account menu for ${account.display_name}`}
-                  aria-expanded={accountMenuOpen}
-                  aria-controls={accountMenuOpen ? 'account-menu' : undefined}
-                  title="Account"
-                >
-                  <FontAwesomeIcon className="app-icon account-icon--signed-in" icon={signedInIcon} fixedWidth aria-hidden="true" />
-                  <span className="account-name">{account.display_name}</span>
-                </button>
-                {accountMenuOpen && (
-                  <div className="account-menu" id="account-menu" role="group" aria-label="Account actions">
-                    <div className="account-menu-content">
-                      <button
-                        type="button"
-                        disabled={controlsDisabled}
-                        onClick={() => {
-                          accountMenuDismissedRef.current = true
-                          setAccountMenuOpen(false)
-                          navigate('profile')
-                        }}
-                        aria-current={view === 'profile' ? 'page' : undefined}
-                      >
-                        <FontAwesomeIcon className="app-icon" icon={faChartLine} fixedWidth aria-hidden="true" />
-                        profile
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          accountMenuDismissedRef.current = true
-                          setAccountMenuOpen(false)
-                          void handleLogout()
-                        }}
-                        disabled={accountActionDisabled}
-                      >
-                        <FontAwesomeIcon className="app-icon" icon={faArrowRightFromBracket} fixedWidth aria-hidden="true" />
-                        sign out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => navigate('login')}
-                disabled={accountActionDisabled}
-                aria-label="Sign in"
-                aria-current={view === 'login' ? 'page' : undefined}
-                title="Sign in"
-              >
-                <FontAwesomeIcon className="app-icon" icon={signedOutIcon} fixedWidth aria-hidden="true" />
-              </button>
-            )}
-          </nav>
+          <AccountNavigation
+            currentPage={view}
+            navigationDisabled={controlsDisabled}
+            accountActionDisabled={accountActionDisabled}
+            onNavigate={navigate}
+            onOpenChange={setAccountMenuOpen}
+            beforeLogout={confirmLogout}
+            onError={setError}
+          />
         </div>
       </header>
 
-      {error && (
+      {notificationError && (
         <aside className="notification" role="alert">
           <div className="notification-copy">
             <strong>
               <FontAwesomeIcon className="app-icon" icon={faCircleExclamation} aria-hidden="true" />
               Error
             </strong>
-            <span>{error}</span>
+            <span>{notificationError}</span>
           </div>
-          <button type="button" onClick={() => setError('')} aria-label="Dismiss error">
+          <button
+            type="button"
+            onClick={() => {
+              if (error) setError('')
+              else dismissSessionError()
+            }}
+            aria-label="Dismiss error"
+          >
             <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </aside>
@@ -818,11 +666,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             <p role="status">checking account...</p>
           </main>
         ) : (
-          <AuthPage
-            onAuthenticated={handleAuthenticated}
-            onSubmittingChange={setAuthSubmitting}
-            onPreview={() => navigate('preview')}
-          />
+          <AuthPage onPreview={() => navigate('preview')} />
         )
       ) : view === 'preview' || account ? (
         <AccountPage
@@ -832,7 +676,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           onPenalty={handlePenalty}
           onDelete={handleDelete}
           onError={setError}
-          onProfileChange={handleProfileChange}
+          onProfileChange={applyProfile}
         />
       ) : null}
 
@@ -959,4 +803,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   )
 }
 
-export default App
+export default function App(props: AppProps) {
+  return (
+    <AuthProvider>
+      <AppShell {...props} />
+    </AuthProvider>
+  )
+}
