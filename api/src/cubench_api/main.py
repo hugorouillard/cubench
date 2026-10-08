@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from cubench_api.auth import AccountDependency, router as auth_router
 from cubench_api.config import ConfigDependency, load_runtime_config
 from cubench_api.database import connect, database_is_ready, initialize_database
+from cubench_api.dev_account import seed_dev_account
 from cubench_api.schemas import (
     ExportData,
     Profile,
@@ -23,6 +24,8 @@ from cubench_api.schemas import (
 async def lifespan(app: FastAPI):
     config = load_runtime_config()
     initialize_database(config.db_path)
+    if config.environment == "development":
+        seed_dev_account(config.db_path)
     app.state.runtime_config = config
     try:
         yield

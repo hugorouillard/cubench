@@ -13,6 +13,7 @@ from cubench_api.database import connect
 
 SESSION_COOKIE = "cubench_session"
 SESSION_MAX_AGE = 60 * 60 * 24 * 30
+DEV_USERNAME = "cubench_dev"
 SCRYPT_N = 2**14
 SCRYPT_R = 8
 SCRYPT_P = 1
@@ -136,6 +137,7 @@ def _set_session_cookie(
 
 
 def require_account(
+    config: ConfigDependency,
     session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> Account:
     if session is None:
@@ -151,7 +153,9 @@ def require_account(
             """,
             (_token_hash(session), int(time.time())),
         ).fetchone()
-    if row is None:
+    if row is None or (
+        row["username"] == DEV_USERNAME and config.environment != "development"
+    ):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return _account(row)
 
@@ -165,6 +169,8 @@ AccountDependency = Annotated[Account, Depends(require_account)]
 def register(
     payload: RegisterRequest, response: Response, config: ConfigDependency
 ) -> Account:
+    if payload.username == DEV_USERNAME:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reserved username")
     expected_invite = _invite_code(config)
     if not secrets.compare_digest(payload.invite_code.encode(), expected_invite.encode()):
         raise HTTPException(
@@ -212,6 +218,11 @@ def register(
 def login(
     payload: LoginRequest, response: Response, config: ConfigDependency
 ) -> Account:
+    if payload.username == DEV_USERNAME and config.environment != "development":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
     with connect() as connection:
         row = connection.execute(
             """

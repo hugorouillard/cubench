@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -18,10 +20,8 @@ import {
   faLock as legacyLock,
   faPalette as legacyPalette,
   faShieldAlt as legacyShield,
-  faUser as legacyUser,
 } from 'free-solid-svg-icons-v5'
 import {
-  faArrowRightFromBracket,
   faCircleExclamation,
   faCube,
   faEyeSlash,
@@ -31,8 +31,10 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { randomScrambleForEvent } from 'cubing/scramble'
-import { ApiError, getAuthSession, logout } from '../api'
-import { AuthPanel } from '../account/AuthPanel'
+import { AuthProvider } from '../auth/AuthProvider'
+import { useAuth } from '../auth/useAuth'
+import { AccountNavigation } from './AccountNavigation'
+import { AuthPage } from '../auth/AuthPage'
 import { AccountPage } from '../account/AccountPage'
 import { createProfilePreview } from '../account/profilePreview'
 import { SessionPanel } from '../session/SessionPanel'
@@ -40,13 +42,12 @@ import { accountSolveStore, guestSolveStore, type SolveStore } from '../solves/s
 import { newestSolvesFirst, summarizeSolves } from '../solves/stats'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from '../timer/timer'
-import type { Account, Penalty, Solve, SolveInput, UserProfile } from '../types'
+import type { Account, Penalty, Solve, SolveInput } from '../types'
 import { useTimer, type TimerPhase } from '../timer/useTimer'
 import './App.css'
 
 declare const __CUBENCH_VERSION__: string
 
-const accountIcon = legacyUser as unknown as IconDefinition
 const aboutIcon = legacyInfo as unknown as IconDefinition
 const optionsIcon = legacyCog as unknown as IconDefinition
 
@@ -136,21 +137,30 @@ type AppProps = {
 }
 
 type SaveState = 'idle' | 'saving' | 'failed'
-type AppView = 'timer' | 'profile' | 'preview'
+type AppView = 'timer' | 'profile' | 'preview' | 'login'
+
+function pathForView(view: AppView): string {
+  const path = view === 'login' ? '/login' : '/'
+  const hash = view === 'profile' || view === 'preview' ? `#${view}` : ''
+  return `${path}${location.search}${hash}`
+}
+
+function isLoginPath(): boolean {
+  return location.pathname === '/login' || location.pathname === '/login/'
+}
 
 function requestedView(account: Account | null): AppView {
+  if (isLoginPath()) return account ? 'timer' : 'login'
   if (location.hash === '#preview') return 'preview'
   return account && location.hash === '#profile' ? 'profile' : 'timer'
 }
 
-function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
-  const [view, setView] = useState<AppView>('timer')
+function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
+  const { account, checking: authChecking, pending, sessionError, dismissSessionError, applyProfile } = useAuth()
+  const authBusy = pending !== null
+  const [view, setView] = useState<AppView>(() => isLoginPath() ? 'login' : 'timer')
   const [profilePreview] = useState(createProfilePreview)
-  const [account, setAccount] = useState<Account | null>(null)
-  const [authChecking, setAuthChecking] = useState(true)
-  const [authOpen, setAuthOpen] = useState(false)
-  const [authBusy, setAuthBusy] = useState(false)
-  const [authSubmitting, setAuthSubmitting] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
@@ -164,37 +174,17 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [inspectionEnabled, setInspectionEnabled] = useState(false)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const latestResultIdRef = useRef(latestResultId)
+  const previousAccountId = useRef<number | null | undefined>(undefined)
   latestResultIdRef.current = latestResultId
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
 
   function navigate(nextView: AppView, replace = false) {
-    const target = nextView !== 'timer'
-      ? `${location.pathname}${location.search}#${nextView}`
-      : `${location.pathname}${location.search}`
+    const target = pathForView(nextView)
     if (`${location.pathname}${location.search}${location.hash}` !== target) {
       window.history[replace ? 'replaceState' : 'pushState'](null, '', target)
     }
     setView(nextView)
   }
-
-  useEffect(() => {
-    let cancelled = false
-    void getAuthSession()
-      .then((restoredAccount) => {
-        if (!cancelled) setAccount(restoredAccount)
-      })
-      .catch((sessionError: unknown) => {
-        if (!cancelled && !(sessionError instanceof ApiError && sessionError.status === 401)) {
-          setError(`Could not restore account; continuing as guest: ${errorMessage(sessionError)}`)
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setAuthChecking(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -268,8 +258,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       !scrambleLoading &&
       !pendingSolve &&
       !authChecking &&
-      !authOpen &&
       !authBusy &&
+      !accountMenuOpen &&
       !practiceSettingsOpen,
     ),
     inspectionEnabled,
@@ -286,16 +276,27 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     phase === 'inspection-ready' ||
     phase === 'running'
 
-  useEffect(() => {
-    if (!authChecking) setView(requestedView(account))
-  }, [account, authChecking])
+  const synchronizeIdentity = useEffectEvent((changed: boolean) => {
+    if (changed) resetCurrentSession()
+    if (changed || (account && isLoginPath())) navigate('timer', true)
+    else setView(requestedView(account))
+  })
+
+  const accountId = account?.id ?? null
+  useLayoutEffect(() => {
+    if (authChecking) return
+    // Restore deep links on startup, but clear practice data before painting
+    // a different identity. Profile edits must not reset the current session.
+    const changed = previousAccountId.current !== undefined && previousAccountId.current !== accountId
+    previousAccountId.current = accountId
+    synchronizeIdentity(changed)
+  }, [accountId, authChecking])
 
   useEffect(() => {
     function handlePopState() {
       const nextView = requestedView(account)
       if (nextView !== view && controlsDisabled) {
-        const hash = view === 'timer' ? '' : `#${view}`
-        window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
+        window.history.replaceState(null, '', pathForView(view))
         return
       }
       setView(nextView)
@@ -315,26 +316,8 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     resetTimer()
   }
 
-  function handleAuthenticated(authenticatedAccount: Account) {
-    setAccount(authenticatedAccount)
-    navigate('timer', true)
-    setAuthOpen(false)
-    resetCurrentSession()
-  }
-
-  async function handleLogout() {
-    if (pendingSolve && !window.confirm('Sign out and discard the unsaved result?')) return
-    setAuthBusy(true)
-    try {
-      await logout()
-      setAccount(null)
-      navigate('timer', true)
-      resetCurrentSession()
-    } catch (logoutError) {
-      setError(`Could not sign out: ${errorMessage(logoutError)}`)
-    } finally {
-      setAuthBusy(false)
-    }
+  function confirmLogout(): boolean {
+    return !pendingSolve || window.confirm('Sign out and discard the unsaved result?')
   }
 
   async function handlePenalty(
@@ -402,14 +385,11 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     applyTheme(nextTheme)
   }
 
-  function handleProfileChange(profile: UserProfile) {
-    setAccount((current) => current ? { ...current, ...profile } : current)
-  }
-
   const lastSolve = solves[0]
   const latestResult = solves.find((solve) => solve.id === latestResultId)
   const summary = summarizeSolves(solves)
   const accountActionDisabled = authBusy || (controlsDisabled && saveState !== 'failed')
+  const notificationError = error || sessionError
   const statTime = (duration: number | null) =>
     duration === null ? '--' : formatTime(duration)
   const inspectionActive =
@@ -493,68 +473,35 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             </button>
           </nav>
 
-          <nav className="account-nav" aria-label="Account">
-            {account ? (
-              <>
-                <button
-                  className={`account-identity${view === 'profile' ? ' is-active' : ''}`}
-                  type="button"
-                  onClick={() => navigate('profile')}
-                  disabled={controlsDisabled}
-                  aria-label={`Open profile for ${account.display_name}`}
-                  aria-current={view === 'profile' ? 'page' : undefined}
-                  title="Profile"
-                >
-                  <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
-                  <span className="account-name">{account.display_name}</span>
-                  <span
-                    className="account-solve-count"
-                    title={`${solves.length} current ${solves.length === 1 ? 'solve' : 'solves'}`}
-                  >
-                    {solves.length}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleLogout()}
-                  disabled={accountActionDisabled}
-                  aria-label="Sign out"
-                  title="Sign out"
-                >
-                  <FontAwesomeIcon
-                    className="app-icon"
-                    icon={faArrowRightFromBracket}
-                    fixedWidth
-                    aria-hidden="true"
-                  />
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAuthOpen(true)}
-                disabled={accountActionDisabled}
-                aria-label="Sign in"
-                title="Sign in"
-              >
-                <FontAwesomeIcon className="app-icon" icon={accountIcon} fixedWidth aria-hidden="true" />
-                <span className="account-name">sign in</span>
-              </button>
-            )}
-          </nav>
+          <AccountNavigation
+            currentPage={view}
+            navigationDisabled={controlsDisabled}
+            accountActionDisabled={accountActionDisabled}
+            onNavigate={navigate}
+            onOpenChange={setAccountMenuOpen}
+            beforeLogout={confirmLogout}
+            onError={setError}
+          />
         </div>
       </header>
 
-      {error && (
+      {notificationError && (
         <aside className="notification" role="alert">
           <div className="notification-copy">
             <strong>
               <FontAwesomeIcon className="app-icon" icon={faCircleExclamation} aria-hidden="true" />
               Error
             </strong>
-            <span>{error}</span>
+            <span>{notificationError}</span>
           </div>
-          <button type="button" onClick={() => setError('')} aria-label="Dismiss error">
+          <button
+            type="button"
+            onClick={() => {
+              if (error) setError('')
+              else dismissSessionError()
+            }}
+            aria-label="Dismiss error"
+          >
             <FontAwesomeIcon className="app-icon" icon={faXmark} fixedWidth aria-hidden="true" />
           </button>
         </aside>
@@ -713,6 +660,14 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             />
           </div>
         </main>
+      ) : view === 'login' ? (
+        authChecking || account ? (
+          <main className="auth-page page-width" aria-busy="true">
+            <p role="status">checking account...</p>
+          </main>
+        ) : (
+          <AuthPage onPreview={() => navigate('preview')} />
+        )
       ) : view === 'preview' || account ? (
         <AccountPage
           key={view}
@@ -721,7 +676,7 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
           onPenalty={handlePenalty}
           onDelete={handleDelete}
           onError={setError}
-          onProfileChange={handleProfileChange}
+          onProfileChange={applyProfile}
         />
       ) : null}
 
@@ -786,25 +741,6 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       </footer>
 
       <Modal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        labelledBy="auth-dialog-title"
-        closeDisabled={authSubmitting}
-      >
-        {authOpen && (
-          <AuthPanel
-            onAuthenticated={handleAuthenticated}
-            onClose={() => setAuthOpen(false)}
-            onSubmittingChange={setAuthSubmitting}
-            onPreview={() => {
-              setAuthOpen(false)
-              navigate('preview')
-            }}
-          />
-        )}
-      </Modal>
-
-      <Modal
         open={practiceSettingsOpen}
         onClose={() => setPracticeSettingsOpen(false)}
         labelledBy="practice-dialog-title"
@@ -867,4 +803,10 @@ function App({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   )
 }
 
-export default App
+export default function App(props: AppProps) {
+  return (
+    <AuthProvider>
+      <AppShell {...props} />
+    </AuthProvider>
+  )
+}

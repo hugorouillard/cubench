@@ -1,0 +1,106 @@
+.account-nav {
+  position: relative;
+  margin-left: auto;
+}
+
+.account-nav button {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--roundness);
+  color: var(--sub-readable-color);
+  background: transparent;
+  cursor: pointer;
+  transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
+}
+
+.account-nav > button:hover,
+.account-nav > button.is-active {
+  color: var(--text-color);
+}
+
+.account-nav > button:active {
+  color: var(--sub-color);
+}
+
+.account-nav > button {
+  width: 2.25rem;
+  color: var(--sub-color);
+}
+
+.account-nav > .account-identity {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.5rem;
+}
+
+.account-name {
+  max-width: 10rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-nav .app-icon {
+  width: 1.25rem;
+  font-size: 1.05rem;
+}
+
+.account-nav .account-icon--signed-in {
+  padding: 0.2em;
+}
+
+.account-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1;
+  min-width: 9rem;
+  padding-top: 0.5rem;
+  animation: account-menu-in 125ms ease-out;
+}
+
+.account-menu-content {
+  padding: 0.25rem;
+  border-radius: var(--roundness);
+  background: var(--sub-alt-color);
+  box-shadow: 0 0 0 0.375rem var(--bg-color);
+}
+
+.account-menu button {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  color: var(--sub-color);
+  font-size: 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.account-menu button:hover {
+  color: var(--text-color);
+}
+
+.account-menu .app-icon {
+  width: 1rem;
+  font-size: 0.875rem;
+}
+
+@keyframes account-menu-in {
+  from { opacity: 0; }
+}
+
+@media (max-width: 848px) {
+  .account-name {
+    display: none;
+  }
+}

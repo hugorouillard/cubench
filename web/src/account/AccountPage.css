@@ -458,6 +458,7 @@
 }
 
 @media (min-width: 849px) {
+  .account-page { padding-top: 1.5rem; }
   .account-summary-body { grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(0, 1fr); }
   .account-summary.has-bio .account-summary-body { grid-template-columns: minmax(0, 17.5rem) 0.5rem minmax(8rem, 1fr) 0.5rem minmax(0, 2fr); }
 }

@@ -1,12 +1,18 @@
 __CUBENCH_DOMAIN__ {
 	encode zstd gzip
+	root * /opt/cubench/current/web/dist
 
 	handle /api/* {
 		reverse_proxy 127.0.0.1:8000
 	}
 
+	@login path /login /login/
+	handle @login {
+		rewrite * /index.html
+		file_server
+	}
+
 	handle {
-		root * /opt/cubench/current/web/dist
 		file_server
 	}
 
