@@ -65,39 +65,3 @@ just install   # install deps
 just dev       # start dev instance
 just check     # run code checks
 ```
-
-### App structure
-
-```text
-React + TypeScript
-  ├── timer and scramble generation in the browser
-  ├── guest solves and fictional preview data in memory
-  └── signed-in requests over /api
-        └── FastAPI + Pydantic
-              └── SQLite: accounts, auth sessions, solves
-```
-
-In `web/src`, `app/` coordinates the views, `timer/` handles timing,
-`session/` displays the current timer session, `solves/` holds shared solve
-storage and statistics, and `account/` contains the lifetime profile and
-account UI. Feature tests live in their respective `tests/` directories.
-
-Notes:
-
-- **Timing is in the browser.** [`useTimer.ts`](web/src/timer/useTimer.ts) uses
-  explicit timer phases and `performance.now()` for elapsed time;
-  `requestAnimationFrame` updates the display. The API only receives completed
-  solves.
-- **Guest and account storage share a small interface.**
-  [`solveStore.ts`](web/src/solves/solveStore.ts) keeps the timer flow the same for both.
-  Failed saves retain the result for retry, and client-generated solve IDs let
-  the API recognize repeated submissions.
-- **Statistics are pure TypeScript functions.**
-  [`stats.ts`](web/src/solves/stats.ts) calculates averages and chart data from solves,
-  with tests for penalty handling, date ranges, and personal bests. The account
-  preview uses the same dashboard and calculations as a real account.
-- **A small backend fits the current scope.** FastAPI uses Python's `sqlite3`
-  module directly. Queries are scoped to the signed-in account. Passwords are
-  hashed with scrypt. Authentication uses an HttpOnly session cookie and hashed
-  session tokens stored in SQLite.
-- **Prod runs on a VPS with Caddy serving the frontend and proxying API requests to Uvicorn.**
