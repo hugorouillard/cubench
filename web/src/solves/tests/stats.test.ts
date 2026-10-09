@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   bestAverage,
   currentAverage,
-  dailyAnalytics,
   filterSolves,
   lifetimeProfileSummary,
   newestSolvesFirst,
@@ -231,32 +230,6 @@ describe('profile history', () => {
     expect(history[2]).toMatchObject({ singleMs: 12_000, pbSingleMs: 12_000 })
     expect(history[49]).toMatchObject({ singleMs: 10_000, ao50Ms: null, pbSingleMs: 10_000 })
     expect(history[50]).toMatchObject({ singleMs: 10_000, ao50Ms: 10_125, pbSingleMs: 10_000 })
-  })
-})
-
-describe('daily analytics', () => {
-  it('counts all attempts while calculating adjusted non-DNF results', () => {
-    const firstDay = new Date(2026, 5, 10, 12)
-    const secondDay = new Date(2026, 5, 11, 12)
-    const analytics = dailyAnalytics([
-      solveAt('one', 10_000, firstDay),
-      solveAt('two', 9_000, firstDay, 'plus2'),
-      solveAt('three', 8_000, firstDay, 'dnf'),
-      solveAt('four', 7_000, secondDay, 'dnf'),
-    ])
-
-    expect(analytics[0]).toMatchObject({
-      attemptCount: 3,
-      dnfCount: 1,
-      nonDnfMeanMs: 10_500,
-      nonDnfBestMs: 10_000,
-    })
-    expect(analytics[1]).toMatchObject({
-      attemptCount: 1,
-      dnfCount: 1,
-      nonDnfMeanMs: null,
-      nonDnfBestMs: null,
-    })
   })
 })
 

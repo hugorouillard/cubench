@@ -1,7 +1,7 @@
 import { effectiveDuration } from '../timer/timer'
 import type { Solve } from '../types'
-import { localDate, localDateKey } from '../dates/localCalendar'
-import { aggregateDailyActivity, summarizeActivity, type ActivitySummary, type DailyActivity } from './activity'
+import { localDateKey } from '../dates/localCalendar'
+import { aggregateDailyActivity, summarizeActivity, type ActivitySummary } from './activity'
 
 export type SolveSummary = {
   count: number
@@ -12,14 +12,6 @@ export type SolveSummary = {
   bestAo5: number | null
   currentAo12: number | null
   bestAo12: number | null
-}
-
-export type DailyProgress = {
-  key: string
-  label: string
-  count: number
-  mean: number
-  best: number
 }
 
 export type PersonalBest = {
@@ -54,8 +46,6 @@ export type SolveHistoryPoint = {
   ao50Ms: number | null
   pbSingleMs: number | null
 }
-
-export type DailyAnalyticsPoint = DailyActivity & { label: string }
 
 export type DurationHistogramBucket = {
   startMs: number
@@ -161,25 +151,6 @@ export function summarizeSolves(solves: Solve[]): SolveSummary {
   }
 }
 
-function dateLabel(key: string): string {
-  return localDate(key).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
-export function dailyProgress(solves: Solve[]): DailyProgress[] {
-  return [...aggregateDailyActivity(solves).values()].flatMap((day) =>
-    day.nonDnfMeanMs === null || day.nonDnfBestMs === null ? [] : [{
-      key: day.dateKey,
-      label: dateLabel(day.dateKey),
-      count: day.attemptCount - day.dnfCount,
-      mean: day.nonDnfMeanMs,
-      best: day.nonDnfBestMs,
-    }],
-  )
-}
-
 export function personalBestHistory(solves: Solve[]): PersonalBest[] {
   let best = Number.POSITIVE_INFINITY
   const history: PersonalBest[] = []
@@ -282,12 +253,6 @@ export function solveHistory(solves: Solve[]): SolveHistoryPoint[] {
       pbSingleMs,
     }
   })
-}
-
-export function dailyAnalytics(solves: Solve[]): DailyAnalyticsPoint[] {
-  return [...aggregateDailyActivity(solves).values()].map((day) => ({
-    ...day, label: dateLabel(day.dateKey),
-  }))
 }
 
 function wholeSecondBucketSize(rangeMs: number): number {
