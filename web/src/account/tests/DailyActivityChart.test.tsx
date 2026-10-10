@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { aggregateDailyActivity, summarizeActivity } from '../../solves/activity'
+import { countSolvesByDay, summarizeActivity } from '../../solves/activity'
 import type { Solve } from '../../types'
 import { DailyActivityChart } from '../DailyActivityChart'
 
@@ -10,7 +10,7 @@ function attempt(id: string, date = new Date(2026, 7, 21, 12), penalty: Solve['p
 }
 
 function props(solves: Solve[] = [], today = '2026-08-21', firstYear = 2025) {
-  const activity = aggregateDailyActivity(solves)
+  const activity = countSolvesByDay(solves)
   return { activity, today, firstYear, summary: summarizeActivity(activity, today) }
 }
 

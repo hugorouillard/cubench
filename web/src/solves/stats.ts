@@ -1,7 +1,7 @@
 import { effectiveDuration } from '../timer/timer'
 import type { Solve } from '../types'
 import { localDateKey } from '../dates/localCalendar'
-import { aggregateDailyActivity, summarizeActivity, type ActivitySummary } from './activity'
+import { countSolvesByDay, summarizeActivity, type ActivitySummary } from './activity'
 
 export type SolveSummary = {
   count: number
@@ -183,7 +183,7 @@ export function lifetimeProfileSummary(
 ): LifetimeProfileSummary {
   return {
     ...lifetimeSolveSummary(solves),
-    ...summarizeActivity(aggregateDailyActivity(solves), localDateKey(now)),
+    ...summarizeActivity(countSolvesByDay(solves), localDateKey(now)),
   }
 }
 

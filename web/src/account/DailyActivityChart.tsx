@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { localDate } from '../dates/localCalendar'
-import type { ActivityByDay, ActivitySummary } from '../solves/activity'
+import type { SolveCountByDay, ActivitySummary } from '../solves/activity'
 import { activityLevel, activityThresholds, buildActivityCalendar, type ActivityRange } from './activityCalendar'
 import { formatAccountDate } from './format'
 import './DailyActivityChart.css'
@@ -10,7 +10,7 @@ function solveCount(count: number): string {
 }
 
 export function DailyActivityChart({ activity, firstYear, today, summary }: {
-  activity: ActivityByDay
+  activity: SolveCountByDay
   firstYear: number
   today: string
   summary: ActivitySummary
