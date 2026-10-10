@@ -2,8 +2,10 @@ import {
   useEffect,
   useEffectEvent,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type ReactNode,
 } from 'react'
@@ -39,7 +41,9 @@ import { AccountPage } from '../account/AccountPage'
 import { createProfilePreview } from '../account/profilePreview'
 import { SessionPanel } from '../session/SessionPanel'
 import { accountSolveStore, guestSolveStore, type SolveStore } from '../solves/solveStore'
-import { newestSolvesFirst, summarizeSolves } from '../solves/stats'
+import { summarizeSolves } from '../solves/stats'
+import { getSolves } from '../api'
+import { createSolveRepository } from '../solves/solveRepository'
 import { applyTheme, isTheme, THEME_OPTIONS, type Theme } from './theme'
 import { formatInspectionTime, formatTime, togglePenalty } from '../timer/timer'
 import type { Account, Penalty, Solve, SolveInput } from '../types'
@@ -161,7 +165,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const [view, setView] = useState<AppView>(() => isLoginPath() ? 'login' : 'timer')
   const [profilePreview] = useState(createProfilePreview)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-  const [solves, setSolves] = useState<Solve[]>([])
   const [scramble, setScramble] = useState('')
   const [scrambleLoading, setScrambleLoading] = useState(true)
   const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null)
@@ -177,6 +180,13 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   const previousAccountId = useRef<number | null | undefined>(undefined)
   latestResultIdRef.current = latestResultId
   const solveStore = solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore)
+  // Different accounts share the same API adapter, but must never share cached data.
+  const accountId = account?.id ?? null
+  const repository = useMemo(
+    () => createSolveRepository(solveStore, accountId === null ? async () => [] : getSolves),
+    [solveStore, accountId],
+  )
+  const { session: solves } = useSyncExternalStore(repository.subscribe, repository.getSnapshot)
 
   function navigate(nextView: AppView, replace = false) {
     const target = pathForView(nextView)
@@ -219,12 +229,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     setSaveState('saving')
     setError('')
     try {
-      const savedSolve = await solveStore.create(solve)
-      setSolves((current) => {
-        const next = new Map(current.map((item) => [item.id, item]))
-        next.set(savedSolve.id, savedSolve)
-        return newestSolvesFirst([...next.values()])
-      })
+      await repository.create(solve)
       setPendingSolve(null)
       setSaveState('idle')
       await generateScramble()
@@ -282,7 +287,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     else setView(requestedView(account))
   })
 
-  const accountId = account?.id ?? null
   useLayoutEffect(() => {
     if (authChecking) return
     // Restore deep links on startup, but clear practice data before painting
@@ -307,7 +311,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   }, [account, controlsDisabled, view])
 
   function resetCurrentSession() {
-    setSolves([])
+    repository.clearSession()
     setPendingSolve(null)
     setSaveState('idle')
     setPendingMutationIds([])
@@ -329,11 +333,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      const updatedSolve = await solveStore.update(solve, update)
-      setSolves((current) =>
-        current.map((item) => (item.id === solve.id ? updatedSolve : item)),
-      )
-      return updatedSolve
+      return await repository.update(solve, update)
     } catch (penaltyError) {
       setError(errorMessage(penaltyError))
       return null
@@ -348,8 +348,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      await solveStore.delete(solve)
-      setSolves((current) => current.filter((item) => item.id !== solve.id))
+      await repository.delete(solve)
       if (solve.id === latestResultIdRef.current) {
         setLatestResultId('')
         latestResultIdRef.current = ''
@@ -372,7 +371,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
       : `Clear all ${solves.length} ${label}? This cannot be undone.`
     if (!window.confirm(message)) return
 
-    setSolves([])
+    repository.clearSession()
     setLatestResultId('')
     latestResultIdRef.current = ''
     resetTimer()
@@ -670,7 +669,8 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         )
       ) : view === 'preview' || account ? (
         <AccountPage
-          key={view}
+          key={`${view}:${account?.id ?? 'guest'}`}
+          repository={repository}
           preview={view === 'preview' ? profilePreview : undefined}
           theme={theme}
           onPenalty={handlePenalty}

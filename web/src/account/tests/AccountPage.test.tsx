@@ -1,10 +1,12 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProfilePreview, type ProfilePreview } from '../profilePreview'
 import { lifetimeProfileSummary } from '../../solves/stats'
 import type { Solve } from '../../types'
+import { createSolveRepository } from '../../solves/solveRepository'
+import { accountSolveStore } from '../../solves/solveStore'
 import { AccountPage } from '../AccountPage'
 
 vi.mock('react-chartjs-2', () => ({
@@ -12,7 +14,7 @@ vi.mock('react-chartjs-2', () => ({
 }))
 
 function props() {
-  return { onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }
+  return { repository: createSolveRepository(accountSolveStore), onPenalty: vi.fn(), onDelete: vi.fn(), onError: vi.fn(), onProfileChange: vi.fn() }
 }
 
 describe('account page', () => {
@@ -62,11 +64,13 @@ describe('account page', () => {
       if (String(input) === '/api/profile' && init?.method === 'PATCH') return Response.json({ ...profile, display_name: 'Updated Cuber' })
       if (String(input) === '/api/profile') return Response.json(profile)
       if (String(input) === '/api/solves') return Response.json([solve])
+      if (String(input) === '/api/solves/solve-1' && init?.method === 'PATCH') return Response.json({ ...solve, penalty: 'plus2' })
+      if (String(input) === '/api/solves/solve-1' && init?.method === 'DELETE') return new Response(null, { status: 204 })
       throw new Error(`Unexpected request: ${input}`)
     })
     const callbacks = props()
-    callbacks.onPenalty.mockResolvedValue({ ...solve, penalty: 'plus2' })
-    callbacks.onDelete.mockResolvedValue(true)
+    callbacks.onPenalty.mockImplementation((solve, penalty) => callbacks.repository.update(solve, { penalty }))
+    callbacks.onDelete.mockImplementation(async (solve) => { await callbacks.repository.delete(solve); return true })
     render(<AccountPage {...callbacks} />)
 
     await screen.findByRole('heading', { name: 'Speed Cuber' })
@@ -90,22 +94,51 @@ describe('account page', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'save profile' }))
     await screen.findByRole('heading', { name: 'Updated Cuber' })
     expect(callbacks.onProfileChange).toHaveBeenCalledWith({ ...profile, display_name: 'Updated Cuber' })
-    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual(['/api/profile', '/api/solves', '/api/profile'])
+    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
+      '/api/profile', '/api/solves', '/api/solves/solve-1', '/api/solves/solve-1', '/api/profile',
+    ])
   })
 
-  it('switches calendar ranges and shows a leap-year calendar with 54 weeks', () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2028, 11, 31, 12))
-    render(<AccountPage preview={{
-      profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2028, 0, 1, 12).toISOString() },
-      solves: [],
-    }} {...props()} />)
+  it('reports failed history loads rather than presenting an empty activity chart', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/profile') return Response.json({ id: 1, display_name: 'Solver', bio: '', created_at: '2026-01-01T12:00:00Z' })
+      return Response.json({ detail: 'offline' }, { status: 503 })
+    })
+    const callbacks = props()
+    render(<AccountPage {...callbacks} />)
+    await screen.findByText('Account unavailable. Try opening this page again.')
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull()
+    expect(callbacks.onError).toHaveBeenCalledWith('Could not load solve history: offline')
+  })
 
+  it('refreshes both the calendar and streak at midnight without a solve change', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 21, 23, 59, 59))
+    const timestamp = new Date(2026, 7, 20, 12).toISOString()
+    render(<AccountPage preview={{
+      profile: { id: 1, display_name: 'Solver', bio: '', created_at: timestamp },
+      solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
+    }} {...props()} />)
+    expect(screen.getByText('Current streak 1 day')).toBeTruthy()
     const activity = screen.getByRole('region', { name: 'Activity' })
-    fireEvent.change(within(activity).getByRole('combobox', { name: 'Activity range' }), { target: { value: '2028' } })
-    expect(within(activity).getByRole('img', { name: /^0 solves in 2028\./ })).toBeTruthy()
-    expect(activity.querySelector<HTMLElement>('.account-calendar-grid')?.style.gridTemplateColumns)
-      .toBe('repeat(54, minmax(0, 1fr))')
+    const before = within(activity).getByTitle('22 Aug 2026: 0 solves')
+    expect(before.classList.contains('is-outside')).toBe(true)
+    act(() => vi.advanceTimersByTime(1000))
+    expect(screen.queryByText('Current streak 1 day')).toBeNull()
+    expect(within(activity).getByTitle('22 Aug 2026: 0 solves').classList.contains('is-outside')).toBe(false)
+    expect(within(activity).getByRole('img').getAttribute('aria-label')).toContain('0 day current streak')
+  })
+
+  it('offers years containing attempts recorded before account creation', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 7, 21, 12))
+    const timestamp = new Date(2023, 0, 1, 12).toISOString()
+    render(<AccountPage preview={{
+      profile: { id: 1, display_name: 'Solver', bio: '', created_at: new Date(2025, 0, 1, 12).toISOString() },
+      solves: [{ id: 'a', recorded_at: timestamp, created_at: timestamp, duration_ms: 1000, scramble: 'R', penalty: 'none' }],
+    }} {...props()} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Activity range' }), { target: { value: '2023' } })
+    expect(screen.getByRole('img', { name: /^1 solve in 2023/ })).toBeTruthy()
   })
 
   it('shows dated records and pages recent solves without affecting lifetime bests', () => {
