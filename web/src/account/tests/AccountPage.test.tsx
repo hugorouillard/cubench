@@ -3,7 +3,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createProfilePreview, type ProfilePreview } from '../profilePreview'
-import { lifetimeProfileSummary } from '../../solves/stats'
 import type { Solve } from '../../types'
 import { createSolveRepository } from '../../solves/solveRepository'
 import { accountSolveStore } from '../../solves/solveStore'
@@ -32,15 +31,15 @@ describe('account page', () => {
   it('renders the sample account with real lifetime totals and no account mutations or fetching', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected request'))
     const preview = createProfilePreview()
-    const summary = lifetimeProfileSummary(preview.solves)
+    const activeDays = new Set(preview.solves.map((solve) => new Date(solve.recorded_at).toDateString()))
     render(<AccountPage preview={preview} {...props()} />)
 
     expect(screen.getByRole('heading', { name: preview.profile.display_name })).toBeTruthy()
     const totals = screen.getByRole('group', { name: 'Lifetime totals' })
     expect(within(totals).getByText('total solves').nextElementSibling?.textContent)
-      .toBe(summary.loggedCount.toLocaleString())
+      .toBe(preview.solves.length.toLocaleString())
     expect(within(totals).getByText('active days').nextElementSibling?.textContent)
-      .toBe(summary.totalActiveDays.toLocaleString())
+      .toBe(activeDays.size.toLocaleString())
     expect(screen.getByLabelText('Level unavailable')).toBeTruthy()
     expect(screen.getByText(/Current streak \d+ days/)).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Personal bests' })).toBeTruthy()

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCrown, faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { newestSolvesFirst, personalBestHistory } from '../solves/stats'
+import { newestSolvesFirst, personalBestIds } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Penalty, Solve } from '../types'
 import { formatAccountDate } from './format'
@@ -16,7 +16,7 @@ export function RecentSolves({ solves, onPenalty, onDelete }: {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [pendingIds, setPendingIds] = useState<string[]>([])
   const recent = useMemo(() => newestSolvesFirst(solves), [solves])
-  const bestIds = useMemo(() => new Set(personalBestHistory(solves).map(({ solve }) => solve.id)), [solves])
+  const bestIds = useMemo(() => personalBestIds(solves), [solves])
 
   async function withPending(solve: Solve, action: () => Promise<void>) {
     setPendingIds((current) => [...current, solve.id])

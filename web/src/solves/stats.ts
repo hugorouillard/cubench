@@ -1,294 +1,158 @@
-import { effectiveDuration } from '../timer/timer'
-import type { Solve } from '../types'
-import { localDateKey } from '../dates/localCalendar'
-import { countSolvesByDay, summarizeActivity, type ActivitySummary } from './activity'
+import { effectiveDuration } from "../timer/timer";
+import type { Solve } from "../types";
 
-export type SolveSummary = {
-  count: number
-  dnfCount: number
-  mean: number | null
-  bestSingle: number | null
-  currentAo5: number | null
-  bestAo5: number | null
-  currentAo12: number | null
-  bestAo12: number | null
-}
-
-export type PersonalBest = {
-  solve: Solve
-  durationMs: number
-}
-
-export type SolveDateRange = 'day' | 'week' | 'month' | 'threeMonths' | 'all'
+export type SessionHistoryEntry = {
+  solve: Solve;
+  singleMs: number;
+  ao5Ms: number;
+};
 
 export type DatedSolveRecord = {
-  durationMs: number
-  achievedAt: string
-  solveId: string
-}
+  durationMs: number;
+  achievedAt: string;
+};
 
-export type LifetimeProfileSummary = ActivitySummary & {
-  loggedCount: number
-  successfulCount: number
-  totalRawDurationMs: number
-  earliestSolveAt: string | null
-  bestSingle: DatedSolveRecord | null
-  bestAo5: DatedSolveRecord | null
-  bestAo12: DatedSolveRecord | null
-}
-
-export type SolveHistoryPoint = {
-  solveId: string
-  recordedAt: string
-  singleMs: number | null
-  ao5Ms: number | null
-  ao12Ms: number | null
-  ao50Ms: number | null
-  pbSingleMs: number | null
-}
-
-export type DurationHistogramBucket = {
-  startMs: number
-  endMs: number
-  label: string
-  count: number
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000
-
-const RANGE_DURATION_MS: Record<Exclude<SolveDateRange, 'all'>, number> = {
-  day: DAY_MS,
-  week: 7 * DAY_MS,
-  month: 30 * DAY_MS,
-  threeMonths: 90 * DAY_MS,
-}
+export type LifetimeSolveSummary = {
+  loggedCount: number;
+  totalRawDurationMs: number;
+  earliestSolveAt: string | null;
+  bestSingle: DatedSolveRecord | null;
+  bestAo5: DatedSolveRecord | null;
+  bestAo12: DatedSolveRecord | null;
+  bestAo50: number | null;
+};
 
 export function completedDuration(solve: Solve): number | null {
-  if (solve.penalty === 'dnf') return null
-  return effectiveDuration(solve.duration_ms, solve.penalty)
+  if (solve.penalty === "dnf") return null;
+  return effectiveDuration(solve.duration_ms, solve.penalty);
 }
 
 function compareSolveOrder(left: Solve, right: Solve): number {
   const timestampDifference =
-    new Date(left.recorded_at).getTime() - new Date(right.recorded_at).getTime()
-  if (timestampDifference !== 0) return timestampDifference
-  if (left.id === right.id) return 0
-  return left.id < right.id ? -1 : 1
+    new Date(left.recorded_at).getTime() -
+    new Date(right.recorded_at).getTime();
+  if (timestampDifference !== 0) return timestampDifference;
+  if (left.id === right.id) return 0;
+  return left.id < right.id ? -1 : 1;
 }
 
-function chronologicalSolves(solves: Solve[]): Solve[] {
-  return [...solves].sort(compareSolveOrder)
+export function chronologicalSolves(solves: readonly Solve[]): Solve[] {
+  return [...solves].sort(compareSolveOrder);
 }
 
 export function newestSolvesFirst(solves: readonly Solve[]): Solve[] {
-  return [...solves].sort((left, right) => compareSolveOrder(right, left))
+  return [...solves].sort((left, right) => compareSolveOrder(right, left));
 }
 
-export function filterSolves(
-  solves: Solve[],
-  range: SolveDateRange,
-  now: Date = new Date(),
-): Solve[] {
-  const nowTimestamp = now.getTime()
-  const earliestTimestamp = range === 'all'
-    ? Number.NEGATIVE_INFINITY
-    : nowTimestamp - RANGE_DURATION_MS[range]
-
-  return solves
-    .filter((solve) => {
-      if (range === 'all') return true
-      const timestamp = new Date(solve.recorded_at).getTime()
-      return timestamp >= earliestTimestamp && timestamp <= nowTimestamp
-    })
-    .sort((left, right) => compareSolveOrder(right, left))
+function mean(durations: number[]): number | null {
+  return durations.length
+    ? Math.round(
+        durations.reduce((sum, duration) => sum + duration, 0) /
+          durations.length,
+      )
+    : null;
 }
 
-export function trimmedAverage(solves: Solve[]): number | null {
-  if (solves.length < 3) return null
+export function trimmedAverage(solves: readonly Solve[]): number | null {
+  if (solves.length < 3) return null;
 
   const results = solves
-    .map((solve) => completedDuration(solve) ?? Number.POSITIVE_INFINITY)
+    .map((solve) => completedDuration(solve) ?? Infinity)
     .sort((left, right) => left - right)
-    .slice(1, -1)
+    .slice(1, -1);
 
-  if (results.some((result) => !Number.isFinite(result))) return null
-  return Math.round(results.reduce((sum, result) => sum + result, 0) / results.length)
+  return results.includes(Infinity) ? null : mean(results);
 }
 
-export function currentAverage(solves: Solve[], size: number): number | null {
-  if (solves.length < size) return null
-  return trimmedAverage(solves.slice(0, size))
-}
-
-export function bestAverage(solves: Solve[], size: number): number | null {
-  if (solves.length < size) return null
-
-  let best: number | null = null
-  for (let index = 0; index <= solves.length - size; index += 1) {
-    const average = trimmedAverage(solves.slice(index, index + size))
-    if (average !== null && (best === null || average < best)) best = average
+// Input is chronological so equal records retain their earliest achievement date.
+function bestAverage(
+  solves: readonly Solve[],
+  size: number,
+): DatedSolveRecord | null {
+  let best: DatedSolveRecord | null = null;
+  for (let index = size - 1; index < solves.length; index += 1) {
+    const average = trimmedAverage(solves.slice(index - size + 1, index + 1));
+    if (average !== null && (best === null || average < best.durationMs)) {
+      best = { durationMs: average, achievedAt: solves[index].recorded_at };
+    }
   }
-  return best
+  return best;
 }
 
-export function summarizeSolves(solves: Solve[]): SolveSummary {
-  const completed = solves
+export function summarizeSolves(solves: readonly Solve[]) {
+  const chronological = chronologicalSolves(solves);
+  const completed = chronological
     .map(completedDuration)
-    .filter((duration): duration is number => duration !== null)
-  const mean = completed.length
-    ? Math.round(completed.reduce((sum, duration) => sum + duration, 0) / completed.length)
-    : null
+    .filter((duration) => duration !== null);
+  const currentAverage = (size: number) =>
+    chronological.length < size
+      ? null
+      : trimmedAverage(chronological.slice(-size));
 
   return {
-    count: solves.length,
-    dnfCount: solves.length - completed.length,
-    mean,
+    mean: mean(completed),
     bestSingle: completed.length ? Math.min(...completed) : null,
-    currentAo5: currentAverage(solves, 5),
-    bestAo5: bestAverage(solves, 5),
-    currentAo12: currentAverage(solves, 12),
-    bestAo12: bestAverage(solves, 12),
-  }
+    currentAo5: currentAverage(5),
+    bestAo5: bestAverage(chronological, 5)?.durationMs ?? null,
+    currentAo12: currentAverage(12),
+  };
 }
 
-export function personalBestHistory(solves: Solve[]): PersonalBest[] {
-  let best = Number.POSITIVE_INFINITY
-  const history: PersonalBest[] = []
-
+export function personalBestIds(solves: readonly Solve[]): Set<string> {
+  let best = Infinity;
+  const ids = new Set<string>();
   const chronological = [...solves].sort(
     (left, right) =>
-      new Date(left.recorded_at).getTime() - new Date(right.recorded_at).getTime(),
-  )
+      new Date(left.recorded_at).getTime() -
+      new Date(right.recorded_at).getTime(),
+  );
   for (const solve of chronological) {
-    const duration = completedDuration(solve)
+    const duration = completedDuration(solve);
     if (duration !== null && duration < best) {
-      best = duration
-      history.push({ solve, durationMs: duration })
+      best = duration;
+      ids.add(solve.id);
     }
   }
-  return history
+  return ids;
 }
 
-function datedRecord(durationMs: number, solve: Solve): DatedSolveRecord {
-  return {
-    durationMs,
-    achievedAt: solve.recorded_at,
-    solveId: solve.id,
-  }
-}
-
-export function lifetimeProfileSummary(
-  solves: Solve[],
-  now: Date = new Date(),
-): LifetimeProfileSummary {
-  return {
-    ...lifetimeSolveSummary(solves),
-    ...summarizeActivity(countSolvesByDay(solves), localDateKey(now)),
-  }
-}
-
-/** Time-independent records can be memoized separately from today's streak. */
-export function lifetimeSolveSummary(solves: Solve[]): Omit<LifetimeProfileSummary, keyof ActivitySummary> {
-  const chronological = chronologicalSolves(solves)
-  let bestSingle: DatedSolveRecord | null = null
-  let bestAo5: DatedSolveRecord | null = null
-  let bestAo12: DatedSolveRecord | null = null
-
-  for (let index = 0; index < chronological.length; index += 1) {
-    const solve = chronological[index]
-    const duration = completedDuration(solve)
-    if (duration !== null && (bestSingle === null || duration < bestSingle.durationMs)) {
-      bestSingle = datedRecord(duration, solve)
-    }
-
-    if (index >= 4) {
-      const average = trimmedAverage(chronological.slice(index - 4, index + 1))
-      if (average !== null && (bestAo5 === null || average < bestAo5.durationMs)) {
-        bestAo5 = datedRecord(average, solve)
-      }
-    }
-
-    if (index >= 11) {
-      const average = trimmedAverage(chronological.slice(index - 11, index + 1))
-      if (average !== null && (bestAo12 === null || average < bestAo12.durationMs)) {
-        bestAo12 = datedRecord(average, solve)
-      }
+export function lifetimeSolveSummary(
+  solves: readonly Solve[],
+): LifetimeSolveSummary {
+  const chronological = chronologicalSolves(solves);
+  let bestSingle: DatedSolveRecord | null = null;
+  for (const solve of chronological) {
+    const duration = completedDuration(solve);
+    if (
+      duration !== null &&
+      (bestSingle === null || duration < bestSingle.durationMs)
+    ) {
+      bestSingle = { durationMs: duration, achievedAt: solve.recorded_at };
     }
   }
 
   return {
     loggedCount: solves.length,
-    successfulCount: solves.filter((solve) => solve.penalty !== 'dnf').length,
-    totalRawDurationMs: solves.reduce((sum, solve) => sum + solve.duration_ms, 0),
+    totalRawDurationMs: solves.reduce(
+      (sum, solve) => sum + solve.duration_ms,
+      0,
+    ),
     earliestSolveAt: chronological[0]?.recorded_at ?? null,
     bestSingle,
-    bestAo5,
-    bestAo12,
-  }
+    bestAo5: bestAverage(chronological, 5),
+    bestAo12: bestAverage(chronological, 12),
+    bestAo50: bestAverage(chronological, 50)?.durationMs ?? null,
+  };
 }
 
-export function solveHistory(solves: Solve[]): SolveHistoryPoint[] {
-  const chronological = chronologicalSolves(solves)
-  let pbSingleMs: number | null = null
-
-  return chronological.map((solve, index) => {
-    const singleMs = completedDuration(solve)
-    if (singleMs !== null && (pbSingleMs === null || singleMs < pbSingleMs)) {
-      pbSingleMs = singleMs
-    }
-
-    return {
-      solveId: solve.id,
-      recordedAt: solve.recorded_at,
-      singleMs,
-      ao5Ms: index < 4
+export function buildSessionHistory(solves: readonly Solve[]) {
+  const chronological = chronologicalSolves(solves);
+  return chronological.map((solve, index) => ({
+    solve,
+    singleMs: completedDuration(solve),
+    ao5Ms:
+      index < 4
         ? null
         : trimmedAverage(chronological.slice(index - 4, index + 1)),
-      ao12Ms: index < 11
-        ? null
-        : trimmedAverage(chronological.slice(index - 11, index + 1)),
-      ao50Ms: index < 49
-        ? null
-        : trimmedAverage(chronological.slice(index - 49, index + 1)),
-      pbSingleMs,
-    }
-  })
-}
-
-function wholeSecondBucketSize(rangeMs: number): number {
-  const rawSizeSeconds = Math.max(1, rangeMs / 10 / 1000)
-  const magnitude = 10 ** Math.floor(Math.log10(rawSizeSeconds))
-  const normalizedSize = rawSizeSeconds / magnitude
-  const factor = [1, 2, 5, 10].find((candidate) => candidate >= normalizedSize) ?? 10
-  return factor * magnitude * 1000
-}
-
-export function solveDurationHistogram(solves: Solve[]): DurationHistogramBucket[] {
-  const durations = solves
-    .map(completedDuration)
-    .filter((duration): duration is number => duration !== null)
-  if (durations.length === 0) return []
-
-  const minimum = Math.min(...durations)
-  const maximum = Math.max(...durations)
-  const bucketSize = wholeSecondBucketSize(maximum - minimum)
-  const firstBucketStart = Math.floor(minimum / bucketSize) * bucketSize
-  const bucketCount = Math.floor((maximum - firstBucketStart) / bucketSize) + 1
-  const buckets = Array.from({ length: bucketCount }, (_, index) => {
-    const startMs = firstBucketStart + index * bucketSize
-    const endMs = startMs + bucketSize
-    return {
-      startMs,
-      endMs,
-      label: `${startMs / 1000}-${endMs / 1000}s`,
-      count: 0,
-    }
-  })
-
-  for (const duration of durations) {
-    const index = Math.floor((duration - firstBucketStart) / bucketSize)
-    buckets[index].count += 1
-  }
-
-  return buckets
+  }));
 }

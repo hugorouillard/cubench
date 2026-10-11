@@ -10,11 +10,7 @@ import {
 import { getProfile } from "../api";
 import type { SolveRepository } from "../solves/solveRepository";
 import type { ProfilePreview } from "./profilePreview";
-import {
-  bestAverage,
-  lifetimeSolveSummary,
-  newestSolvesFirst,
-} from "../solves/stats";
+import { lifetimeSolveSummary } from "../solves/stats";
 import { countSolvesByDay, summarizeActivity } from "../solves/activity";
 import { useToday } from "../dates/useToday";
 import { localDate } from "../dates/localCalendar";
@@ -106,10 +102,6 @@ export function AccountPage({
   );
   const records = useMemo(() => lifetimeSolveSummary(solves), [solves]);
   const lifetime = { ...records, ...activitySummary };
-  const ao50 = useMemo(
-    () => bestAverage(newestSolvesFirst(solves), 50),
-    [solves],
-  );
 
   async function changePenalty(solve: Solve, penalty: Penalty) {
     try {
@@ -162,7 +154,7 @@ export function AccountPage({
         single={lifetime.bestSingle}
         ao5={lifetime.bestAo5}
         ao12={lifetime.bestAo12}
-        ao50={ao50}
+        ao50={lifetime.bestAo50}
       />
       <DailyActivityChart
         activity={solveCounts}
