@@ -15,8 +15,8 @@ type SessionPanelProps = {
   disabled: boolean;
   pendingSolveIds: string[];
   theme: string;
-  onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>;
-  onDelete: (solve: Solve) => Promise<boolean>;
+  onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
+  onDelete: (solve: Solve) => Promise<void>;
   onClear: () => void;
 };
 

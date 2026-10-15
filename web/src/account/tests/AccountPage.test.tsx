@@ -68,8 +68,8 @@ describe('account page', () => {
       throw new Error(`Unexpected request: ${input}`)
     })
     const callbacks = props()
-    callbacks.onPenalty.mockImplementation((solve, penalty) => callbacks.repository.update(solve, { penalty }))
-    callbacks.onDelete.mockImplementation(async (solve) => { await callbacks.repository.delete(solve); return true })
+    callbacks.onPenalty.mockImplementation(async (solve, penalty) => { await callbacks.repository.update(solve, { penalty }) })
+    callbacks.onDelete.mockImplementation(async (solve) => { await callbacks.repository.delete(solve) })
     render(<AccountPage {...callbacks} />)
 
     await screen.findByRole('heading', { name: 'Speed Cuber' })

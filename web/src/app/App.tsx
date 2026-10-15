@@ -327,23 +327,22 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
   async function handlePenalty(
     solve: Solve,
     selectedPenalty: Penalty,
-  ): Promise<Solve | null> {
+  ): Promise<void> {
     const update = { penalty: togglePenalty(solve.penalty, selectedPenalty) }
     setPendingMutationIds((current) =>
       current.includes(solve.id) ? current : [...current, solve.id],
     )
     try {
-      return await repository.update(solve, update)
+      await repository.update(solve, update)
     } catch (penaltyError) {
       setError(errorMessage(penaltyError))
-      return null
     } finally {
       setPendingMutationIds((current) => current.filter((id) => id !== solve.id))
     }
   }
 
-  async function handleDelete(solve: Solve, confirm = true): Promise<boolean> {
-    if (confirm && !window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return false
+  async function handleDelete(solve: Solve, confirm = true): Promise<void> {
+    if (confirm && !window.confirm(`Delete the ${formatTime(solve.duration_ms)} solve?`)) return
     setPendingMutationIds((current) =>
       current.includes(solve.id) ? current : [...current, solve.id],
     )
@@ -354,10 +353,8 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         latestResultIdRef.current = ''
         resetTimer()
       }
-      return true
     } catch (deleteError) {
       setError(errorMessage(deleteError))
-      return false
     } finally {
       setPendingMutationIds((current) => current.filter((id) => id !== solve.id))
     }

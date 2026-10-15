@@ -32,8 +32,8 @@ export type AccountPageProps = {
   repository: SolveRepository;
   preview?: ProfilePreview;
   theme?: string;
-  onPenalty: (solve: Solve, penalty: Penalty) => Promise<Solve | null>;
-  onDelete: (solve: Solve) => Promise<boolean>;
+  onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
+  onDelete: (solve: Solve) => Promise<void>;
   onError: (message: string) => void;
   onProfileChange: (profile: UserProfile) => void;
 };
@@ -103,22 +103,6 @@ export function AccountPage({
   const records = useMemo(() => lifetimeSolveSummary(solves), [solves]);
   const lifetime = { ...records, ...activitySummary };
 
-  async function changePenalty(solve: Solve, penalty: Penalty) {
-    try {
-      await onPenalty(solve, penalty);
-    } catch (error) {
-      onError(`Could not update solve: ${errorMessage(error)}`);
-    }
-  }
-
-  async function deleteSolve(solve: Solve) {
-    try {
-      await onDelete(solve);
-    } catch (error) {
-      onError(`Could not delete solve: ${errorMessage(error)}`);
-    }
-  }
-
   if (loading || loadFailed || !profile) {
     return (
       <main
@@ -173,8 +157,8 @@ export function AccountPage({
       </Suspense>
       <RecentSolves
         solves={solves}
-        onPenalty={preview ? undefined : changePenalty}
-        onDelete={preview ? undefined : deleteSolve}
+        onPenalty={preview ? undefined : onPenalty}
+        onDelete={preview ? undefined : onDelete}
       />
       {!preview && (
         <ProfileEditor
