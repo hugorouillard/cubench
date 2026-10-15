@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "npm run test:unit:default && npm run test:unit:timezones",
+    "test:unit:default": "vitest run",
+    "test:unit:timezones": "TZ=America/New_York vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts && TZ=Pacific/Auckland vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts",
     "test:e2e": "playwright test",
-    "test:timezones": "TZ=America/New_York vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts && TZ=Pacific/Auckland vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts",
+    "check": "npm run lint && npm test && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {

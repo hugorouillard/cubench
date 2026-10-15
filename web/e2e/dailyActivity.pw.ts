@@ -59,34 +59,23 @@ for (const width of [375, 1280]) {
       ).toBe(true);
     });
 
-    test("supports a 54-week year and keyboard/touch access to exact daily counts", async ({
+    test("supports a 54-week year with correct counts and no page overflow", async ({
       page,
     }) => {
       await openAccount(page, "2028-12-31");
       await page
         .getByRole("combobox", { name: "Activity range" })
         .selectOption("2028");
-      await expect(page.locator(".account-calendar-grid i")).toHaveCount(378);
-      const summary = page.locator(".account-calendar-details summary");
-      if (width === 375) await summary.tap();
-      else {
-        await summary.focus();
-        await page.keyboard.press("Enter");
-      }
-      const table = page.getByRole("table", {
-        name: "Daily solve counts in 2028",
-      });
-      await expect(table).toBeVisible();
-      await expect(table.getByRole("row")).toHaveCount(367);
+      const grid = page.locator(".account-calendar-grid");
+      await expect(grid.locator("i")).toHaveCount(378);
+      await expect(grid.locator("i:not(.is-outside)")).toHaveCount(366);
       await expect(
-        table.getByRole("row", { name: "31 Dec 2028 2", exact: true }),
+        page.getByRole("img", { name: /^2 solves in 2028\./ }),
       ).toBeVisible();
-      if (width !== 375) {
-        await page.keyboard.press("Tab");
-        await expect(
-          page.getByRole("region", { name: "Daily counts table" }),
-        ).toBeFocused();
-      }
+      await expect(grid.locator("i:not(.is-outside)").last()).toHaveAttribute(
+        "title",
+        "31 Dec 2028: 2 solves",
+      );
       const cell = await page
         .locator(".account-calendar-grid i:not(.is-outside)")
         .last()

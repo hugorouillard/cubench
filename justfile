@@ -43,7 +43,17 @@ dev:
 release bump="patch":
     bash ops/release.sh "$1"
 
-# Run all backend and frontend checks.
-check:
+# Run all backend tests.
+test-api:
     uv run --directory api pytest
-    cd web && npm run lint && npm run test && npm run build
+
+# Run all frontend tests.
+test-web:
+    npm test --prefix web
+
+# Run all backend and frontend tests.
+test: test-api test-web
+
+# Run all checks: backend tests, frontend tests, lint, and build.
+check: test-api
+    npm run check --prefix web
