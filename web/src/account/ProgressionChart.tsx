@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartLine, faCrown } from '@fortawesome/free-solid-svg-icons'
 import { Line } from 'react-chartjs-2'
 import { formatTimeAxisTick, getChartColors, getLineChartOptions, getTooltipOptions } from '../Charts'
-import { solveHistory } from '../solves/stats'
+import { chronologicalSolves, completedDuration } from '../solves/stats'
 import { formatTime } from '../timer/timer'
 import type { Solve } from '../types'
 import { formatAccountDate } from './format'
@@ -30,18 +30,24 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
   const [visible, setVisible] = useState<Record<Series, boolean>>({
     pb: true, ao5: true, ao12: true, ao50: true,
   })
-  const history = useMemo(() => solveHistory(solves), [solves])
-  // DNFs count toward attempt numbers, but not the chart's rolling averages.
-  const plotted = history.flatMap((point, index) =>
-    point.singleMs === null ? [] : [{ point, singleMs: point.singleMs, solveNumber: index + 1 }],
-  )
-  const rollingMean = (size: number) => plotted.map((_, index) =>
+  // Transform attempts into dots once; every series below is a view of these dots.
+  const plotted = useMemo(() => chronologicalSolves(solves).flatMap((solve, index) => {
+    const singleMs = completedDuration(solve)
+    return singleMs === null ? [] : [{ singleMs, recordedAt: solve.recorded_at, solveNumber: index + 1 }]
+  }), [solves])
+  const singles = plotted.map(({ singleMs }) => singleMs)
+  const rollingMean = (size: number) => singles.map((_, index) =>
     index < size - 1 ? null : Math.round(
-      plotted.slice(index - size + 1, index + 1).reduce((sum, { singleMs }) => sum + singleMs, 0) / size,
+      singles.slice(index - size + 1, index + 1).reduce((sum, time) => sum + time, 0) / size,
     ),
   )
-  const firstPb = plotted[0]?.point.pbSingleMs
-  const currentPb = plotted.at(-1)?.point.pbSingleMs
+  let best = Infinity
+  const personalBests = singles.map((time) => {
+    best = Math.min(best, time)
+    return best
+  })
+  const firstPb = personalBests[0]
+  const currentPb = personalBests.at(-1)
   const timeSolving = solves.reduce((sum, solve) => sum + solve.duration_ms, 0)
   const improvementPerHour = firstPb != null && currentPb != null && timeSolving > 0 ? (((firstPb - currentPb) / 1000)) / (timeSolving / 3_600_000): null
   const colors = useMemo(getChartColors, [theme])
@@ -58,7 +64,7 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
     datasets: [
       {
         label: 'solve',
-        data: plotted.map(({ point }) => point.singleMs),
+        data: singles,
         borderColor: singleColor,
         pointBackgroundColor: singleColor,
         borderWidth: 0,
@@ -70,7 +76,7 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
       },
       {
         label: 'PB',
-        data: plotted.map(({ point }) => point.pbSingleMs),
+        data: personalBests,
         borderColor: blendHex(colors.background, colors.text, 0.2),
         borderWidth: 3,
         fill: false,
@@ -109,11 +115,11 @@ export function AccountProgression({ solves, theme }: { solves: Solve[]; theme: 
           title: () => '',
           label: (context) => {
             const result = plotted[context.dataIndex]
-            if (!result || result.point.singleMs === null) return ''
-            const date = new Date(result.point.recordedAt)
+            if (!result) return ''
+            const date = new Date(result.recordedAt)
             return [
-              `solve #${result.solveNumber}: ${formatTime(result.point.singleMs)}`,
-              `${formatAccountDate(result.point.recordedAt)} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+              `solve #${result.solveNumber}: ${formatTime(result.singleMs)}`,
+              `${formatAccountDate(result.recordedAt)} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
             ]
           },
         },

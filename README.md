@@ -63,5 +63,28 @@ at `/login` with username `cubench_dev` and password `dev-password`.
 ```bash
 just install   # install deps
 just dev       # start dev instance
-just check     # run code checks
+just test      # run all backend and frontend tests
+just check     # run all tests, frontend lint, and production build
+```
+
+Before running browser tests for the first time, install Playwright's Chromium
+browser and system dependencies (repeat after a Playwright upgrade):
+
+```bash
+(cd web && npx playwright install --with-deps chromium)
+```
+
+`just test` and `just check` cover the whole project. Their npm equivalents,
+`npm test --prefix web` and `npm run check --prefix web`, cover only the frontend.
+Both test commands include unit tests, timezone variations, and Playwright E2E tests.
+
+For targeted runs:
+
+```bash
+just test-api                                  # backend tests
+just test-web                                  # all frontend tests
+npm run test:unit --prefix web                  # all unit tests, including timezone variations
+npm run test:unit:default --prefix web          # unit tests in the default timezone only
+npm run test:unit:timezones --prefix web         # timezone-sensitive unit tests in New York and Auckland
+npm run test:e2e --prefix web                   # browser tests only
 ```

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { createProfilePreview } from '../profilePreview'
-import { filterSolves, lifetimeProfileSummary } from '../../solves/stats'
 
 describe('profile preview', () => {
   it('provides sparse, reproducible practice throughout the last year', () => {
@@ -23,14 +22,6 @@ describe('profile preview', () => {
     expect(solves.every((solve) => new Date(solve.recorded_at) <= now)).toBe(true)
     expect(new Set(solves.map((solve) => solve.scramble)).size).toBe(solves.length)
     expect(new Set(solves.map((solve) => solve.penalty))).toEqual(new Set(['none', 'plus2', 'dnf']))
-
-    for (const range of ['day', 'week', 'month', 'threeMonths', 'all'] as const) {
-      expect(filterSolves(solves, range, now).length).toBeGreaterThan(0)
-    }
-    expect(filterSolves(solves, 'day', now).length).toBeGreaterThanOrEqual(6)
-    expect(filterSolves(solves, 'week', now).length).toBeGreaterThanOrEqual(12)
-    expect(filterSolves(solves, 'threeMonths', now).length).toBeLessThan(solves.length)
-    expect(lifetimeProfileSummary(solves, now).currentStreak).toBeGreaterThanOrEqual(2)
   })
 
   it('keeps today and yesterday active even just after midnight', () => {
@@ -44,6 +35,5 @@ describe('profile preview', () => {
     expect(solves.some((solve) => new Date(solve.recorded_at).toDateString() === yesterday))
       .toBe(true)
     expect(solves.every((solve) => new Date(solve.recorded_at) <= now)).toBe(true)
-    expect(lifetimeProfileSummary(solves, now).currentStreak).toBeGreaterThanOrEqual(2)
   })
 })

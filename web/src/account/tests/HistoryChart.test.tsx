@@ -64,6 +64,27 @@ describe('account progression', () => {
     expect(screen.getByRole('img', { name: /5 completed solves/ })).toBeTruthy()
   })
 
+  it.each([
+    [5, 28_600, 32_400],
+    [12, 17_750, 19_333],
+    [50, 11_860, 12_240],
+  ])('averages the latest %i dots without trimming', (size, firstMean, nextMean) => {
+    const solves = Array.from({ length: size + 1 }, (_, index) => ({
+      ...solve(index * 2, index === 1 ? 'plus2' : 'none'),
+      duration_ms: index === 0 ? 1_000 : index === size - 1 ? 110_000 : index === size ? 20_000 : 10_000,
+    }))
+    solves.push(solve(1, 'dnf'), solve(3, 'dnf'))
+    render(<AccountProgression solves={solves.reverse()} theme="catppuccin-mocha" />)
+
+    const { data } = chartData()
+    expect(data.datasets[0].data).toHaveLength(size + 1)
+    expect(data.datasets[0].data.slice(0, 2)).toEqual([1_000, 12_000])
+    expect(data.datasets[1].data).toEqual(Array(size + 1).fill(1_000))
+    expect(data.datasets.find(({ label }) => label === `Avg of ${size}`)?.data).toEqual([
+      ...Array(size - 1).fill(null), firstMean, nextMean,
+    ])
+  })
+
   it('reads updated theme colors when the theme changes', () => {
     const solves = [solve(0)]
     const { rerender } = render(<AccountProgression solves={solves} theme="catppuccin-mocha" />)

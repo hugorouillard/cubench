@@ -19,7 +19,7 @@ export function PersonalBests({ single, ao5, ao12, ao50 }: {
 
   return (
     <section className="account-bests" aria-labelledby="account-bests-title">
-      <h2 id="account-bests-title" className="account-visually-hidden">Personal bests</h2>
+      <h2 id="account-bests-title" className="sr-only">Personal bests</h2>
       <div className="account-bests-grid">
         {bests.map(({ label, value, achievedAt, context }) => (
           <div className="account-best" key={label}>

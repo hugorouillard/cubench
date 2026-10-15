@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "npm run test:unit:default && npm run test:unit:timezones",
+    "test:unit:default": "vitest run",
+    "test:unit:timezones": "TZ=America/New_York vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts && TZ=Pacific/Auckland vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm test && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -26,6 +31,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
