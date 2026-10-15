@@ -1,12 +1,6 @@
 import { effectiveDuration } from "../timer/timer";
 import type { Solve } from "../types";
 
-export type SessionHistoryEntry = {
-  solve: Solve;
-  singleMs: number;
-  ao5Ms: number;
-};
-
 export type DatedSolveRecord = {
   durationMs: number;
   achievedAt: string;

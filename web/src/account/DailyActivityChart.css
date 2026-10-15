@@ -92,19 +92,6 @@
   font-size: 0.75rem;
 }
 
-.account-calendar-details { margin-top: 1rem; color: var(--sub-readable-color); font-size: 0.875rem; }
-.account-calendar-details summary { width: fit-content; cursor: pointer; padding: 0.25rem 0; }
-.account-calendar-details p { max-width: 60ch; }
-.account-calendar-table-scroll { position: relative; max-height: 18rem; overflow: auto; scrollbar-color: var(--sub-color) transparent; }
-.account-calendar-table-scroll table { width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums; }
-.account-calendar-table-scroll th,
-.account-calendar-table-scroll td { padding: 0.5rem; border-bottom: 1px solid var(--bg-color); }
-.account-calendar-table-scroll thead th { position: sticky; top: 0; background: var(--sub-alt-color); }
-.account-calendar-table-scroll th { font-weight: 400; }
-.account-calendar-table-scroll td { color: var(--text-color); }
-.account-calendar summary:focus-visible,
-.account-calendar [tabindex]:focus-visible { outline: 2px solid var(--text-color); outline-offset: -2px; }
-
 @media (max-width: 640px) {
   .account-calendar-top { grid-template-columns: minmax(0, 1fr) auto; }
   .account-calendar-legend { grid-column: 1 / -1; justify-content: flex-end; }
