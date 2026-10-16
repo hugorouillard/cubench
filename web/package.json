@@ -3,17 +3,18 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
+	"packageManager": "pnpm@12.11.2",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
 		"lint": "biome ci .",
 		"format": "biome check --write .",
-		"test": "npm run test:unit && npm run test:e2e",
-		"test:unit": "npm run test:unit:default && npm run test:unit:timezones",
+		"test": "pnpm run test:unit && pnpm run test:e2e",
+		"test:unit": "pnpm run test:unit:default && pnpm run test:unit:timezones",
 		"test:unit:default": "vitest run",
 		"test:unit:timezones": "TZ=America/New_York vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts && TZ=Pacific/Auckland vitest run src/dates src/solves/tests/activity.test.ts src/account/tests/activityCalendar.test.ts",
 		"test:e2e": "playwright test",
-		"check": "npm run lint && npm test && npm run build",
+		"check": "pnpm run lint && pnpm test && pnpm run build",
 		"preview": "vite preview"
 	},
 	"dependencies": {

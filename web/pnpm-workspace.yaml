@@ -1,0 +1,6 @@
+# These packages ship prebuilt icons; their postinstall scripts only print attribution.
+allowBuilds:
+  '@fortawesome/fontawesome-common-types': false
+  '@fortawesome/free-brands-svg-icons': false
+  '@fortawesome/free-regular-svg-icons': false
+  '@fortawesome/free-solid-svg-icons': false

@@ -6,7 +6,7 @@ default:
 # Install backend and frontend dependencies.
 install:
     uv sync --directory api
-    cd web && npm install
+    pnpm --dir web install --frozen-lockfile
 
 # Run the FastAPI development server.
 api:
@@ -14,7 +14,7 @@ api:
 
 # Run the Vite development server.
 web:
-    cd web && npm run dev
+    pnpm --dir web run dev
 
 # Run the complete local development stack.
 dev:
@@ -33,7 +33,7 @@ dev:
 
     uv run --directory api fastapi dev src/cubench_api/main.py &
     api_pid=$!
-    (cd web && exec npm run dev) &
+    pnpm --dir web run dev &
     web_pid=$!
 
     wait -n "$api_pid" "$web_pid"
@@ -45,11 +45,11 @@ release bump="patch":
 
 # Format frontend code, organize imports, and apply safe lint fixes.
 format:
-    npm run format --prefix web
+    pnpm --dir web run format
 
 # Check frontend formatting, imports, and lint rules without changing files.
 lint:
-    npm run lint --prefix web
+    pnpm --dir web run lint
 
 # Run all backend tests.
 test-api:
@@ -57,11 +57,11 @@ test-api:
 
 # Run all frontend tests.
 test-web:
-    npm test --prefix web
+    pnpm --dir web test
 
 # Run all backend and frontend tests.
 test: test-api test-web
 
 # Run all checks: backend tests, frontend tests, Biome, and build.
 check: test-api
-    npm run check --prefix web
+    pnpm --dir web run check
