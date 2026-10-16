@@ -42,7 +42,8 @@ jobs:
       - run: npm ci --prefix web
       - run: npx playwright install --with-deps chromium
         working-directory: web
-      - run: npm run check --prefix web
+      - name: Check frontend (Biome, tests, build)
+        run: npm run check --prefix web
 
       - name: Package release
         run: >-

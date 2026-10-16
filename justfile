@@ -43,6 +43,14 @@ dev:
 release bump="patch":
     bash ops/release.sh "$1"
 
+# Format frontend code, organize imports, and apply safe lint fixes.
+format:
+    npm run format --prefix web
+
+# Check frontend formatting, imports, and lint rules without changing files.
+lint:
+    npm run lint --prefix web
+
 # Run all backend tests.
 test-api:
     uv run --directory api pytest
@@ -54,6 +62,6 @@ test-web:
 # Run all backend and frontend tests.
 test: test-api test-web
 
-# Run all checks: backend tests, frontend tests, lint, and build.
+# Run all checks: backend tests, frontend tests, Biome, and build.
 check: test-api
     npm run check --prefix web

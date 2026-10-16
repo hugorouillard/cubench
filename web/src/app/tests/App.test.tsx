@@ -1,674 +1,674 @@
 /** @vitest-environment jsdom */
 
 import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SolveStore } from "../../solves/solveStore";
 import type { ProfilePreview } from "../../account/profilePreview";
+import type { SolveStore } from "../../solves/solveStore";
 import type { Penalty, Solve, UserProfile } from "../../types";
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }));
 const timer = vi.hoisted(() => ({
-  onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
-  reset: vi.fn(),
+	onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
+	reset: vi.fn(),
 }));
 const account = {
-  id: 1,
-  username: "speedcuber",
-  display_name: "Speed Cuber",
-  bio: "",
-  created_at: "2026-01-01T00:00:00Z",
+	id: 1,
+	username: "speedcuber",
+	display_name: "Speed Cuber",
+	bio: "",
+	created_at: "2026-01-01T00:00:00Z",
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: { "Content-Type": "application/json" },
+	});
 }
 
 vi.mock("cubing/scramble", () => ({ randomScrambleForEvent: scramble.random }));
 vi.mock("../../session/SessionPanel", () => ({
-  SessionPanel: ({
-    solves,
-    onPenalty,
-    onDelete,
-    onClear,
-  }: {
-    solves: Solve[];
-    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
-    onDelete: (solve: Solve) => Promise<void>;
-    onClear: () => void;
-  }) => (
-    <div>
-      <span data-testid="solve-count">{solves.length}</span>
-      <span data-testid="solve-penalty">{solves[0]?.penalty ?? ""}</span>
-      {solves[0] && (
-        <>
-          <button
-            type="button"
-            onClick={() => void onPenalty(solves[0], "plus2")}
-          >
-            add penalty
-          </button>
-          <button type="button" onClick={() => void onDelete(solves[0])}>
-            delete solve
-          </button>
-        </>
-      )}
-      <button type="button" onClick={onClear}>
-        clear times
-      </button>
-    </div>
-  ),
+	SessionPanel: ({
+		solves,
+		onPenalty,
+		onDelete,
+		onClear,
+	}: {
+		solves: Solve[];
+		onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
+		onDelete: (solve: Solve) => Promise<void>;
+		onClear: () => void;
+	}) => (
+		<div>
+			<span data-testid="solve-count">{solves.length}</span>
+			<span data-testid="solve-penalty">{solves[0]?.penalty ?? ""}</span>
+			{solves[0] && (
+				<>
+					<button
+						type="button"
+						onClick={() => void onPenalty(solves[0], "plus2")}
+					>
+						add penalty
+					</button>
+					<button type="button" onClick={() => void onDelete(solves[0])}>
+						delete solve
+					</button>
+				</>
+			)}
+			<button type="button" onClick={onClear}>
+				clear times
+			</button>
+		</div>
+	),
 }));
 vi.mock("../../timer/useTimer", () => ({
-  useTimer: (
-    _enabled: boolean,
-    _inspectionEnabled: boolean,
-    onComplete: (durationMs: number, penalty: Penalty) => void,
-  ) => {
-    timer.onComplete = onComplete;
-    return { phase: "stopped", elapsedMs: 12_340, reset: timer.reset };
-  },
+	useTimer: (
+		_enabled: boolean,
+		_inspectionEnabled: boolean,
+		onComplete: (durationMs: number, penalty: Penalty) => void,
+	) => {
+		timer.onComplete = onComplete;
+		return { phase: "stopped", elapsedMs: 12_340, reset: timer.reset };
+	},
 }));
 vi.mock("../../account/AccountPage", () => ({
-  AccountPage: ({
-    onProfileChange,
-    preview,
-  }: {
-    onProfileChange: (profile: UserProfile) => void;
-    preview?: ProfilePreview;
-  }) => (
-    <main>
-      <h1>{preview ? "Sample profile" : "Lifetime profile"}</h1>
-      <button
-        type="button"
-        onClick={() =>
-          onProfileChange({
-            id: 1,
-            display_name: "Updated Cuber",
-            bio: "",
-            created_at: "2026-01-01T00:00:00Z",
-          })
-        }
-      >
-        update profile
-      </button>
-    </main>
-  ),
+	AccountPage: ({
+		onProfileChange,
+		preview,
+	}: {
+		onProfileChange: (profile: UserProfile) => void;
+		preview?: ProfilePreview;
+	}) => (
+		<main>
+			<h1>{preview ? "Sample profile" : "Lifetime profile"}</h1>
+			<button
+				type="button"
+				onClick={() =>
+					onProfileChange({
+						id: 1,
+						display_name: "Updated Cuber",
+						bio: "",
+						created_at: "2026-01-01T00:00:00Z",
+					})
+				}
+			>
+				update profile
+			</button>
+		</main>
+	),
 }));
 
 import App from "../App";
 
 describe("current session", () => {
-  afterEach(() => {
-    cleanup();
-    vi.unstubAllGlobals();
-  });
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllGlobals();
+	});
 
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    vi.clearAllMocks();
-    window.history.replaceState(null, "", "/");
-    timer.onComplete = null;
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      jsonResponse({ detail: "Not authenticated" }, 401),
-    );
-    HTMLDialogElement.prototype.showModal = function showModal() {
-      this.setAttribute("open", "");
-    };
-    HTMLDialogElement.prototype.close = function close() {
-      this.removeAttribute("open");
-    };
-    vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
-      "00000000-0000-4000-8000-000000000001",
-    );
-    scramble.random
-      .mockReset()
-      .mockResolvedValue({ toString: () => "F R U" })
-      .mockResolvedValueOnce({ toString: () => "R U R'" });
-  });
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		vi.clearAllMocks();
+		window.history.replaceState(null, "", "/");
+		timer.onComplete = null;
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			jsonResponse({ detail: "Not authenticated" }, 401),
+		);
+		HTMLDialogElement.prototype.showModal = function showModal() {
+			this.setAttribute("open", "");
+		};
+		HTMLDialogElement.prototype.close = function close() {
+			this.removeAttribute("open");
+		};
+		vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
+			"00000000-0000-4000-8000-000000000001",
+		);
+		scramble.random
+			.mockReset()
+			.mockResolvedValue({ toString: () => "F R U" })
+			.mockResolvedValueOnce({ toString: () => "R U R'" });
+	});
 
-  it("keeps guest solves in memory after checking the session", async () => {
-    const fetch = vi.mocked(globalThis.fetch);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+	it("keeps guest solves in memory after checking the session", async () => {
+		const fetch = vi.mocked(globalThis.fetch);
+		vi.spyOn(window, "confirm").mockReturnValue(true);
 
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
 
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
 
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-    );
-    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
-      "/api/auth/session",
-    ]);
-    const accountNav = within(
-      screen.getByRole("navigation", { name: "Account" }),
-    );
-    const signIn = accountNav.getByRole("button", { name: "Sign in" });
-    expect(accountNav.getAllByRole("button")).toHaveLength(1);
-    expect(signIn.textContent).toBe("");
-    expect(signIn.querySelector('[data-prefix="far"]')).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "clear times" }));
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
-  });
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("1"),
+		);
+		expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
+			"/api/auth/session",
+		]);
+		const accountNav = within(
+			screen.getByRole("navigation", { name: "Account" }),
+		);
+		const signIn = accountNav.getByRole("button", { name: "Sign in" });
+		expect(accountNav.getAllByRole("button")).toHaveLength(1);
+		expect(signIn.textContent).toBe("");
+		expect(signIn.querySelector('[data-prefix="far"]')).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "clear times" }));
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
+	});
 
-  it("releases option-bar focus so Space remains available to the timer", async () => {
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
+	it("releases option-bar focus so Space remains available to the timer", async () => {
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
 
-    for (const name of ["hide timer", "inspection"]) {
-      const option = screen.getByRole("button", { name });
-      option.focus();
-      fireEvent.click(option);
-      expect(document.activeElement).not.toBe(option);
-    }
-  });
+		for (const name of ["hide timer", "inspection"]) {
+			const option = screen.getByRole("button", { name });
+			option.focus();
+			fireEvent.click(option);
+			expect(document.activeElement).not.toBe(option);
+		}
+	});
 
-  it("previews account features and returns to the guest session without changing its solves", async () => {
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-    );
+	it("previews account features and returns to the guest session without changing its solves", async () => {
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("1"),
+		);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(location.pathname).toBe("/login");
-    fireEvent.click(
-      screen.getByRole("button", { name: "preview account features" }),
-    );
-    expect(
-      screen.getByRole("heading", { name: "Sample profile" }),
-    ).toBeTruthy();
-    expect(location.pathname).toBe("/");
-    expect(location.hash).toBe("#preview");
+		fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+		expect(location.pathname).toBe("/login");
+		fireEvent.click(
+			screen.getByRole("button", { name: "preview account features" }),
+		);
+		expect(
+			screen.getByRole("heading", { name: "Sample profile" }),
+		).toBeTruthy();
+		expect(location.pathname).toBe("/");
+		expect(location.hash).toBe("#preview");
 
-    fireEvent.click(screen.getByRole("button", { name: "Timer" }));
-    expect(screen.getByTestId("solve-count").textContent).toBe("1");
-    expect(location.hash).toBe("");
-    expect(
-      vi.mocked(globalThis.fetch).mock.calls.map(([path]) => String(path)),
-    ).toEqual(["/api/auth/session"]);
-  });
+		fireEvent.click(screen.getByRole("button", { name: "Timer" }));
+		expect(screen.getByTestId("solve-count").textContent).toBe("1");
+		expect(location.hash).toBe("");
+		expect(
+			vi.mocked(globalThis.fetch).mock.calls.map(([path]) => String(path)),
+		).toEqual(["/api/auth/session"]);
+	});
 
-  it("opens a shared preview link without signing in", async () => {
-    window.history.replaceState(null, "", "/#preview");
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByRole("heading", { name: "Sample profile" });
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(location.hash).toBe("#preview");
-  });
+	it("opens a shared preview link without signing in", async () => {
+		window.history.replaceState(null, "", "/#preview");
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByRole("heading", { name: "Sample profile" });
+		expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
+		expect(location.hash).toBe("#preview");
+	});
 
-  it("offers the preview and invitation below the two account forms", async () => {
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(
-      screen.getByRole("heading", { name: "create account" }),
-    ).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
-    expect(
-      screen
-        .getByRole("link", { name: "request an invite" })
-        .getAttribute("href"),
-    ).toContain("mailto:rouillard.hugo1@gmail.com");
-    fireEvent.click(
-      screen.getByRole("button", { name: "preview account features" }),
-    );
-    expect(
-      screen.queryByRole("heading", { name: "create account" }),
-    ).toBeNull();
-    expect(
-      screen.getByRole("heading", { name: "Sample profile" }),
-    ).toBeTruthy();
-  });
+	it("offers the preview and invitation below the two account forms", async () => {
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
+		fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+		expect(
+			screen.getByRole("heading", { name: "create account" }),
+		).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
+		expect(
+			screen
+				.getByRole("link", { name: "request an invite" })
+				.getAttribute("href"),
+		).toContain("mailto:rouillard.hugo1@gmail.com");
+		fireEvent.click(
+			screen.getByRole("button", { name: "preview account features" }),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "create account" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("heading", { name: "Sample profile" }),
+		).toBeTruthy();
+	});
 
-  it.each(["/login", "/login/"])(
-    "opens %s directly and returns to the timer with browser navigation",
-    async (path) => {
-      window.history.replaceState(null, "", path);
-      render(<App initialTheme="catppuccin-mocha" />);
-      await screen.findByRole("heading", { name: "create account" });
-      expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
+	it.each(["/login", "/login/"])(
+		"opens %s directly and returns to the timer with browser navigation",
+		async (path) => {
+			window.history.replaceState(null, "", path);
+			render(<App initialTheme="catppuccin-mocha" />);
+			await screen.findByRole("heading", { name: "create account" });
+			expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
 
-      fireEvent.click(screen.getByRole("button", { name: "Timer" }));
-      expect(location.pathname).toBe("/");
-      expect(screen.getByText("R U R'")).toBeTruthy();
+			fireEvent.click(screen.getByRole("button", { name: "Timer" }));
+			expect(location.pathname).toBe("/");
+			expect(screen.getByText("R U R'")).toBeTruthy();
 
-      window.history.replaceState(null, "", "/login");
-      await act(async () =>
-        window.dispatchEvent(new PopStateEvent("popstate")),
-      );
-      expect(
-        screen.getByRole("heading", { name: "create account" }),
-      ).toBeTruthy();
-    },
-  );
+			window.history.replaceState(null, "", "/login");
+			await act(async () =>
+				window.dispatchEvent(new PopStateEvent("popstate")),
+			);
+			expect(
+				screen.getByRole("heading", { name: "create account" }),
+			).toBeTruthy();
+		},
+	);
 
-  it("keeps upcoming header buttons on the timer view", async () => {
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
+	it("keeps upcoming header buttons on the timer view", async () => {
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
 
-    fireEvent.click(screen.getByRole("button", { name: "About" }));
-    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+		fireEvent.click(screen.getByRole("button", { name: "About" }));
+		fireEvent.click(screen.getByRole("button", { name: "Options" }));
 
-    expect(
-      screen
-        .getByRole("button", { name: "About" })
-        .getAttribute("aria-disabled"),
-    ).toBe("true");
-    expect(
-      screen
-        .getByRole("button", { name: "Options" })
-        .getAttribute("aria-disabled"),
-    ).toBe("true");
-    expect(location.hash).toBe("");
-    expect(screen.getByText("R U R'")).toBeTruthy();
-  });
+		expect(
+			screen
+				.getByRole("button", { name: "About" })
+				.getAttribute("aria-disabled"),
+		).toBe("true");
+		expect(
+			screen
+				.getByRole("button", { name: "Options" })
+				.getAttribute("aria-disabled"),
+		).toBe("true");
+		expect(location.hash).toBe("");
+		expect(screen.getByText("R U R'")).toBeTruthy();
+	});
 
-  it("updates and deletes guest solves without solve API requests", async () => {
-    const fetch = vi.mocked(globalThis.fetch);
+	it("updates and deletes guest solves without solve API requests", async () => {
+		const fetch = vi.mocked(globalThis.fetch);
 
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
 
-    fireEvent.click(await screen.findByRole("button", { name: "add penalty" }));
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-penalty").textContent).toBe("plus2"),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "delete solve" }));
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("0"),
-    );
-    expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
-      "/api/auth/session",
-    ]);
-  });
+		fireEvent.click(await screen.findByRole("button", { name: "add penalty" }));
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-penalty").textContent).toBe("plus2"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "delete solve" }));
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("0"),
+		);
+		expect(fetch.mock.calls.map(([path]) => String(path))).toEqual([
+			"/api/auth/session",
+		]);
+	});
 
-  it("starts a fresh guest session when remounted", async () => {
-    const firstRender = render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-    );
+	it("starts a fresh guest session when remounted", async () => {
+		const firstRender = render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("1"),
+		);
 
-    firstRender.unmount();
-    render(<App initialTheme="catppuccin-mocha" />);
+		firstRender.unmount();
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
-  });
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
+	});
 
-  it("clears the guest session and persists new solves after sign in", async () => {
-    let failNextSolve = false;
-    const fetch = vi
-      .mocked(globalThis.fetch)
-      .mockImplementation(async (input, init) => {
-        const path = String(input);
-        if (path === "/api/auth/session")
-          return jsonResponse({ detail: "Not authenticated" }, 401);
-        if (path === "/api/auth/login") return jsonResponse(account);
-        if (path === "/api/solves") {
-          if (failNextSolve)
-            return jsonResponse({ detail: "Not authenticated" }, 401);
-          const solve = JSON.parse(String(init?.body)) as Record<
-            string,
-            unknown
-          >;
-          return jsonResponse(
-            { ...solve, created_at: "2026-01-01T00:00:01Z" },
-            201,
-          );
-        }
-        if (path === "/api/auth/logout")
-          return new Response(null, { status: 204 });
-        throw new Error(`Unexpected request: ${path}`);
-      });
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+	it("clears the guest session and persists new solves after sign in", async () => {
+		let failNextSolve = false;
+		const fetch = vi
+			.mocked(globalThis.fetch)
+			.mockImplementation(async (input, init) => {
+				const path = String(input);
+				if (path === "/api/auth/session")
+					return jsonResponse({ detail: "Not authenticated" }, 401);
+				if (path === "/api/auth/login") return jsonResponse(account);
+				if (path === "/api/solves") {
+					if (failNextSolve)
+						return jsonResponse({ detail: "Not authenticated" }, 401);
+					const solve = JSON.parse(String(init?.body)) as Record<
+						string,
+						unknown
+					>;
+					return jsonResponse(
+						{ ...solve, created_at: "2026-01-01T00:00:01Z" },
+						201,
+					);
+				}
+				if (path === "/api/auth/logout")
+					return new Response(null, { status: 204 });
+				throw new Error(`Unexpected request: ${path}`);
+			});
+		const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
 
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-    );
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("1"),
+		);
 
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    const signIn = within(screen.getByRole("region", { name: "sign in" }));
-    fireEvent.change(signIn.getByLabelText("username"), {
-      target: { value: "speedcuber" },
-    });
-    fireEvent.change(signIn.getByLabelText("password"), {
-      target: { value: "test-password" },
-    });
-    fireEvent.click(signIn.getByRole("button", { name: "sign in" }));
+		fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+		const signIn = within(screen.getByRole("region", { name: "sign in" }));
+		fireEvent.change(signIn.getByLabelText("username"), {
+			target: { value: "speedcuber" },
+		});
+		fireEvent.change(signIn.getByLabelText("password"), {
+			target: { value: "test-password" },
+		});
+		fireEvent.click(signIn.getByRole("button", { name: "sign in" }));
 
-    await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
-    expect(location.pathname).toBe("/");
-    const accountNav = within(
-      screen.getByRole("navigation", { name: "Account" }),
-    );
-    expect(accountNav.getAllByRole("button")).toHaveLength(1);
-    expect(
-      accountNav.getByRole("button", { name: "Account menu for Speed Cuber" })
-        .textContent,
-    ).toBe("Speed Cuber");
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
-    await act(async () => {
-      timer.onComplete?.(11_000, "none");
-    });
-    await waitFor(() =>
-      expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-    );
-    expect(fetch.mock.calls.map(([path]) => String(path))).toContain(
-      "/api/solves",
-    );
+		await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
+		expect(location.pathname).toBe("/");
+		const accountNav = within(
+			screen.getByRole("navigation", { name: "Account" }),
+		);
+		expect(accountNav.getAllByRole("button")).toHaveLength(1);
+		expect(
+			accountNav.getByRole("button", { name: "Account menu for Speed Cuber" })
+				.textContent,
+		).toBe("Speed Cuber");
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
+		await act(async () => {
+			timer.onComplete?.(11_000, "none");
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("solve-count").textContent).toBe("1"),
+		);
+		expect(fetch.mock.calls.map(([path]) => String(path))).toContain(
+			"/api/solves",
+		);
 
-    fireEvent.click(
-      accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
-    );
-    await screen.findByRole("heading", { name: "Lifetime profile" });
-    fireEvent.click(screen.getByRole("link", { name: "Cubench home" }));
-    expect(screen.getByTestId("solve-count").textContent).toBe("1");
+		fireEvent.click(
+			accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
+		);
+		await screen.findByRole("heading", { name: "Lifetime profile" });
+		fireEvent.click(screen.getByRole("link", { name: "Cubench home" }));
+		expect(screen.getByTestId("solve-count").textContent).toBe("1");
 
-    fireEvent.click(screen.getByRole("button", { name: "clear times" }));
-    expect(confirm).toHaveBeenCalledWith(
-      "Clear 1 current solve? Saved solves remain in your profile.",
-    );
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
+		fireEvent.click(screen.getByRole("button", { name: "clear times" }));
+		expect(confirm).toHaveBeenCalledWith(
+			"Clear 1 current solve? Saved solves remain in your profile.",
+		);
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
 
-    failNextSolve = true;
-    await act(async () => {
-      timer.onComplete?.(10_000, "none");
-    });
-    await screen.findByRole("button", { name: "Retry saving result" });
-    window.history.pushState(null, "", "#profile");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-    expect(location.hash).toBe("");
-    expect(
-      screen.queryByRole("heading", { name: "Lifetime profile" }),
-    ).toBeNull();
+		failNextSolve = true;
+		await act(async () => {
+			timer.onComplete?.(10_000, "none");
+		});
+		await screen.findByRole("button", { name: "Retry saving result" });
+		window.history.pushState(null, "", "#profile");
+		window.dispatchEvent(new PopStateEvent("popstate"));
+		expect(location.hash).toBe("");
+		expect(
+			screen.queryByRole("heading", { name: "Lifetime profile" }),
+		).toBeNull();
 
-    confirm.mockReturnValueOnce(false);
-    fireEvent.click(
-      accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-    expect(
-      screen.getByRole("button", { name: "Retry saving result" }),
-    ).toBeTruthy();
+		confirm.mockReturnValueOnce(false);
+		fireEvent.click(
+			accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "sign out" }));
+		expect(
+			screen.getByRole("button", { name: "Retry saving result" }),
+		).toBeTruthy();
 
-    confirm.mockReturnValueOnce(true);
-    fireEvent.click(
-      accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-    await screen.findByRole("button", { name: /sign in/i });
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
-  });
+		confirm.mockReturnValueOnce(true);
+		fireEvent.click(
+			accountNav.getByRole("button", { name: "Account menu for Speed Cuber" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "sign out" }));
+		await screen.findByRole("button", { name: /sign in/i });
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
+	});
 
-  it("keeps the login page open and blocks navigation while sign in is pending", async () => {
-    let resolveLogin!: (response: Response) => void;
-    vi.mocked(globalThis.fetch).mockImplementation((input) => {
-      if (String(input) === "/api/auth/session") {
-        return Promise.resolve(
-          jsonResponse({ detail: "Not authenticated" }, 401),
-        );
-      }
-      return new Promise<Response>((resolve) => {
-        resolveLogin = resolve;
-      });
-    });
-    render(<App initialTheme="catppuccin-mocha" />);
-    await screen.findByText("R U R'");
+	it("keeps the login page open and blocks navigation while sign in is pending", async () => {
+		let resolveLogin!: (response: Response) => void;
+		vi.mocked(globalThis.fetch).mockImplementation((input) => {
+			if (String(input) === "/api/auth/session") {
+				return Promise.resolve(
+					jsonResponse({ detail: "Not authenticated" }, 401),
+				);
+			}
+			return new Promise<Response>((resolve) => {
+				resolveLogin = resolve;
+			});
+		});
+		render(<App initialTheme="catppuccin-mocha" />);
+		await screen.findByText("R U R'");
 
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    const signIn = within(screen.getByRole("region", { name: "sign in" }));
-    fireEvent.change(signIn.getByLabelText("username"), {
-      target: { value: "speedcuber" },
-    });
-    fireEvent.change(signIn.getByLabelText("password"), {
-      target: { value: "test-password" },
-    });
-    fireEvent.click(signIn.getByRole("button", { name: "sign in" }));
+		fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+		const signIn = within(screen.getByRole("region", { name: "sign in" }));
+		fireEvent.change(signIn.getByLabelText("username"), {
+			target: { value: "speedcuber" },
+		});
+		fireEvent.change(signIn.getByLabelText("password"), {
+			target: { value: "test-password" },
+		});
+		fireEvent.click(signIn.getByRole("button", { name: "sign in" }));
 
-    expect(location.pathname).toBe("/login");
-    expect(
-      screen.getByRole("button", { name: "Timer" }).hasAttribute("disabled"),
-    ).toBe(true);
-    expect(
-      screen
-        .getByRole("button", { name: "preview account features" })
-        .hasAttribute("disabled"),
-    ).toBe(true);
-    window.history.replaceState(null, "", "/");
-    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
-    expect(location.pathname).toBe("/login");
-    expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
-    resolveLogin(jsonResponse(account));
-    await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
-  });
+		expect(location.pathname).toBe("/login");
+		expect(
+			screen.getByRole("button", { name: "Timer" }).hasAttribute("disabled"),
+		).toBe(true);
+		expect(
+			screen
+				.getByRole("button", { name: "preview account features" })
+				.hasAttribute("disabled"),
+		).toBe(true);
+		window.history.replaceState(null, "", "/");
+		await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+		expect(location.pathname).toBe("/login");
+		expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
+		resolveLogin(jsonResponse(account));
+		await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
+	});
 
-  it("redirects signed-in visitors away from /login", async () => {
-    window.history.replaceState(null, "", "/login");
-    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
-    render(<App initialTheme="catppuccin-mocha" />);
+	it("redirects signed-in visitors away from /login", async () => {
+		window.history.replaceState(null, "", "/login");
+		vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
-    expect(location.pathname).toBe("/");
-    expect(
-      screen.queryByRole("heading", { name: "create account" }),
-    ).toBeNull();
-  });
+		await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
+		expect(location.pathname).toBe("/");
+		expect(
+			screen.queryByRole("heading", { name: "create account" }),
+		).toBeNull();
+	});
 
-  it("restores an account session", async () => {
-    const fetch = vi
-      .mocked(globalThis.fetch)
-      .mockResolvedValue(jsonResponse(account));
+	it("restores an account session", async () => {
+		const fetch = vi
+			.mocked(globalThis.fetch)
+			.mockResolvedValue(jsonResponse(account));
 
-    render(<App initialTheme="catppuccin-mocha" />);
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
-    expect(fetch).toHaveBeenCalledWith("/api/auth/session", expect.anything());
-    expect(screen.getByTestId("solve-count").textContent).toBe("0");
-  });
+		await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
+		expect(fetch).toHaveBeenCalledWith("/api/auth/session", expect.anything());
+		expect(screen.getByTestId("solve-count").textContent).toBe("0");
+	});
 
-  it("preserves profile deep links when restoring a session", async () => {
-    window.history.replaceState(null, "", "/#profile");
-    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
-    render(<App initialTheme="catppuccin-mocha" />);
+	it("preserves profile deep links when restoring a session", async () => {
+		window.history.replaceState(null, "", "/#profile");
+		vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    await screen.findByRole("heading", { name: "Lifetime profile" });
-    expect(location.hash).toBe("#profile");
-    expect(timer.reset).not.toHaveBeenCalled();
-  });
+		await screen.findByRole("heading", { name: "Lifetime profile" });
+		expect(location.hash).toBe("#profile");
+		expect(timer.reset).not.toHaveBeenCalled();
+	});
 
-  it("waits for session restoration before showing the login forms", async () => {
-    window.history.replaceState(null, "", "/login");
-    let resolveSession!: (response: Response) => void;
-    vi.mocked(globalThis.fetch).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveSession = resolve;
-        }),
-    );
-    render(<App initialTheme="catppuccin-mocha" />);
+	it("waits for session restoration before showing the login forms", async () => {
+		window.history.replaceState(null, "", "/login");
+		let resolveSession!: (response: Response) => void;
+		vi.mocked(globalThis.fetch).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveSession = resolve;
+				}),
+		);
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    expect(screen.getByText("checking account...")).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "sign in" })).toBeNull();
-    await act(async () =>
-      resolveSession(jsonResponse({ detail: "Not authenticated" }, 401)),
-    );
-    expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
-    expect(location.pathname).toBe("/login");
-  });
+		expect(screen.getByText("checking account...")).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "sign in" })).toBeNull();
+		await act(async () =>
+			resolveSession(jsonResponse({ detail: "Not authenticated" }, 401)),
+		);
+		expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
+		expect(location.pathname).toBe("/login");
+	});
 
-  it("displays and dismisses session restoration failures", async () => {
-    vi.mocked(globalThis.fetch).mockRejectedValue(new Error("offline"));
-    render(<App initialTheme="catppuccin-mocha" />);
+	it("displays and dismisses session restoration failures", async () => {
+		vi.mocked(globalThis.fetch).mockRejectedValue(new Error("offline"));
+		render(<App initialTheme="catppuccin-mocha" />);
 
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "Could not restore account; continuing as guest: offline",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss error" }));
-    expect(screen.queryByRole("alert")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
-  });
+		expect((await screen.findByRole("alert")).textContent).toContain(
+			"Could not restore account; continuing as guest: offline",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Dismiss error" }));
+		expect(screen.queryByRole("alert")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+		expect(screen.getByRole("heading", { name: "sign in" })).toBeTruthy();
+	});
 
-  it("retains practice data and identity after failed logout", async () => {
-    vi.mocked(globalThis.fetch).mockImplementation(async (input) => {
-      if (String(input) === "/api/auth/session") return jsonResponse(account);
-      throw new Error("offline");
-    });
-    const store: SolveStore = {
-      create: vi.fn(async (solve) => ({
-        ...solve,
-        created_at: solve.recorded_at,
-      })),
-      update: vi.fn(),
-      delete: vi.fn(),
-    };
-    render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
-    await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
-    await screen.findByText("R U R'");
-    await act(async () => timer.onComplete?.(12_340, "none"));
+	it("retains practice data and identity after failed logout", async () => {
+		vi.mocked(globalThis.fetch).mockImplementation(async (input) => {
+			if (String(input) === "/api/auth/session") return jsonResponse(account);
+			throw new Error("offline");
+		});
+		const store: SolveStore = {
+			create: vi.fn(async (solve) => ({
+				...solve,
+				created_at: solve.recorded_at,
+			})),
+			update: vi.fn(),
+			delete: vi.fn(),
+		};
+		render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
+		await screen.findByRole("button", { name: "Account menu for Speed Cuber" });
+		await screen.findByText("R U R'");
+		await act(async () => timer.onComplete?.(12_340, "none"));
 
-    fireEvent.pointerEnter(
-      screen.getByRole("navigation", { name: "Account" }),
-      { pointerType: "mouse" },
-    );
-    fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "Could not sign out: offline",
-    );
-    expect(screen.getByTestId("solve-count").textContent).toBe("1");
-    expect(
-      screen.getByRole("button", { name: "Account menu for Speed Cuber" }),
-    ).toBeTruthy();
-    expect(timer.reset).not.toHaveBeenCalled();
-  });
+		fireEvent.pointerEnter(
+			screen.getByRole("navigation", { name: "Account" }),
+			{ pointerType: "mouse" },
+		);
+		fireEvent.click(screen.getByRole("button", { name: "sign out" }));
+		expect((await screen.findByRole("alert")).textContent).toContain(
+			"Could not sign out: offline",
+		);
+		expect(screen.getByTestId("solve-count").textContent).toBe("1");
+		expect(
+			screen.getByRole("button", { name: "Account menu for Speed Cuber" }),
+		).toBeTruthy();
+		expect(timer.reset).not.toHaveBeenCalled();
+	});
 
-  it("switches between the timer and account profile without resetting practice on profile edits", async () => {
-    vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
-    const store: SolveStore = {
-      create: vi.fn(async (solve) => ({
-        ...solve,
-        created_at: solve.recorded_at,
-      })),
-      update: vi.fn(),
-      delete: vi.fn(),
-    };
-    render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
-    await screen.findByText("R U R'");
-    await act(async () => timer.onComplete?.(12_340, "none"));
+	it("switches between the timer and account profile without resetting practice on profile edits", async () => {
+		vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
+		const store: SolveStore = {
+			create: vi.fn(async (solve) => ({
+				...solve,
+				created_at: solve.recorded_at,
+			})),
+			update: vi.fn(),
+			delete: vi.fn(),
+		};
+		render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
+		await screen.findByText("R U R'");
+		await act(async () => timer.onComplete?.(12_340, "none"));
 
-    const accountButton = await screen.findByRole("button", {
-      name: "Account menu for Speed Cuber",
-    });
-    expect(accountButton.textContent).toBe("Speed Cuber");
-    expect(accountButton.querySelector('[data-prefix="fas"]')).toBeTruthy();
-    expect(
-      within(screen.getByRole("navigation", { name: "Account" })).getAllByRole(
-        "button",
-      ),
-    ).toHaveLength(1);
-    fireEvent.click(accountButton);
+		const accountButton = await screen.findByRole("button", {
+			name: "Account menu for Speed Cuber",
+		});
+		expect(accountButton.textContent).toBe("Speed Cuber");
+		expect(accountButton.querySelector('[data-prefix="fas"]')).toBeTruthy();
+		expect(
+			within(screen.getByRole("navigation", { name: "Account" })).getAllByRole(
+				"button",
+			),
+		).toHaveLength(1);
+		fireEvent.click(accountButton);
 
-    await screen.findByRole("heading", { name: "Lifetime profile" });
-    expect(location.hash).toBe("#profile");
-    const accountNav = screen.getByRole("navigation", { name: "Account" });
-    fireEvent.pointerLeave(accountNav, { pointerType: "mouse" });
-    fireEvent.pointerEnter(accountNav, { pointerType: "mouse" });
-    expect(
-      screen
-        .getByRole("button", { name: "profile" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-    fireEvent.pointerLeave(accountNav, { pointerType: "mouse" });
-    expect(
-      screen
-        .getByRole("button", { name: "Timer" })
-        .getAttribute("aria-current"),
-    ).toBeNull();
+		await screen.findByRole("heading", { name: "Lifetime profile" });
+		expect(location.hash).toBe("#profile");
+		const accountNav = screen.getByRole("navigation", { name: "Account" });
+		fireEvent.pointerLeave(accountNav, { pointerType: "mouse" });
+		fireEvent.pointerEnter(accountNav, { pointerType: "mouse" });
+		expect(
+			screen
+				.getByRole("button", { name: "profile" })
+				.getAttribute("aria-current"),
+		).toBe("page");
+		fireEvent.pointerLeave(accountNav, { pointerType: "mouse" });
+		expect(
+			screen
+				.getByRole("button", { name: "Timer" })
+				.getAttribute("aria-current"),
+		).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "update profile" }));
-    expect(
-      screen.getByRole("button", { name: "Account menu for Updated Cuber" })
-        .textContent,
-    ).toBe("Updated Cuber");
-    expect(location.hash).toBe("#profile");
-    expect(timer.reset).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "update profile" }));
+		expect(
+			screen.getByRole("button", { name: "Account menu for Updated Cuber" })
+				.textContent,
+		).toBe("Updated Cuber");
+		expect(location.hash).toBe("#profile");
+		expect(timer.reset).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Timer" }));
-    expect(screen.getByTestId("solve-count").textContent).toBe("1");
-    expect(location.hash).toBe("");
-    expect(
-      screen.queryByRole("heading", { name: "Lifetime profile" }),
-    ).toBeNull();
-    expect(
-      screen
-        .getByRole("button", { name: "Timer" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-  });
+		fireEvent.click(screen.getByRole("button", { name: "Timer" }));
+		expect(screen.getByTestId("solve-count").textContent).toBe("1");
+		expect(location.hash).toBe("");
+		expect(
+			screen.queryByRole("heading", { name: "Lifetime profile" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("button", { name: "Timer" })
+				.getAttribute("aria-current"),
+		).toBe("page");
+	});
 
-  it("retains a failed solve and retries it before advancing the scramble", async () => {
-    const store: SolveStore = {
-      create: vi
-        .fn()
-        .mockRejectedValueOnce(new Error("offline"))
-        .mockImplementationOnce(async (solve) => ({
-          ...solve,
-          created_at: "2026-01-01T00:00:01Z",
-        })),
-      update: vi.fn(),
-      delete: vi.fn(),
-    };
+	it("retains a failed solve and retries it before advancing the scramble", async () => {
+		const store: SolveStore = {
+			create: vi
+				.fn()
+				.mockRejectedValueOnce(new Error("offline"))
+				.mockImplementationOnce(async (solve) => ({
+					...solve,
+					created_at: "2026-01-01T00:00:01Z",
+				})),
+			update: vi.fn(),
+			delete: vi.fn(),
+		};
 
-    render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
-    await screen.findByText("R U R'");
+		render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
+		await screen.findByText("R U R'");
 
-    await act(async () => {
-      timer.onComplete?.(12_340, "none");
-    });
+		await act(async () => {
+			timer.onComplete?.(12_340, "none");
+		});
 
-    await screen.findByRole("button", { name: "Retry saving result" });
-    expect(screen.getByText("R U R'")).toBeTruthy();
-    expect(scramble.random).toHaveBeenCalledTimes(1);
+		await screen.findByRole("button", { name: "Retry saving result" });
+		expect(screen.getByText("R U R'")).toBeTruthy();
+		expect(scramble.random).toHaveBeenCalledTimes(1);
 
-    const originalSolve = vi.mocked(store.create).mock.calls[0][0];
-    fireEvent.click(
-      screen.getByRole("button", { name: "Retry saving result" }),
-    );
+		const originalSolve = vi.mocked(store.create).mock.calls[0][0];
+		fireEvent.click(
+			screen.getByRole("button", { name: "Retry saving result" }),
+		);
 
-    await waitFor(() => expect(store.create).toHaveBeenCalledTimes(2));
-    expect(vi.mocked(store.create).mock.calls[1][0]).toEqual(originalSolve);
-    await screen.findByText("F R U");
-    expect(
-      screen.queryByRole("button", { name: "Retry saving result" }),
-    ).toBeNull();
-  });
+		await waitFor(() => expect(store.create).toHaveBeenCalledTimes(2));
+		expect(vi.mocked(store.create).mock.calls[1][0]).toEqual(originalSolve);
+		await screen.findByText("F R U");
+		expect(
+			screen.queryByRole("button", { name: "Retry saving result" }),
+		).toBeNull();
+	});
 });

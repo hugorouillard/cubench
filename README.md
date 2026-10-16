@@ -64,8 +64,16 @@ at `/login` with username `cubench_dev` and password `dev-password`.
 just install   # install deps
 just dev       # start dev instance
 just test      # run all backend and frontend tests
-just check     # run all tests, frontend lint, and production build
+just format    # format frontend code, organize imports, and apply safe lint fixes
+just lint      # check frontend formatting, imports, and lint rules
+just check     # run all tests, Biome checks, and production build
 ```
+
+Frontend formatting and linting use Biome's defaults in `web/biome.json`.
+The sole rule exception allows intentional ARIA groups without requiring form
+fieldsets. CI and deployment run the same read-only Biome checks through
+`just check`'s frontend equivalent. Run `just format` before committing; for
+editor integration, use the Biome extension with the project's local version.
 
 Before running browser tests for the first time, install Playwright's Chromium
 browser and system dependencies (repeat after a Playwright upgrade):
