@@ -34,15 +34,18 @@ jobs:
       - run: uv sync --directory api --frozen
       - run: uv run --directory api --frozen pytest
 
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          package_json_file: web/package.json
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci --prefix web
-      - run: npx playwright install --with-deps chromium
-        working-directory: web
-      - run: npm run check --prefix web
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm --dir web install --frozen-lockfile
+      - run: pnpm --dir web exec playwright install --with-deps chromium
+      - name: Check frontend (Biome, tests, build)
+        run: pnpm --dir web run check
 
       - name: Package release
         run: >-

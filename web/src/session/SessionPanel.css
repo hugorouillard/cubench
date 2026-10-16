@@ -1,337 +1,343 @@
 .session-panel {
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
-  max-height: min(36rem, calc(100svh - 8rem));
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  align-self: center;
-  border: 1px solid color-mix(in srgb, var(--line-color) 65%, transparent);
-  border-radius: calc(var(--roundness) * 1.5);
-  background: var(--sub-alt-color);
-  overflow: hidden;
-  text-align: left;
-  transition: opacity 180ms ease;
+	min-width: 0;
+	min-height: 0;
+	height: 100%;
+	max-height: min(36rem, calc(100svh - 8rem));
+	display: grid;
+	grid-template-rows: auto auto minmax(0, 1fr);
+	align-self: center;
+	border: 1px solid color-mix(in srgb, var(--line-color) 65%, transparent);
+	border-radius: calc(var(--roundness) * 1.5);
+	background: var(--sub-alt-color);
+	overflow: hidden;
+	text-align: left;
+	transition: opacity 180ms ease;
 }
 
 .session-panel-header {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.15rem 1.25rem;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1.15rem 1.25rem;
 }
 
 .session-panel-header strong,
 .session-panel-header h2 {
-  display: block;
+	display: block;
 }
 
 .session-panel-summary > strong {
-  color: var(--sub-readable-color);
-  font-size: 0.7rem;
+	color: var(--sub-readable-color);
+	font-size: 0.7rem;
 }
 
 .session-panel-header h2 {
-  margin: 0;
-  color: var(--sub-readable-color);
-  font-size: 0.82rem;
-  font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+	margin: 0;
+	color: var(--sub-readable-color);
+	font-size: 0.82rem;
+	font-weight: 400;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .session-panel-summary > strong {
-  flex: 0 0 auto;
-  font-weight: 400;
+	flex: 0 0 auto;
+	font-weight: 400;
 }
 
 .session-panel-summary {
-  min-width: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
+	min-width: auto;
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
 }
 
 .session-panel-summary button {
-  width: 1.7rem;
-  height: 1.7rem;
-  display: inline-grid;
-  place-items: center;
-  border: 0;
-  border-radius: 0.25rem;
-  padding: 0;
-  color: var(--sub-readable-color);
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.55rem;
-  transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
+	width: 1.7rem;
+	height: 1.7rem;
+	display: inline-grid;
+	place-items: center;
+	border: 0;
+	border-radius: 0.25rem;
+	padding: 0;
+	color: var(--sub-readable-color);
+	background: transparent;
+	cursor: pointer;
+	font-size: 0.55rem;
+	transition:
+		color 125ms ease,
+		background 125ms ease,
+		opacity 125ms ease;
 }
 
 .session-panel-summary button:hover:not(:disabled) {
-  color: var(--bg-color);
-  background: var(--error-readable-color);
+	color: var(--bg-color);
+	background: var(--error-readable-color);
 }
 
 .session-panel-summary button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
+	cursor: not-allowed;
+	opacity: 0.45;
 }
 
 .session-chart-region {
-  border-block-start: 1px solid color-mix(in srgb, var(--line-color) 60%, transparent);
-  padding: 0.85rem 1.1rem;
+	border-block-start: 1px solid
+		color-mix(in srgb, var(--line-color) 60%, transparent);
+	padding: 0.85rem 1.1rem;
 }
 
 .session-chart-region.is-pending {
-  padding-block: 0;
+	padding-block: 0;
 }
 
 .session-chart-legend {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  min-height: 0.8rem;
-  color: var(--sub-readable-color);
-  font-size: 0.65rem;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	min-height: 0.8rem;
+	color: var(--sub-readable-color);
+	font-size: 0.65rem;
 }
 
 .session-chart-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
 }
 
 .session-chart-legend i {
-  width: 0.8rem;
-  height: 2px;
-  background: var(--main-color);
+	width: 0.8rem;
+	height: 2px;
+	background: var(--main-color);
 }
 
 .session-chart-legend i.is-average {
-  background: var(--text-color);
+	background: var(--text-color);
 }
 
 .session-chart {
-  position: relative;
-  height: 9.75rem;
+	position: relative;
+	height: 9.75rem;
 }
 
 .session-chart canvas {
-  max-width: 100%;
+	max-width: 100%;
 }
 
 .session-chart-loading {
-  height: 100%;
-  display: grid;
-  place-items: center;
-  color: var(--sub-readable-color);
-  font-size: 0.65rem;
+	height: 100%;
+	display: grid;
+	place-items: center;
+	color: var(--sub-readable-color);
+	font-size: 0.65rem;
 }
 
 .session-chart-pending {
-  min-height: 4.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-inline: 0.1rem;
-  color: var(--sub-readable-color);
+	min-height: 4.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-inline: 0.1rem;
+	color: var(--sub-readable-color);
 }
 
 .session-chart-pending span {
-  color: var(--text-color);
-  font-size: 0.65rem;
+	color: var(--text-color);
+	font-size: 0.65rem;
 }
 
 .session-chart-pending p {
-  margin: 0;
-  font-size: 0.65rem;
+	margin: 0;
+	font-size: 0.65rem;
 }
 
 .session-solve-list {
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-y: auto;
-  overscroll-behavior-block: contain;
-  scrollbar-color: var(--sub-color) transparent;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	overflow-y: auto;
+	overscroll-behavior-block: contain;
+	scrollbar-color: var(--sub-color) transparent;
 }
 
 .session-solve-list li {
-  position: relative;
-  border-top: 1px solid color-mix(in srgb, var(--line-color) 60%, transparent);
+	position: relative;
+	border-top: 1px solid color-mix(in srgb, var(--line-color) 60%, transparent);
 }
 
 .session-solve-list li.is-latest {
-  box-shadow: inset 2px 0 var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 4%, transparent);
+	box-shadow: inset 2px 0 var(--main-color);
+	background: color-mix(in srgb, var(--main-color) 4%, transparent);
 }
 
 .session-solve-summary {
-  position: relative;
-  width: 100%;
-  min-height: 3.3rem;
-  display: grid;
-  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.45rem;
-  border: 0;
-  padding: 0.85rem 1.1rem;
-  color: var(--sub-readable-color);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
+	position: relative;
+	width: 100%;
+	min-height: 3.3rem;
+	display: grid;
+	grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.45rem;
+	border: 0;
+	padding: 0.85rem 1.1rem;
+	color: var(--sub-readable-color);
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
 }
 
 .session-solve-summary:hover,
 .session-solve-summary:focus-visible {
-  outline: none;
-  background: color-mix(in srgb, var(--bg-color) 40%, transparent);
+	outline: none;
+	background: color-mix(in srgb, var(--bg-color) 40%, transparent);
 }
 
 .session-solve-number,
 .session-solve-list time {
-  font-size: 0.65rem;
-  white-space: nowrap;
+	font-size: 0.65rem;
+	white-space: nowrap;
 }
 
 .session-solve-result {
-  min-width: 0;
+	min-width: 0;
 }
 
 .session-solve-result strong,
 .session-solve-result small {
-  display: block;
-  font-variant-numeric: tabular-nums;
+	display: block;
+	font-variant-numeric: tabular-nums;
 }
 
 .session-solve-result strong {
-  color: var(--text-color);
-  font-size: 1rem;
-  font-weight: 400;
+	color: var(--text-color);
+	font-size: 1rem;
+	font-weight: 400;
 }
 
 .session-solve-result small {
-  margin-top: 0.15rem;
-  color: var(--sub-readable-color);
-  font-size: 0.6rem;
+	margin-top: 0.15rem;
+	color: var(--sub-readable-color);
+	font-size: 0.6rem;
 }
 
 .session-solve-list li.is-best .session-solve-result strong {
-  color: var(--main-color);
+	color: var(--main-color);
 }
 
 .session-solve-list time {
-  justify-self: end;
+	justify-self: end;
 }
 
 .session-solve-actions {
-  position: absolute;
-  z-index: 1;
-  inset-block: 0;
-  inset-inline-end: 0.55rem;
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-  padding-left: 1.5rem;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 125ms ease;
+	position: absolute;
+	z-index: 1;
+	inset-block: 0;
+	inset-inline-end: 0.55rem;
+	display: flex;
+	align-items: center;
+	gap: 0.15rem;
+	padding-left: 1.5rem;
+	visibility: hidden;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 125ms ease;
 }
 
 .session-solve-list li:hover .session-solve-actions,
 .session-solve-list li:focus-within .session-solve-actions,
 .session-solve-list li.is-actions-visible .session-solve-actions {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+	visibility: visible;
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.session-solve-summary time {
+	transition: opacity 125ms ease;
 }
 
 .session-solve-list li:hover .session-solve-summary time,
 .session-solve-list li:focus-within .session-solve-summary time,
 .session-solve-list li.is-actions-visible .session-solve-summary time {
-  opacity: 0;
-}
-
-.session-solve-summary time {
-  transition: opacity 125ms ease;
+	opacity: 0;
 }
 
 .session-solve-actions button {
-  width: 1.7rem;
-  height: 1.7rem;
-  display: inline-grid;
-  place-items: center;
-  border: 0;
-  border-radius: 0.25rem;
-  padding: 0;
-  color: var(--sub-readable-color);
-  background: var(--bg-color);
-  cursor: pointer;
-  font-size: 0.48rem;
-  transition: color 125ms ease, background 125ms ease, opacity 125ms ease;
+	width: 1.7rem;
+	height: 1.7rem;
+	display: inline-grid;
+	place-items: center;
+	border: 0;
+	border-radius: 0.25rem;
+	padding: 0;
+	color: var(--sub-readable-color);
+	background: var(--bg-color);
+	cursor: pointer;
+	font-size: 0.48rem;
+	transition:
+		color 125ms ease,
+		background 125ms ease,
+		opacity 125ms ease;
 }
 
 .session-solve-actions button:hover,
 .session-solve-actions button.is-active {
-  color: var(--bg-color);
-  background: var(--main-color);
+	color: var(--bg-color);
+	background: var(--main-color);
 }
 
 .session-solve-actions button.is-delete:hover {
-  background: var(--error-readable-color);
+	background: var(--error-readable-color);
 }
 
 .session-solve-actions button:disabled {
-  cursor: wait;
-  opacity: 0.35;
+	cursor: wait;
+	opacity: 0.35;
 }
 
 .session-solve-actions .app-icon {
-  font-size: 0.68rem;
+	font-size: 0.68rem;
 }
 
 .session-panel-empty {
-  min-height: 18rem;
-  display: grid;
-  grid-row: 2 / -1;
-  align-content: center;
-  justify-items: center;
-  padding: 2rem;
-  color: var(--sub-readable-color);
-  text-align: center;
+	min-height: 18rem;
+	display: grid;
+	grid-row: 2 / -1;
+	align-content: center;
+	justify-items: center;
+	padding: 2rem;
+	color: var(--sub-readable-color);
+	text-align: center;
 }
 
 .session-panel-empty p {
-  max-width: 15rem;
-  margin: 0;
-  color: var(--sub-readable-color);
-  font-size: 0.7rem;
-  line-height: 1.6;
+	max-width: 15rem;
+	margin: 0;
+	color: var(--sub-readable-color);
+	font-size: 0.7rem;
+	line-height: 1.6;
 }
 
 @media (max-width: 848px) {
-  .session-panel {
-    height: min(36rem, calc(100svh - 8rem));
-  }
+	.session-panel {
+		height: min(36rem, calc(100svh - 8rem));
+	}
 
-  .session-chart {
-    height: 9rem;
-  }
-
+	.session-chart {
+		height: 9rem;
+	}
 }
 
 @media (max-width: 480px) {
-  .session-chart {
-    height: 8rem;
-  }
+	.session-chart {
+		height: 8rem;
+	}
 
-  .session-solve-summary {
-    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
-  }
+	.session-solve-summary {
+		grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+	}
 }

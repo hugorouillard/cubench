@@ -41,6 +41,7 @@ guest solves are not transferred.
 ### Requirements
 
 - Node.js 24 or newer
+- [pnpm](https://pnpm.io/installation) (version pinned in `web/package.json`)
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
 - [just](https://just.systems/)
@@ -64,27 +65,39 @@ at `/login` with username `cubench_dev` and password `dev-password`.
 just install   # install deps
 just dev       # start dev instance
 just test      # run all backend and frontend tests
-just check     # run all tests, frontend lint, and production build
+just format    # format frontend code, organize imports, and apply safe lint fixes
+just lint      # check frontend formatting, imports, and lint rules
+just check     # run all tests, Biome checks, and production build
 ```
+
+Frontend formatting and linting use Biome's defaults in `web/biome.json`.
+The sole rule exception allows intentional ARIA groups without requiring form
+fieldsets. CI and deployment run the same read-only Biome checks through
+`just check`'s frontend equivalent. Run `just format` before committing; for
+editor integration, use the Biome extension with the project's local version.
 
 Before running browser tests for the first time, install Playwright's Chromium
 browser and system dependencies (repeat after a Playwright upgrade):
 
 ```bash
-(cd web && npx playwright install --with-deps chromium)
+pnpm --dir web exec playwright install --with-deps chromium
 ```
 
-`just test` and `just check` cover the whole project. Their npm equivalents,
-`npm test --prefix web` and `npm run check --prefix web`, cover only the frontend.
+`just install` uses the committed pnpm lockfile without updating it. To change
+frontend dependencies, use `pnpm --dir web add` or `pnpm --dir web remove` and
+commit both `web/package.json` and `web/pnpm-lock.yaml`.
+
+`just test` and `just check` cover the whole project. Their pnpm equivalents,
+`pnpm --dir web test` and `pnpm --dir web run check`, cover only the frontend.
 Both test commands include unit tests, timezone variations, and Playwright E2E tests.
 
 For targeted runs:
 
 ```bash
-just test-api                                  # backend tests
-just test-web                                  # all frontend tests
-npm run test:unit --prefix web                  # all unit tests, including timezone variations
-npm run test:unit:default --prefix web          # unit tests in the default timezone only
-npm run test:unit:timezones --prefix web         # timezone-sensitive unit tests in New York and Auckland
-npm run test:e2e --prefix web                   # browser tests only
+just test-api                              # backend tests
+just test-web                              # all frontend tests
+pnpm --dir web run test:unit                # all unit tests, including timezone variations
+pnpm --dir web run test:unit:default        # unit tests in the default timezone only
+pnpm --dir web run test:unit:timezones       # timezone-sensitive unit tests in New York and Auckland
+pnpm --dir web run test:e2e                 # browser tests only
 ```
