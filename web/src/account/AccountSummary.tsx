@@ -1,7 +1,7 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserCircle as legacyUserCircle } from "free-solid-svg-icons-v5";
+import { faUserCircle } from "free-solid-svg-icons-v5";
 import { useEffect, useRef } from "react";
 import type { ActivitySummary } from "../solves/activity";
 import type { LifetimeSolveSummary } from "../solves/stats";
@@ -13,8 +13,6 @@ type AccountSummaryProps = {
     lifetime: LifetimeSolveSummary & ActivitySummary;
     onEdit?: () => void;
 };
-
-const userCircle = legacyUserCircle as unknown as IconDefinition;
 
 function FittedName({ name }: { name: string }) {
     const nameRef = useRef<HTMLHeadingElement>(null);
@@ -68,7 +66,7 @@ export function AccountSummary({
                 <div className="account-summary-identity">
                     <FontAwesomeIcon
                         className="account-summary-avatar"
-                        icon={userCircle}
+                        icon={faUserCircle as IconDefinition}
                         aria-hidden="true"
                     />
                     <div className="account-summary-identity-text">

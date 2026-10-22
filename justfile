@@ -1,4 +1,4 @@
-set dotenv-load := true
+set dotenv-load
 
 default:
     @just --list
@@ -37,6 +37,9 @@ dev:
     web_pid=$!
 
     wait -n "$api_pid" "$web_pid"
+
+watch:
+    pnpm --dir web exec tsc -b --watch
 
 # Tag and push the next release (patch by default; also accepts minor or major).
 [positional-arguments]
