@@ -1,15 +1,18 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"root": "..",
-		"useIgnoreFile": true
-	},
-	"linter": {
-		"domains": { "react": "recommended" },
-		"rules": {
-			"a11y": { "useSemanticElements": "off" }
-		}
-	}
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "root": "..",
+        "useIgnoreFile": true
+    },
+    "linter": {
+        "domains": { "react": "recommended" },
+        "rules": {
+            "a11y": { "useSemanticElements": "off" }
+        }
+    },
+    "formatter": {
+        "enabled": true,
+        "useEditorconfig": true
+    }
 }

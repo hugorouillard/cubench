@@ -1,0 +1,37 @@
+{
+    "format_on_save": "on",
+    "lsp": {
+        "biome": {
+            "binary": {
+                "path": "./web/node_modules/.bin/biome",
+                "arguments": ["lsp-proxy"]
+            },
+            "settings": {
+                "config_path": "web/biome.json"
+            }
+        }
+    },
+    "languages": {
+        "JavaScript": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "JSX": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "TypeScript": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "TSX": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "JSON": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "JSONC": {
+            "formatter": { "language_server": { "name": "biome" } }
+        },
+        "CSS": {
+            "formatter": { "language_server": { "name": "biome" } }
+        }
+    }
+}

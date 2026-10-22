@@ -1,22 +1,22 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-	testDir: "./e2e",
-	testMatch: "**/*.pw.ts",
-	fullyParallel: true,
-	forbidOnly: Boolean(process.env.CI),
-	retries: process.env.CI ? 1 : 0,
-	use: {
-		baseURL: "http://127.0.0.1:4173",
-		timezoneId: "UTC",
-		trace: "retain-on-failure",
-		launchOptions: {
-			executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-		},
-	},
-	webServer: {
-		command: "pnpm run dev --host 127.0.0.1 --port 4173 --strictPort",
-		url: "http://127.0.0.1:4173",
-		reuseExistingServer: !process.env.CI,
-	},
+    testDir: "./e2e",
+    testMatch: "**/*.pw.ts",
+    fullyParallel: true,
+    forbidOnly: Boolean(process.env.CI),
+    retries: process.env.CI ? 1 : 0,
+    use: {
+        baseURL: "http://127.0.0.1:4173",
+        timezoneId: "UTC",
+        trace: "retain-on-failure",
+        launchOptions: {
+            executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+        },
+    },
+    webServer: {
+        command: "pnpm run dev --host 127.0.0.1 --port 4173 --strictPort",
+        url: "http://127.0.0.1:4173",
+        reuseExistingServer: !process.env.CI,
+    },
 });
