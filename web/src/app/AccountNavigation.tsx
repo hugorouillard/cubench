@@ -4,14 +4,11 @@ import {
     faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser as legacyUserRegular } from "free-regular-svg-icons-v5";
-import { faUser as legacyUser } from "free-solid-svg-icons-v5";
+import { faUser as faUserRegular } from "free-regular-svg-icons-v5";
+import { faUser } from "free-solid-svg-icons-v5";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import "./AccountNavigation.css";
-
-const signedInIcon = legacyUser as unknown as IconDefinition;
-const signedOutIcon = legacyUserRegular as unknown as IconDefinition;
 
 type AccountNavigationProps = {
     currentPage: "timer" | "profile" | "preview" | "login";
@@ -168,7 +165,7 @@ export function AccountNavigation({
                     >
                         <FontAwesomeIcon
                             className="app-icon account-icon--signed-in"
-                            icon={signedInIcon}
+                            icon={faUser as IconDefinition}
                             fixedWidth
                             aria-hidden="true"
                         />
@@ -230,7 +227,7 @@ export function AccountNavigation({
                 >
                     <FontAwesomeIcon
                         className="app-icon"
-                        icon={signedOutIcon}
+                        icon={faUserRegular as IconDefinition}
                         fixedWidth
                         aria-hidden="true"
                     />
