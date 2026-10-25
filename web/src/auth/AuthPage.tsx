@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type FormEvent, useState } from "react";
 import { INVITE_REQUEST_URL } from "./project";
 import { useAuth } from "./useAuth";
+import "./AuthPage.css";
 
 type AuthPageProps = {
     onPreview: () => void;
