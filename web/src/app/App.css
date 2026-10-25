@@ -12,7 +12,6 @@
     overflow-x: hidden;
 }
 
-.site-header,
 .practice-config-row,
 .scramble,
 .timer-status,
@@ -22,77 +21,6 @@
         color 150ms ease;
 }
 
-.site-header {
-    z-index: 10;
-    min-height: 2.25rem;
-}
-
-.site-header--timer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--session-panel-width);
-    gap: var(--workspace-gap);
-}
-
-.site-header-main {
-    display: flex;
-    align-items: center;
-    min-height: 2.25rem;
-}
-
-.site-header--timer .site-header-main {
-    grid-column: 1 / -1;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.brand-mark {
-    width: 2.25rem;
-    height: 2.25rem;
-    display: grid;
-    flex: 0 0 auto;
-    place-items: center;
-    color: var(--main-color);
-}
-
-.brand-mark .app-icon {
-    font-size: 2.1rem;
-}
-
-.brand-copy {
-    position: relative;
-    display: flex;
-    align-items: baseline;
-    gap: 0.65rem;
-    white-space: nowrap;
-}
-
-.brand-copy strong {
-    font-family: "Lexend Deca", sans-serif;
-    font-size: 1.85rem;
-    font-weight: 400;
-    letter-spacing: -0.07em;
-    line-height: 1;
-}
-
-.brand-copy small {
-    color: var(--sub-color);
-    font-size: 0.68rem;
-}
-
-.main-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.1rem;
-    margin-left: 1rem;
-}
-
-.main-nav button,
 .dialog-heading button {
     width: 2.25rem;
     height: 2.25rem;
@@ -109,7 +37,6 @@
         opacity 125ms ease;
 }
 
-.main-nav .app-icon,
 .dialog-heading .app-icon {
     font-size: 1.05rem;
 }
@@ -118,98 +45,10 @@
     color: var(--main-color);
 }
 
-.main-nav button {
-    color: var(--timer-icon-color);
-}
-
-.main-nav button[data-nav-item="about"] {
-    --nav-item-color: var(--about-icon-color);
-}
-
-.main-nav button[data-nav-item="options"] {
-    --nav-item-color: var(--settings-icon-color);
-}
-
-.main-nav button[data-nav-item] {
-    color: var(--nav-item-color);
-}
-
-.main-nav button[data-nav-item]:hover {
-    color: color-mix(in srgb, var(--nav-item-color) 75%, white);
-}
-
 button:disabled,
 select:disabled {
     cursor: not-allowed;
     opacity: 0.35;
-}
-
-.notification {
-    position: fixed;
-    z-index: 50;
-    top: 1.25rem;
-    right: 1.25rem;
-    width: min(24rem, calc(100vw - 2rem));
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    border: 2px solid var(--error-color);
-    border-radius: calc(var(--roundness) * 1.5);
-    padding: 1rem;
-    color: var(--text-color);
-    background: color-mix(
-        in srgb,
-        var(--error-color) 12%,
-        var(--sub-alt-color)
-    );
-    box-shadow: 0 1rem 3rem rgb(0 0 0 / 0.25);
-    font-size: 0.75rem;
-    line-height: 1.55;
-    animation: notification-in 125ms ease-out;
-}
-
-.notification-copy {
-    min-width: 0;
-    display: grid;
-    flex: 1;
-    gap: 0.45rem;
-}
-
-.notification-copy strong {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    color: var(--error-readable-color);
-    font-size: 0.68rem;
-    font-weight: 400;
-}
-
-.notification-copy span {
-    flex: 1;
-}
-
-.notification button {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: grid;
-    flex: 0 0 auto;
-    place-items: center;
-    border: 0;
-    padding: 0;
-    color: var(--sub-readable-color);
-    background: transparent;
-    cursor: pointer;
-}
-
-.notification .app-icon {
-    font-size: 1rem;
-}
-
-@keyframes notification-in {
-    from {
-        opacity: 0;
-        transform: translateY(-0.5rem);
-    }
 }
 
 .practice-view {
@@ -829,10 +668,6 @@ select:disabled {
 }
 
 @media (max-width: 1104px) {
-    .brand-copy small {
-        display: none;
-    }
-
     .practice-config {
         gap: 0.6rem;
         font-size: 0.6rem;
@@ -864,7 +699,6 @@ select:disabled {
 }
 
 @media (max-width: 848px) {
-    .site-header--timer,
     .practice-config-row {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -923,14 +757,6 @@ select:disabled {
 
     .auth-footer {
         margin-top: 2.5rem;
-    }
-
-    .brand-copy {
-        display: none;
-    }
-
-    .main-nav {
-        margin-left: 0.65rem;
     }
 
     .timer-stage {

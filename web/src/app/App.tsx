@@ -1,6 +1,4 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
-    faCircleExclamation,
     faCube,
     faEyeSlash,
     faRotateRight,
@@ -10,7 +8,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { randomScrambleForEvent } from "cubing/scramble";
-import { faCog, faInfo } from "free-solid-svg-icons-v5";
 import {
     type ReactNode,
     useEffect,
@@ -43,7 +40,9 @@ import {
 import { type TimerPhase, useTimer } from "../timer/useTimer";
 import type { Account, Penalty, Solve, SolveInput } from "../types";
 import { AccountNavigation } from "./AccountNavigation";
+import { ErrorNotification } from "./ErrorNotification";
 import { Footer } from "./Footer";
+import { Header } from "./Header";
 import { applyTheme, type Theme } from "./theme";
 import "./App.css";
 
@@ -449,118 +448,29 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                       : phase
             }${inspectionActive ? " app--inspecting" : ""}`}
         >
-            <header className="site-header site-header--timer page-width focus-chrome">
-                <div className="site-header-main">
-                    <a
-                        className="brand"
-                        href="/"
-                        onClick={(event) => {
-                            event.preventDefault();
-                            if (!controlsDisabled) navigate("timer");
-                        }}
-                        aria-label="Cubench home"
-                        tabIndex={controlsDisabled ? -1 : 0}
-                    >
-                        <span className="brand-mark" aria-hidden="true">
-                            <FontAwesomeIcon
-                                className="app-icon"
-                                icon={faCube}
-                            />
-                        </span>
-                        <span className="brand-copy">
-                            <strong>cubench</strong>
-                        </span>
-                    </a>
-
-                    <nav className="main-nav" aria-label="Main views">
-                        <button
-                            className={view === "timer" ? "is-active" : ""}
-                            type="button"
-                            onClick={() => navigate("timer")}
-                            disabled={controlsDisabled}
-                            aria-label="Timer"
-                            aria-current={view === "timer" ? "page" : undefined}
-                            title="Timer"
-                        >
-                            <FontAwesomeIcon
-                                className="app-icon"
-                                icon={faStopwatch}
-                                fixedWidth
-                                aria-hidden="true"
-                            />
-                        </button>
-                        <button
-                            type="button"
-                            disabled={controlsDisabled}
-                            aria-label="About"
-                            aria-disabled="true"
-                            title="About (coming soon)"
-                            data-nav-item="about"
-                        >
-                            <FontAwesomeIcon
-                                className="app-icon"
-                                icon={faInfo as IconDefinition}
-                                fixedWidth
-                                aria-hidden="true"
-                            />
-                        </button>
-                        <button
-                            type="button"
-                            disabled={controlsDisabled}
-                            aria-label="Options"
-                            aria-disabled="true"
-                            title="Options (coming soon)"
-                            data-nav-item="options"
-                        >
-                            <FontAwesomeIcon
-                                className="app-icon"
-                                icon={faCog as IconDefinition}
-                                fixedWidth
-                                aria-hidden="true"
-                            />
-                        </button>
-                    </nav>
-
-                    <AccountNavigation
-                        currentPage={view}
-                        navigationDisabled={controlsDisabled}
-                        accountActionDisabled={accountActionDisabled}
-                        onNavigate={navigate}
-                        onOpenChange={setAccountMenuOpen}
-                        beforeLogout={confirmLogout}
-                        onError={setError}
-                    />
-                </div>
-            </header>
+            <Header
+                timerActive={view === "timer"}
+                disabled={controlsDisabled}
+                onTimer={() => navigate("timer")}
+            >
+                <AccountNavigation
+                    currentPage={view}
+                    navigationDisabled={controlsDisabled}
+                    accountActionDisabled={accountActionDisabled}
+                    onNavigate={navigate}
+                    onOpenChange={setAccountMenuOpen}
+                    beforeLogout={confirmLogout}
+                    onError={setError}
+                />
+            </Header>
             {notificationError && (
-                <aside className="notification" role="alert">
-                    <div className="notification-copy">
-                        <strong>
-                            <FontAwesomeIcon
-                                className="app-icon"
-                                icon={faCircleExclamation}
-                                aria-hidden="true"
-                            />
-                            Error
-                        </strong>
-                        <span>{notificationError}</span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (error) setError("");
-                            else dismissSessionError();
-                        }}
-                        aria-label="Dismiss error"
-                    >
-                        <FontAwesomeIcon
-                            className="app-icon"
-                            icon={faXmark}
-                            fixedWidth
-                            aria-hidden="true"
-                        />
-                    </button>
-                </aside>
+                <ErrorNotification
+                    message={notificationError}
+                    onDismiss={() => {
+                        if (error) setError("");
+                        else dismissSessionError();
+                    }}
+                />
             )}
             {view === "timer" ? (
                 <main className="practice-view page-width">
