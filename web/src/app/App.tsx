@@ -163,7 +163,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         isLoginPath() ? "login" : "timer",
     );
     const [profilePreview] = useState(createProfilePreview);
-    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [scramble, setScramble] = useState("");
     const [scrambleLoading, setScrambleLoading] = useState(true);
     const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
@@ -281,7 +280,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 !pendingSolve &&
                 !authChecking &&
                 !authBusy &&
-                !accountMenuOpen &&
                 !practiceSettingsOpen,
         ),
         inspectionEnabled,
@@ -318,7 +316,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     useEffect(() => {
         function handlePopState() {
             const nextView = requestedView(account);
-            if (nextView !== view && controlsDisabled) {
+            if (nextView !== view && (authChecking || authBusy)) {
                 window.history.replaceState(null, "", pathForView(view));
                 return;
             }
@@ -327,7 +325,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
         window.addEventListener("popstate", handlePopState);
         return () => window.removeEventListener("popstate", handlePopState);
-    }, [account, controlsDisabled, view]);
+    }, [account, authChecking, authBusy, view]);
 
     function resetCurrentSession() {
         repository.clearSession();
@@ -417,8 +415,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     const lastSolve = solves[0];
     const latestResult = solves.find((solve) => solve.id === latestResultId);
     const summary = summarizeSolves(solves);
-    const accountActionDisabled =
-        authBusy || (controlsDisabled && saveState !== "failed");
     const notificationError = error || sessionError;
     const statTime = (duration: number | null) =>
         duration === null ? "--" : formatTime(duration);
@@ -450,15 +446,12 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         >
             <Header
                 timerActive={view === "timer"}
-                disabled={controlsDisabled}
+                disabled={authChecking || authBusy}
                 onTimer={() => navigate("timer")}
             >
                 <AccountNavigation
                     currentPage={view}
-                    navigationDisabled={controlsDisabled}
-                    accountActionDisabled={accountActionDisabled}
                     onNavigate={navigate}
-                    onOpenChange={setAccountMenuOpen}
                     beforeLogout={confirmLogout}
                     onError={setError}
                 />

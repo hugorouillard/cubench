@@ -12,20 +12,14 @@ import "./AccountNavigation.css";
 
 type AccountNavigationProps = {
     currentPage: "timer" | "profile" | "preview" | "login";
-    navigationDisabled: boolean;
-    accountActionDisabled: boolean;
     onNavigate: (page: "profile" | "login") => void;
-    onOpenChange: (open: boolean) => void;
     beforeLogout: () => boolean;
     onError: (message: string) => void;
 };
 
 export function AccountNavigation({
     currentPage,
-    navigationDisabled,
-    accountActionDisabled,
     onNavigate,
-    onOpenChange,
     beforeLogout,
     onError,
 }: AccountNavigationProps) {
@@ -34,17 +28,11 @@ export function AccountNavigation({
     const menuRef = useRef<HTMLElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dismissedRef = useRef(false);
-    const disabled = checking || pending !== null || accountActionDisabled;
+    const disabled = checking || pending !== null;
     const dismissMenu = useCallback(() => {
         dismissedRef.current = true;
         setOpen(false);
     }, []);
-
-    useEffect(() => {
-        onOpenChange(open);
-    }, [open, onOpenChange]);
-
-    useEffect(() => () => onOpenChange(false), [onOpenChange]);
 
     useEffect(() => {
         if (!open) return;
@@ -150,9 +138,6 @@ export function AccountNavigation({
                             ) {
                                 dismissedRef.current = open;
                                 setOpen(!open);
-                            } else if (navigationDisabled) {
-                                dismissedRef.current = false;
-                                setOpen(true);
                             } else {
                                 openProfile();
                             }
@@ -183,7 +168,7 @@ export function AccountNavigation({
                             <div className="account-menu-content">
                                 <button
                                     type="button"
-                                    disabled={disabled || navigationDisabled}
+                                    disabled={disabled}
                                     onClick={openProfile}
                                     aria-current={
                                         currentPage === "profile"
