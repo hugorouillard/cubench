@@ -1,17 +1,15 @@
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { randomScrambleForEvent } from "cubing/scramble";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { Theme } from "../app/theme";
 import { SessionPanel } from "../session/SessionPanel";
 import { summarizeSolves } from "../solves/stats";
 import type { Penalty, Solve, SolveInput } from "../types";
 import { PracticeSettings } from "./PracticeSettings";
 import { formatInspectionTime, formatTime } from "./timer";
-import { type TimerPhase, useTimer } from "./useTimer";
+import { type SaveState, usePracticeSession } from "./usePracticeSession";
+import type { TimerPhase } from "./useTimer";
 import "./TimerPage.css";
-
-type SaveState = "idle" | "saving" | "failed";
 
 // Only the state the shell needs for focus styling and unsaved-result handling.
 export type TimerPageState = {
@@ -31,10 +29,6 @@ type TimerPageProps = {
     onError: (message: string) => void;
     onStateChange: (state: TimerPageState) => void;
 };
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Something went wrong";
-}
 
 function phaseInstruction(
     phase: TimerPhase,
@@ -66,88 +60,24 @@ export function TimerPage({
     const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false);
     const [hideTimer, setHideTimer] = useState(false);
     const [inspectionEnabled, setInspectionEnabled] = useState(false);
-    const [scramble, setScramble] = useState("");
-    const [scrambleLoading, setScrambleLoading] = useState(true);
-    const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
-    const [saveState, setSaveState] = useState<SaveState>("idle");
-    const [latestResultId, setLatestResultId] = useState("");
-
-    useEffect(() => {
-        let cancelled = false;
-        randomScrambleForEvent("333")
-            .then((nextScramble) => {
-                if (cancelled) return;
-                setScramble(nextScramble.toString());
-                setScrambleLoading(false);
-            })
-            .catch((initialError: unknown) => {
-                if (!cancelled) onError(errorMessage(initialError));
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [onError]);
-
-    async function generateScramble() {
-        setScramble("");
-        setScrambleLoading(true);
-        try {
-            const nextScramble = await randomScrambleForEvent("333");
-            setScramble(nextScramble.toString());
-        } catch (scrambleError) {
-            onError(errorMessage(scrambleError));
-        } finally {
-            setScrambleLoading(false);
-        }
-    }
-
-    async function persistSolve(solve: SolveInput) {
-        setSaveState("saving");
-        onError("");
-        try {
-            await onSave(solve);
-            setPendingSolve(null);
-            setSaveState("idle");
-            await generateScramble();
-        } catch (saveError) {
-            setSaveState("failed");
-            onError(`Failed to save result: ${errorMessage(saveError)}`);
-        }
-    }
-
-    function handleTimerComplete(durationMs: number, penalty: Penalty) {
-        if (!scramble || pendingSolve) return;
-        const solve: SolveInput = {
-            id: crypto.randomUUID(),
-            duration_ms: durationMs,
-            penalty,
-            scramble,
-            recorded_at: new Date().toISOString(),
-        };
-        setPendingSolve(solve);
-        setLatestResultId(solve.id);
-        void persistSolve(solve);
-    }
-
     const {
         phase,
         elapsedMs,
-        reset: resetTimer,
-    } = useTimer(
-        Boolean(
-            scramble &&
-                !scrambleLoading &&
-                !pendingSolve &&
-                !disabled &&
-                !practiceSettingsOpen,
-        ),
+        scramble,
+        scrambleLoading,
+        latestResultId,
+        saveState,
+        busy,
+        generateScramble,
+        retrySave,
+        forgetResult,
+    } = usePracticeSession({
+        onSave,
+        enabled: !disabled && !practiceSettingsOpen,
         inspectionEnabled,
-        handleTimerComplete,
-    );
-    const controlsDisabled =
-        disabled ||
-        Boolean(pendingSolve) ||
-        (phase !== "idle" && phase !== "stopped");
+        onError,
+    });
+    const controlsDisabled = disabled || busy;
 
     useLayoutEffect(() => {
         onStateChange({ phase, saveState });
@@ -165,10 +95,9 @@ export function TimerPage({
         // A cleared session or deleted result should no longer be on the clock.
         // An unsaved result is intentionally absent from the repository.
         if (latestResultId && !latestResult && saveState === "idle") {
-            setLatestResultId("");
-            resetTimer();
+            forgetResult(latestResultId);
         }
-    }, [latestResultId, latestResult, saveState, resetTimer]);
+    }, [latestResultId, latestResult, saveState, forgetResult]);
 
     const summary = summarizeSolves(solves);
     const statTime = (duration: number | null) =>
@@ -261,10 +190,7 @@ export function TimerPage({
                                     className="post-solve-retry"
                                     type="button"
                                     disabled={disabled}
-                                    onClick={() => {
-                                        if (pendingSolve)
-                                            void persistSolve(pendingSolve);
-                                    }}
+                                    onClick={() => void retrySave()}
                                 >
                                     <FontAwesomeIcon
                                         className="app-icon"
