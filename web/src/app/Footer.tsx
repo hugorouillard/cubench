@@ -11,6 +11,7 @@ import {
     faShieldAlt,
 } from "free-solid-svg-icons-v5";
 import { isTheme, THEME_OPTIONS, type Theme } from "./theme";
+import "./Footer.css";
 
 declare const __CUBENCH_VERSION__: string;
 
