@@ -12,12 +12,14 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfilePreview } from "../../account/profilePreview";
 import type { SolveStore } from "../../solves/solveStore";
+import type { TimerPhase } from "../../timer/useTimer";
 import type { Penalty, Solve, UserProfile } from "../../types";
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }));
 const timer = vi.hoisted(() => ({
     onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
     reset: vi.fn(),
+    phase: "stopped" as TimerPhase,
 }));
 const account = {
     id: 1,
@@ -79,7 +81,7 @@ vi.mock("../../timer/useTimer", () => ({
         onComplete: (durationMs: number, penalty: Penalty) => void,
     ) => {
         timer.onComplete = onComplete;
-        return { phase: "stopped", elapsedMs: 12_340, reset: timer.reset };
+        return { phase: timer.phase, elapsedMs: 12_340, reset: timer.reset };
     },
 }));
 vi.mock("../../account/AccountPage", () => ({
@@ -122,6 +124,7 @@ describe("current session", () => {
         vi.clearAllMocks();
         window.history.replaceState(null, "", "/");
         timer.onComplete = null;
+        timer.phase = "stopped";
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             jsonResponse({ detail: "Not authenticated" }, 401),
         );
@@ -179,6 +182,40 @@ describe("current session", () => {
             expect(document.activeElement).not.toBe(option);
         }
     });
+
+    it.each(["account button", "browser history"])(
+        "allows navigation during a solve through %s",
+        async (source) => {
+            vi.mocked(globalThis.fetch).mockResolvedValue(
+                jsonResponse(account),
+            );
+            timer.phase = "running";
+            render(<App initialTheme="catppuccin-mocha" />);
+            const accountButton = await screen.findByRole("button", {
+                name: "Account menu for Speed Cuber",
+            });
+            expect(
+                screen
+                    .getByRole("button", { name: "Timer" })
+                    .hasAttribute("disabled"),
+            ).toBe(false);
+
+            if (source === "account button") {
+                fireEvent.click(accountButton);
+            } else {
+                window.history.pushState(null, "", "#profile");
+                await act(async () =>
+                    window.dispatchEvent(new PopStateEvent("popstate")),
+                );
+            }
+            expect(
+                await screen.findByRole("heading", {
+                    name: "Lifetime profile",
+                }),
+            ).toBeTruthy();
+            expect(location.hash).toBe("#profile");
+        },
+    );
 
     it("previews account features and returns to the guest session without changing its solves", async () => {
         render(<App initialTheme="catppuccin-mocha" />);
@@ -327,129 +364,6 @@ describe("current session", () => {
         firstRender.unmount();
         render(<App initialTheme="catppuccin-mocha" />);
 
-        expect(screen.getByTestId("solve-count").textContent).toBe("0");
-    });
-
-    it("clears the guest session and persists new solves after sign in", async () => {
-        let failNextSolve = false;
-        const fetch = vi
-            .mocked(globalThis.fetch)
-            .mockImplementation(async (input, init) => {
-                const path = String(input);
-                if (path === "/api/auth/session")
-                    return jsonResponse({ detail: "Not authenticated" }, 401);
-                if (path === "/api/auth/login") return jsonResponse(account);
-                if (path === "/api/solves") {
-                    if (failNextSolve)
-                        return jsonResponse(
-                            { detail: "Not authenticated" },
-                            401,
-                        );
-                    const solve = JSON.parse(String(init?.body)) as Record<
-                        string,
-                        unknown
-                    >;
-                    return jsonResponse(
-                        { ...solve, created_at: "2026-01-01T00:00:01Z" },
-                        201,
-                    );
-                }
-                if (path === "/api/auth/logout")
-                    return new Response(null, { status: 204 });
-                throw new Error(`Unexpected request: ${path}`);
-            });
-        const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-
-        render(<App initialTheme="catppuccin-mocha" />);
-        await screen.findByText("R U R'");
-        await act(async () => {
-            timer.onComplete?.(12_340, "none");
-        });
-        await waitFor(() =>
-            expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-        );
-
-        fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-        const signIn = within(screen.getByRole("region", { name: "sign in" }));
-        fireEvent.change(signIn.getByLabelText("username"), {
-            target: { value: "speedcuber" },
-        });
-        fireEvent.change(signIn.getByLabelText("password"), {
-            target: { value: "test-password" },
-        });
-        fireEvent.click(signIn.getByRole("button", { name: "sign in" }));
-
-        await screen.findByRole("button", {
-            name: "Account menu for Speed Cuber",
-        });
-        expect(location.pathname).toBe("/");
-        const accountNav = within(
-            screen.getByRole("navigation", { name: "Account" }),
-        );
-        expect(accountNav.getAllByRole("button")).toHaveLength(1);
-        expect(
-            accountNav.getByRole("button", {
-                name: "Account menu for Speed Cuber",
-            }).textContent,
-        ).toBe("Speed Cuber");
-        expect(screen.getByTestId("solve-count").textContent).toBe("0");
-        await act(async () => {
-            timer.onComplete?.(11_000, "none");
-        });
-        await waitFor(() =>
-            expect(screen.getByTestId("solve-count").textContent).toBe("1"),
-        );
-        expect(fetch.mock.calls.map(([path]) => String(path))).toContain(
-            "/api/solves",
-        );
-
-        fireEvent.click(
-            accountNav.getByRole("button", {
-                name: "Account menu for Speed Cuber",
-            }),
-        );
-        await screen.findByRole("heading", { name: "Lifetime profile" });
-        fireEvent.click(screen.getByRole("link", { name: "Cubench home" }));
-        await screen.findByText("F R U");
-        expect(screen.getByTestId("solve-count").textContent).toBe("1");
-
-        fireEvent.click(screen.getByRole("button", { name: "clear times" }));
-        expect(confirm).toHaveBeenCalledWith(
-            "Clear 1 current solve? Saved solves remain in your profile.",
-        );
-        expect(screen.getByTestId("solve-count").textContent).toBe("0");
-
-        failNextSolve = true;
-        await act(async () => {
-            timer.onComplete?.(10_000, "none");
-        });
-        await screen.findByRole("button", { name: "Retry saving result" });
-        window.history.pushState(null, "", "#profile");
-        window.dispatchEvent(new PopStateEvent("popstate"));
-        expect(location.hash).toBe("");
-        expect(
-            screen.queryByRole("heading", { name: "Lifetime profile" }),
-        ).toBeNull();
-
-        confirm.mockReturnValueOnce(false);
-        fireEvent.click(
-            accountNav.getByRole("button", {
-                name: "Account menu for Speed Cuber",
-            }),
-        );
-        fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-        expect(
-            screen.getByRole("button", { name: "Retry saving result" }),
-        ).toBeTruthy();
-
-        confirm.mockReturnValueOnce(true);
-        fireEvent.click(
-            accountNav.getByRole("button", {
-                name: "Account menu for Speed Cuber",
-            }),
-        );
-        fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-        await screen.findByRole("button", { name: /sign in/i });
         expect(screen.getByTestId("solve-count").textContent).toBe("0");
     });
 

@@ -68,7 +68,6 @@ async function renderTimer(
                 pendingMutationIds={[]}
                 theme="catppuccin-mocha"
                 disabled={false}
-                inputBlocked={false}
                 onPenalty={vi.fn()}
                 onDelete={vi.fn()}
                 onClear={vi.fn()}

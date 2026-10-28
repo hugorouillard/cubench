@@ -70,7 +70,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         isLoginPath() ? "login" : "timer",
     );
     const [profilePreview] = useState(createProfilePreview);
-    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [{ phase, saveState }, setTimerPageState] = useState<TimerPageState>({
         phase: "idle",
         saveState: "idle",
@@ -110,17 +109,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         setView(nextView);
     }
 
-    const controlsDisabled =
-        authChecking ||
-        authBusy ||
-        saveState !== "idle" ||
-        phase === "holding" ||
-        phase === "ready" ||
-        phase === "inspection" ||
-        phase === "inspection-holding" ||
-        phase === "inspection-ready" ||
-        phase === "running";
-
     const synchronizeIdentity = useEffectEvent((changed: boolean) => {
         if (changed) resetCurrentSession();
         if (changed || (account && isLoginPath())) navigate("timer", true);
@@ -141,7 +129,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     useEffect(() => {
         function handlePopState() {
             const nextView = requestedView(account);
-            if (nextView !== view && controlsDisabled) {
+            if (nextView !== view && (authChecking || authBusy)) {
                 window.history.replaceState(null, "", pathForView(view));
                 return;
             }
@@ -149,7 +137,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         }
         window.addEventListener("popstate", handlePopState);
         return () => window.removeEventListener("popstate", handlePopState);
-    }, [account, controlsDisabled, view]);
+    }, [account, authChecking, authBusy, view]);
 
     function resetCurrentSession() {
         repository.clearSession();
@@ -226,8 +214,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         applyTheme(nextTheme);
     }
 
-    const accountActionDisabled =
-        authBusy || (controlsDisabled && saveState !== "failed");
     const notificationError = error || sessionError;
     const inspectionActive =
         phase === "inspection" ||
@@ -240,15 +226,12 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         >
             <Header
                 timerActive={view === "timer"}
-                disabled={controlsDisabled}
+                disabled={authChecking || authBusy}
                 onTimer={() => navigate("timer")}
             >
                 <AccountNavigation
                     currentPage={view}
-                    navigationDisabled={controlsDisabled}
-                    accountActionDisabled={accountActionDisabled}
                     onNavigate={navigate}
-                    onOpenChange={setAccountMenuOpen}
                     beforeLogout={confirmLogout}
                     onError={setError}
                 />
@@ -269,7 +252,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                     pendingMutationIds={pendingMutationIds}
                     theme={theme}
                     disabled={authChecking || authBusy}
-                    inputBlocked={accountMenuOpen}
                     onSave={repository.create}
                     onPenalty={handlePenalty}
                     onDelete={(solve) => handleDelete(solve, false)}

@@ -19,10 +19,7 @@ let auth: AuthContextValue;
 function renderNavigation(overrides = {}) {
     const props = {
         currentPage: "timer" as const,
-        navigationDisabled: false,
-        accountActionDisabled: false,
         onNavigate: vi.fn(),
-        onOpenChange: vi.fn(),
         beforeLogout: vi.fn(() => true),
         onError: vi.fn(),
         ...overrides,
@@ -74,16 +71,17 @@ describe("account navigation", () => {
     });
 
     it("opens on hover, closes on leave, and navigates directly on desktop click", () => {
-        const { onOpenChange, onNavigate } = renderNavigation();
+        const { onNavigate } = renderNavigation();
         openMenu();
-        expect(onOpenChange).toHaveBeenLastCalledWith(true);
+        expect(
+            screen.getByRole("group", { name: "Account actions" }),
+        ).toBeTruthy();
         fireEvent.pointerLeave(screen.getByRole("navigation"), {
             pointerType: "mouse",
         });
         expect(
             screen.queryByRole("group", { name: "Account actions" }),
         ).toBeNull();
-        expect(onOpenChange).toHaveBeenLastCalledWith(false);
         fireEvent.click(
             screen.getByRole("button", { name: "Account menu for Cuber" }),
         );
@@ -110,18 +108,13 @@ describe("account navigation", () => {
         expect(trigger.getAttribute("aria-expanded")).toBe("false");
     });
 
-    it("closes on an outside press and releases the open notification on unmount", () => {
-        const { onOpenChange, unmount } = renderNavigation();
+    it("closes on an outside press", () => {
+        renderNavigation();
         openMenu();
         fireEvent.pointerDown(document.body);
-        expect(onOpenChange).toHaveBeenLastCalledWith(false);
-        fireEvent.pointerLeave(screen.getByRole("navigation"), {
-            pointerType: "mouse",
-        });
-        openMenu();
-        expect(onOpenChange).toHaveBeenLastCalledWith(true);
-        unmount();
-        expect(onOpenChange).toHaveBeenLastCalledWith(false);
+        expect(
+            screen.queryByRole("group", { name: "Account actions" }),
+        ).toBeNull();
     });
 
     it("toggles with touch without navigating, then follows the profile action", () => {
@@ -140,21 +133,6 @@ describe("account navigation", () => {
         fireEvent.click(trigger);
         fireEvent.click(screen.getByRole("button", { name: "profile" }));
         expect(onNavigate).toHaveBeenCalledWith("profile");
-    });
-
-    it("allows logout when practice policy blocks profile navigation", async () => {
-        const { beforeLogout } = renderNavigation({ navigationDisabled: true });
-        fireEvent.click(
-            screen.getByRole("button", { name: "Account menu for Cuber" }),
-        );
-        expect(
-            screen
-                .getByRole("button", { name: "profile" })
-                .hasAttribute("disabled"),
-        ).toBe(true);
-        fireEvent.click(screen.getByRole("button", { name: "sign out" }));
-        await waitFor(() => expect(auth.logout).toHaveBeenCalledOnce());
-        expect(beforeLogout).toHaveBeenCalledOnce();
     });
 
     it("honors the shell’s logout veto without calling the API", () => {
@@ -176,12 +154,12 @@ describe("account navigation", () => {
         expect(onNavigate).not.toHaveBeenCalled();
     });
 
-    it.each(["checking", "pending", "practice"] as const)(
+    it.each(["checking", "pending"] as const)(
         "does not open while blocked by %s",
         (reason) => {
             auth.checking = reason === "checking";
             auth.pending = reason === "pending" ? "logout" : null;
-            renderNavigation({ accountActionDisabled: reason === "practice" });
+            renderNavigation();
             const trigger = screen.getByRole("button", {
                 name: "Account menu for Cuber",
             });

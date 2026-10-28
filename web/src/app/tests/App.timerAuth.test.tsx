@@ -6,7 +6,6 @@ import {
     fireEvent,
     render,
     screen,
-    within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
@@ -82,30 +81,6 @@ describe("authentication and timer integration", () => {
         cleanup();
         vi.useRealTimers();
         vi.restoreAllMocks();
-    });
-
-    it("blocks Space while the account menu is open and resumes timing after dismissal", async () => {
-        await renderTimer();
-        fireEvent.pointerEnter(
-            screen.getByRole("navigation", { name: "Account" }),
-            { pointerType: "mouse" },
-        );
-        expect(screen.getByRole("button", { name: "sign out" })).toBeTruthy();
-        holdAndReleaseSpace();
-        expect(screen.getByText("hold space to start")).toBeTruthy();
-
-        fireEvent.pointerDown(document.body);
-        holdAndReleaseSpace();
-        expect(screen.getByText("space to stop")).toBeTruthy();
-        act(() => vi.advanceTimersByTime(1_000));
-        await act(async () =>
-            fireEvent.keyDown(document.body, { code: "Space" }),
-        );
-        expect(screen.getByText("hold space for next solve")).toBeTruthy();
-        const solveRequests = vi
-            .mocked(globalThis.fetch)
-            .mock.calls.filter(([path]) => String(path) === "/api/solves");
-        expect(solveRequests).toHaveLength(1);
     });
 
     it("blocks timing during logout and starts a fresh guest timer on success", async () => {

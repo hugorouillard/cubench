@@ -13,7 +13,7 @@ import "./TimerPage.css";
 
 type SaveState = "idle" | "saving" | "failed";
 
-// Only the state the shell needs for focus styling and navigation guards.
+// Only the state the shell needs for focus styling and unsaved-result handling.
 export type TimerPageState = {
     phase: TimerPhase;
     saveState: SaveState;
@@ -24,7 +24,6 @@ type TimerPageProps = {
     pendingMutationIds: string[];
     theme: Theme;
     disabled: boolean;
-    inputBlocked: boolean;
     onSave: (solve: SolveInput) => Promise<Solve>;
     onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
     onDelete: (solve: Solve) => Promise<void>;
@@ -57,7 +56,6 @@ export function TimerPage({
     pendingMutationIds,
     theme,
     disabled,
-    inputBlocked,
     onSave,
     onPenalty,
     onDelete,
@@ -141,7 +139,6 @@ export function TimerPage({
                 !scrambleLoading &&
                 !pendingSolve &&
                 !disabled &&
-                !inputBlocked &&
                 !practiceSettingsOpen,
         ),
         inspectionEnabled,
