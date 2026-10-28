@@ -1,36 +1,88 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { ComponentProps } from "react";
-import { afterEach, expect, it, vi } from "vitest";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+} from "@testing-library/react";
+import { type ComponentProps, useState } from "react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import type { Penalty, SolveInput } from "../../types";
 import { TimerPage } from "../TimerPage";
 import type { TimerPhase } from "../useTimer";
 
-afterEach(cleanup);
+const timer = vi.hoisted(() => ({
+    phase: "idle" as TimerPhase,
+    elapsedMs: 0,
+    onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
+    reset: vi.fn(),
+}));
 
-function renderTimer(
+vi.mock("cubing/scramble", () => ({
+    randomScrambleForEvent: vi.fn(async () => ({
+        toString: (): string => "R U R'",
+    })),
+}));
+vi.mock("../../session/SessionPanel", () => ({ SessionPanel: () => null }));
+vi.mock("../useTimer", () => ({
+    useTimer: (
+        _enabled: boolean,
+        _inspectionEnabled: boolean,
+        onComplete: (durationMs: number, penalty: Penalty) => void,
+    ) => {
+        timer.onComplete = onComplete;
+        return {
+            phase: timer.phase,
+            elapsedMs: timer.elapsedMs,
+            reset: timer.reset,
+        };
+    },
+}));
+
+afterEach(cleanup);
+beforeEach(() => {
+    vi.clearAllMocks();
+    timer.phase = "idle";
+    timer.elapsedMs = 0;
+    timer.onComplete = null;
+});
+
+async function renderTimer(
     overrides: Partial<ComponentProps<typeof TimerPage>> = {},
 ) {
-    return render(
-        <TimerPage
-            phase="idle"
-            elapsedMs={0}
-            scramble="R U R'"
-            scrambleLoading={false}
-            solves={[]}
-            latestResultId=""
-            hideTimer={false}
-            inspectionEnabled={false}
-            disabled={false}
-            saveState="idle"
-            retryDisabled={false}
-            onScramble={vi.fn()}
-            onRetrySave={vi.fn()}
-            settings={null}
-            sessionPanel={null}
-            {...overrides}
-        />,
-    );
+    const onError = vi.fn();
+    const onStateChange = vi.fn();
+    function Harness() {
+        const [solves, setSolves] = useState(overrides.solves ?? []);
+        async function save(input: SolveInput) {
+            const solve = overrides.onSave
+                ? await overrides.onSave(input)
+                : { ...input, created_at: input.recorded_at };
+            setSolves((current) => [solve, ...current]);
+            return solve;
+        }
+        return (
+            <TimerPage
+                pendingMutationIds={[]}
+                theme="catppuccin-mocha"
+                disabled={false}
+                inputBlocked={false}
+                onPenalty={vi.fn()}
+                onDelete={vi.fn()}
+                onClear={vi.fn()}
+                onError={onError}
+                onStateChange={onStateChange}
+                {...overrides}
+                solves={solves}
+                onSave={save}
+            />
+        );
+    }
+    const result = render(<Harness />);
+    await screen.findByText("R U R'");
+    return result;
 }
 
 it.each<[TimerPhase, number, string, string]>([
@@ -39,9 +91,11 @@ it.each<[TimerPhase, number, string, string]>([
     ["inspection-ready", 18000, "DNF", "release to start"],
     ["running", 12340, "12.34", "space to stop"],
 ])(
-    "renders %s without owning the clock",
-    (phase, elapsedMs, time, instruction) => {
-        const { container } = renderTimer({ phase, elapsedMs });
+    "renders %s from the timer hook",
+    async (phase, elapsedMs, time, instruction) => {
+        timer.phase = phase;
+        timer.elapsedMs = elapsedMs;
+        const { container } = await renderTimer();
         expect(container.querySelector(".timer-readout")?.textContent).toBe(
             time,
         );
@@ -49,32 +103,56 @@ it.each<[TimerPhase, number, string, string]>([
     },
 );
 
-it("shows the saved result's penalty instead of the raw elapsed time", () => {
-    const { container } = renderTimer({
-        phase: "stopped",
-        elapsedMs: 12340,
-        latestResultId: "solve-1",
-        solves: [
-            {
-                id: "solve-1",
-                duration_ms: 12340,
-                penalty: "plus2",
-                scramble: "R U",
-                recorded_at: "2026-01-01T00:00:00Z",
-                created_at: "2026-01-01T00:00:00Z",
-            },
-        ],
-    });
+it("shows the saved result's penalty instead of the raw elapsed time", async () => {
+    timer.phase = "stopped";
+    timer.elapsedMs = 12340;
+    const { container } = await renderTimer();
+    await act(async () => timer.onComplete?.(12340, "plus2"));
     expect(container.querySelector(".timer-readout")?.textContent).toBe(
         "14.34",
     );
 });
 
-it("asks the parent to retry a failed save", () => {
-    const onRetrySave = vi.fn();
-    renderTimer({ phase: "stopped", saveState: "failed", onRetrySave });
-    fireEvent.click(
-        screen.getByRole("button", { name: "Retry saving result" }),
-    );
-    expect(onRetrySave).toHaveBeenCalledOnce();
+it("retries the same pending solve after a failed save", async () => {
+    timer.phase = "stopped";
+    const onSave = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("offline"))
+        .mockImplementationOnce(async (input: SolveInput) => ({
+            ...input,
+            created_at: input.recorded_at,
+        }));
+    const onStateChange = vi.fn();
+    await renderTimer({ onSave, onStateChange });
+    await act(async () => timer.onComplete?.(12340, "none"));
+    expect(onStateChange).toHaveBeenLastCalledWith({
+        phase: "stopped",
+        saveState: "failed",
+    });
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", { name: "Retry saving result" }),
+        );
+    });
+    expect(onSave).toHaveBeenCalledTimes(2);
+    expect(onSave.mock.calls[1][0]).toEqual(onSave.mock.calls[0][0]);
+    expect(onStateChange).toHaveBeenLastCalledWith({
+        phase: "stopped",
+        saveState: "idle",
+    });
+});
+
+it("releases the shell's timer state when leaving the page", async () => {
+    timer.phase = "stopped";
+    const onStateChange = vi.fn();
+    const { unmount } = await renderTimer({ onStateChange });
+    expect(onStateChange).toHaveBeenLastCalledWith({
+        phase: "stopped",
+        saveState: "idle",
+    });
+    unmount();
+    expect(onStateChange).toHaveBeenLastCalledWith({
+        phase: "idle",
+        saveState: "idle",
+    });
 });

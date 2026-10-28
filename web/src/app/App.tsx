@@ -1,4 +1,3 @@
-import { randomScrambleForEvent } from "cubing/scramble";
 import {
     useEffect,
     useEffectEvent,
@@ -14,18 +13,15 @@ import { getSolves } from "../api";
 import { AuthPage } from "../auth/AuthPage";
 import { AuthProvider } from "../auth/AuthProvider";
 import { useAuth } from "../auth/useAuth";
-import { SessionPanel } from "../session/SessionPanel";
 import { createSolveRepository } from "../solves/solveRepository";
 import {
     accountSolveStore,
     guestSolveStore,
     type SolveStore,
 } from "../solves/solveStore";
-import { PracticeSettings } from "../timer/PracticeSettings";
-import { type SaveState, TimerPage } from "../timer/TimerPage";
+import { TimerPage, type TimerPageState } from "../timer/TimerPage";
 import { formatTime, togglePenalty } from "../timer/timer";
-import { useTimer } from "../timer/useTimer";
-import type { Account, Penalty, Solve, SolveInput } from "../types";
+import type { Account, Penalty, Solve } from "../types";
 import { AccountNavigation } from "./AccountNavigation";
 import { ErrorNotification } from "./ErrorNotification";
 import { Footer } from "./Footer";
@@ -75,20 +71,14 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     );
     const [profilePreview] = useState(createProfilePreview);
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-    const [scramble, setScramble] = useState("");
-    const [scrambleLoading, setScrambleLoading] = useState(true);
-    const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
-    const [saveState, setSaveState] = useState<SaveState>("idle");
+    const [{ phase, saveState }, setTimerPageState] = useState<TimerPageState>({
+        phase: "idle",
+        saveState: "idle",
+    });
     const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([]);
-    const [latestResultId, setLatestResultId] = useState("");
     const [error, setError] = useState("");
-    const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false);
-    const [hideTimer, setHideTimer] = useState(false);
-    const [inspectionEnabled, setInspectionEnabled] = useState(false);
     const [theme, setTheme] = useState<Theme>(initialTheme);
-    const latestResultIdRef = useRef(latestResultId);
     const previousAccountId = useRef<number | null | undefined>(undefined);
-    latestResultIdRef.current = latestResultId;
     const solveStore =
         solveStoreOverride ?? (account ? accountSolveStore : guestSolveStore);
     // Different accounts share the same API adapter, but must never share cached data.
@@ -120,87 +110,10 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         setView(nextView);
     }
 
-    useEffect(() => {
-        let cancelled = false;
-        randomScrambleForEvent("333")
-            .then((nextScramble) => {
-                if (cancelled) return;
-                setScramble(nextScramble.toString());
-                setScrambleLoading(false);
-            })
-            .catch((initialError: unknown) => {
-                if (!cancelled) setError(errorMessage(initialError));
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    async function generateScramble() {
-        setScramble("");
-        setScrambleLoading(true);
-        try {
-            const nextScramble = await randomScrambleForEvent("333");
-            setScramble(nextScramble.toString());
-        } catch (scrambleError) {
-            setError(errorMessage(scrambleError));
-        } finally {
-            setScrambleLoading(false);
-        }
-    }
-
-    async function persistSolve(solve: SolveInput) {
-        setSaveState("saving");
-        setError("");
-        try {
-            await repository.create(solve);
-            setPendingSolve(null);
-            setSaveState("idle");
-            await generateScramble();
-        } catch (saveError) {
-            setSaveState("failed");
-            setError(`Failed to save result: ${errorMessage(saveError)}`);
-        }
-    }
-
-    function handleTimerComplete(durationMs: number, penalty: Penalty) {
-        const completedScramble = scramble;
-        if (!completedScramble || pendingSolve) return;
-        const solve: SolveInput = {
-            id: crypto.randomUUID(),
-            duration_ms: durationMs,
-            penalty,
-            scramble: completedScramble,
-            recorded_at: new Date().toISOString(),
-        };
-        setPendingSolve(solve);
-        setLatestResultId(solve.id);
-        latestResultIdRef.current = solve.id;
-        void persistSolve(solve);
-    }
-
-    const {
-        phase,
-        elapsedMs,
-        reset: resetTimer,
-    } = useTimer(
-        Boolean(
-            view === "timer" &&
-                scramble &&
-                !scrambleLoading &&
-                !pendingSolve &&
-                !authChecking &&
-                !authBusy &&
-                !accountMenuOpen &&
-                !practiceSettingsOpen,
-        ),
-        inspectionEnabled,
-        handleTimerComplete,
-    );
     const controlsDisabled =
         authChecking ||
         authBusy ||
-        Boolean(pendingSolve) ||
+        saveState !== "idle" ||
         phase === "holding" ||
         phase === "ready" ||
         phase === "inspection" ||
@@ -240,17 +153,12 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
 
     function resetCurrentSession() {
         repository.clearSession();
-        setPendingSolve(null);
-        setSaveState("idle");
         setPendingMutationIds([]);
-        setLatestResultId("");
-        latestResultIdRef.current = "";
-        resetTimer();
     }
 
     function confirmLogout(): boolean {
         return (
-            !pendingSolve ||
+            saveState === "idle" ||
             window.confirm("Sign out and discard the unsaved result?")
         );
     }
@@ -289,11 +197,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         );
         try {
             await repository.delete(solve);
-            if (solve.id === latestResultIdRef.current) {
-                setLatestResultId("");
-                latestResultIdRef.current = "";
-                resetTimer();
-            }
         } catch (deleteError) {
             setError(errorMessage(deleteError));
         } finally {
@@ -304,7 +207,11 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     }
 
     function handleClearSolves(): void {
-        if (solves.length === 0 || pendingSolve || pendingMutationIds.length)
+        if (
+            solves.length === 0 ||
+            saveState !== "idle" ||
+            pendingMutationIds.length
+        )
             return;
         const label = solves.length === 1 ? "solve" : "solves";
         const message = account
@@ -312,9 +219,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             : `Clear all ${solves.length} ${label}? This cannot be undone.`;
         if (!window.confirm(message)) return;
         repository.clearSession();
-        setLatestResultId("");
-        latestResultIdRef.current = "";
-        resetTimer();
     }
 
     function handleThemeChange(nextTheme: Theme) {
@@ -360,46 +264,18 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
             )}
             {view === "timer" ? (
                 <TimerPage
-                    phase={phase}
-                    elapsedMs={elapsedMs}
-                    scramble={scramble}
-                    scrambleLoading={scrambleLoading}
+                    key={accountId ?? "guest"}
                     solves={solves}
-                    latestResultId={latestResultId}
-                    hideTimer={hideTimer}
-                    inspectionEnabled={inspectionEnabled}
-                    disabled={controlsDisabled}
-                    saveState={saveState}
-                    retryDisabled={authBusy}
-                    onScramble={() => void generateScramble()}
-                    onRetrySave={() => {
-                        if (pendingSolve) void persistSolve(pendingSolve);
-                    }}
-                    settings={
-                        <PracticeSettings
-                            open={practiceSettingsOpen}
-                            disabled={controlsDisabled}
-                            hideTimer={hideTimer}
-                            inspectionEnabled={inspectionEnabled}
-                            onOpenChange={setPracticeSettingsOpen}
-                            onHideTimerChange={setHideTimer}
-                            onInspectionChange={setInspectionEnabled}
-                        />
-                    }
-                    sessionPanel={
-                        <SessionPanel
-                            solves={solves}
-                            disabled={
-                                controlsDisabled ||
-                                pendingMutationIds.length > 0
-                            }
-                            pendingSolveIds={pendingMutationIds}
-                            theme={theme}
-                            onPenalty={handlePenalty}
-                            onDelete={(solve) => handleDelete(solve, false)}
-                            onClear={handleClearSolves}
-                        />
-                    }
+                    pendingMutationIds={pendingMutationIds}
+                    theme={theme}
+                    disabled={authChecking || authBusy}
+                    inputBlocked={accountMenuOpen}
+                    onSave={repository.create}
+                    onPenalty={handlePenalty}
+                    onDelete={(solve) => handleDelete(solve, false)}
+                    onClear={handleClearSolves}
+                    onError={setError}
+                    onStateChange={setTimerPageState}
                 />
             ) : view === "login" ? (
                 authChecking || account ? (

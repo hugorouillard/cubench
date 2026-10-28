@@ -255,7 +255,7 @@ describe("current session", () => {
 
             fireEvent.click(screen.getByRole("button", { name: "Timer" }));
             expect(location.pathname).toBe("/");
-            expect(screen.getByText("R U R'")).toBeTruthy();
+            expect(await screen.findByText("R U R'")).toBeTruthy();
 
             window.history.replaceState(null, "", "/login");
             await act(async () =>
@@ -410,6 +410,7 @@ describe("current session", () => {
         );
         await screen.findByRole("heading", { name: "Lifetime profile" });
         fireEvent.click(screen.getByRole("link", { name: "Cubench home" }));
+        await screen.findByText("F R U");
         expect(screen.getByTestId("solve-count").textContent).toBe("1");
 
         fireEvent.click(screen.getByRole("button", { name: "clear times" }));
@@ -592,7 +593,7 @@ describe("current session", () => {
         await screen.findByRole("button", {
             name: "Account menu for Speed Cuber",
         });
-        await screen.findByText("R U R'");
+        await screen.findByText("F R U");
         await act(async () => timer.onComplete?.(12_340, "none"));
 
         fireEvent.pointerEnter(
@@ -623,7 +624,7 @@ describe("current session", () => {
             delete: vi.fn(),
         };
         render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
-        await screen.findByText("R U R'");
+        await screen.findByText("F R U");
         await act(async () => timer.onComplete?.(12_340, "none"));
 
         const accountButton = await screen.findByRole("button", {
