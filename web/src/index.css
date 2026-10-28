@@ -102,6 +102,12 @@ select {
     -webkit-tap-highlight-color: transparent;
 }
 
+button:disabled,
+select:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -165,3 +171,16 @@ a:focus-visible {
         --content-max: 100%;
     }
 }
+
+/* biome-ignore-start lint/complexity/noImportantStyles: Reduced-motion preferences must override all component animations. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: End reduced-motion overrides. */

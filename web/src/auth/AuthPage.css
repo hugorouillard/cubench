@@ -1,0 +1,152 @@
+.auth-page {
+    max-width: 52rem;
+    align-self: center;
+}
+
+.auth-page > [role="status"] {
+    color: var(--sub-readable-color);
+    text-align: center;
+}
+
+.auth-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+}
+
+.auth-column {
+    width: 100%;
+    max-width: 20rem;
+}
+
+.auth-column:last-child {
+    justify-self: end;
+}
+
+.auth-column h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0 0 1rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.auth-column h2 .app-icon {
+    color: var(--main-color);
+}
+
+.auth-form {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.auth-form label {
+    display: block;
+}
+
+.auth-form input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 2px solid transparent;
+    border-radius: var(--roundness);
+    padding: 0.8rem 0.9rem;
+    color: var(--text-color);
+    background: var(--sub-alt-color);
+}
+
+.auth-form input::placeholder {
+    color: var(--sub-readable-color);
+}
+
+.auth-form input:focus {
+    border-color: var(--main-color);
+    outline: none;
+}
+
+.auth-error {
+    margin: 0;
+    color: var(--error-readable-color);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.auth-submit {
+    width: 100%;
+    border: 0;
+    border-radius: var(--roundness);
+    padding: 0.8rem 1rem;
+    color: var(--bg-color);
+    background: var(--main-color);
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition:
+        background 125ms ease,
+        color 125ms ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+    background: var(--text-color);
+}
+
+.auth-submit:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.auth-footer {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    margin-top: 3rem;
+    color: var(--sub-readable-color);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.auth-footer button {
+    border: 0;
+    padding: 0.25rem;
+    color: var(--main-color);
+    background: transparent;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.auth-footer button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.auth-footer p {
+    margin: 0;
+    line-height: 1.7;
+}
+
+.auth-footer a {
+    color: var(--main-color);
+    text-underline-offset: 0.2em;
+}
+
+@media (max-width: 720px) {
+    .auth-page {
+        max-width: 20rem;
+        align-self: start;
+        padding-block: 1.5rem;
+    }
+
+    .auth-columns {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2.5rem;
+    }
+
+    .auth-column:last-child {
+        justify-self: start;
+    }
+
+    .auth-footer {
+        margin-top: 2.5rem;
+    }
+}

@@ -15,8 +15,6 @@ vi.mock("cubing/scramble", () => ({
         toString: (): string => "R U R'",
     })),
 }));
-// Keep the real useTimer; solve-history rendering is unrelated to these guards.
-vi.mock("../../session/SessionPanel", () => ({ SessionPanel: () => null }));
 
 const account = {
     id: 1,
@@ -49,6 +47,12 @@ async function renderTimer() {
 describe("authentication and timer integration", () => {
     beforeEach(() => {
         window.history.replaceState(null, "", "/");
+        HTMLDialogElement.prototype.showModal = function showModal() {
+            this.setAttribute("open", "");
+        };
+        HTMLDialogElement.prototype.close = function close() {
+            this.removeAttribute("open");
+        };
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 if (String(input) === "/api/auth/session")
@@ -61,6 +65,12 @@ describe("authentication and timer integration", () => {
                         },
                         201,
                     );
+                }
+                if (
+                    String(input).startsWith("/api/solves/") &&
+                    init?.method === "DELETE"
+                ) {
+                    return new Response(null, { status: 204 });
                 }
                 throw new Error(`Unexpected request: ${String(input)}`);
             },

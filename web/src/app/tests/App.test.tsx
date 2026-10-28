@@ -183,6 +183,40 @@ describe("current session", () => {
         }
     });
 
+    it.each(["account button", "browser history"])(
+        "allows navigation during a solve through %s",
+        async (source) => {
+            vi.mocked(globalThis.fetch).mockResolvedValue(
+                jsonResponse(account),
+            );
+            timer.phase = "running";
+            render(<App initialTheme="catppuccin-mocha" />);
+            const accountButton = await screen.findByRole("button", {
+                name: "Account menu for Speed Cuber",
+            });
+            expect(
+                screen
+                    .getByRole("button", { name: "Timer" })
+                    .hasAttribute("disabled"),
+            ).toBe(false);
+
+            if (source === "account button") {
+                fireEvent.click(accountButton);
+            } else {
+                window.history.pushState(null, "", "#profile");
+                await act(async () =>
+                    window.dispatchEvent(new PopStateEvent("popstate")),
+                );
+            }
+            expect(
+                await screen.findByRole("heading", {
+                    name: "Lifetime profile",
+                }),
+            ).toBeTruthy();
+            expect(location.hash).toBe("#profile");
+        },
+    );
+
     it("previews account features and returns to the guest session without changing its solves", async () => {
         render(<App initialTheme="catppuccin-mocha" />);
         await screen.findByText("R U R'");
@@ -258,7 +292,7 @@ describe("current session", () => {
 
             fireEvent.click(screen.getByRole("button", { name: "Timer" }));
             expect(location.pathname).toBe("/");
-            expect(screen.getByText("R U R'")).toBeTruthy();
+            expect(await screen.findByText("R U R'")).toBeTruthy();
 
             window.history.replaceState(null, "", "/login");
             await act(async () =>
@@ -473,7 +507,7 @@ describe("current session", () => {
         await screen.findByRole("button", {
             name: "Account menu for Speed Cuber",
         });
-        await screen.findByText("R U R'");
+        await screen.findByText("F R U");
         await act(async () => timer.onComplete?.(12_340, "none"));
 
         fireEvent.pointerEnter(
@@ -504,7 +538,7 @@ describe("current session", () => {
             delete: vi.fn(),
         };
         render(<App initialTheme="catppuccin-mocha" solveStore={store} />);
-        await screen.findByText("R U R'");
+        await screen.findByText("F R U");
         await act(async () => timer.onComplete?.(12_340, "none"));
 
         const accountButton = await screen.findByRole("button", {
