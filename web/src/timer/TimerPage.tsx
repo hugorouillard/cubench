@@ -65,12 +65,10 @@ export function TimerPage({
         elapsedMs,
         scramble,
         scrambleLoading,
-        latestResultId,
         saveState,
         busy,
         generateScramble,
         retrySave,
-        forgetResult,
     } = usePracticeSession({
         onSave,
         enabled: !disabled && !practiceSettingsOpen,
@@ -88,17 +86,6 @@ export function TimerPage({
         [onStateChange],
     );
 
-    const lastSolve = solves[0];
-    const latestResult = solves.find((solve) => solve.id === latestResultId);
-
-    useLayoutEffect(() => {
-        // A cleared session or deleted result should no longer be on the clock.
-        // An unsaved result is intentionally absent from the repository.
-        if (latestResultId && !latestResult && saveState === "idle") {
-            forgetResult(latestResultId);
-        }
-    }, [latestResultId, latestResult, saveState, forgetResult]);
-
     const summary = summarizeSolves(solves);
     const statTime = (duration: number | null) =>
         duration === null ? "--" : formatTime(duration);
@@ -108,15 +95,7 @@ export function TimerPage({
         phase === "inspection-ready";
     const displayedTime = inspectionActive
         ? formatInspectionTime(elapsedMs)
-        : phase === "running"
-          ? formatTime(elapsedMs)
-          : phase === "stopped"
-            ? latestResult
-                ? formatTime(latestResult.duration_ms, latestResult.penalty)
-                : formatTime(elapsedMs)
-            : lastSolve
-              ? formatTime(lastSolve.duration_ms, lastSolve.penalty)
-              : "0.00";
+        : formatTime(elapsedMs);
 
     return (
         <main className="practice-view page-width">

@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Penalty, SolveInput } from "../../types";
+import type { Penalty, Solve, SolveInput } from "../../types";
 import { TimerPage } from "../TimerPage";
 import type { TimerPhase } from "../useTimer";
 
@@ -54,8 +54,10 @@ async function renderTimer(
 ) {
     const onError = vi.fn();
     const onStateChange = vi.fn();
+    let replaceSolves!: (solves: Solve[]) => void;
     function Harness() {
         const [solves, setSolves] = useState(overrides.solves ?? []);
+        replaceSolves = setSolves;
         async function save(input: SolveInput) {
             const solve = overrides.onSave
                 ? await overrides.onSave(input)
@@ -81,13 +83,16 @@ async function renderTimer(
     }
     const result = render(<Harness />);
     await screen.findByText("R U R'");
-    return result;
+    return {
+        ...result,
+        replaceSolves: (solves: Solve[]) => act(() => replaceSolves(solves)),
+    };
 }
 
 it.each<[TimerPhase, number, string, string]>([
     ["inspection", 14000, "1", "space to start"],
-    ["inspection-holding", 16000, "+2", "keep holding"],
-    ["inspection-ready", 18000, "DNF", "release to start"],
+    ["inspection-holding", 16000, "-1", "keep holding"],
+    ["inspection-ready", 18000, "-3", "release to start"],
     ["running", 12340, "12.34", "space to stop"],
 ])(
     "renders %s from the timer hook",
@@ -102,14 +107,76 @@ it.each<[TimerPhase, number, string, string]>([
     },
 );
 
-it("shows the saved result's penalty instead of the raw elapsed time", async () => {
+it.each<Penalty>(["none", "plus2", "dnf"])(
+    "shows raw elapsed time while preserving the saved %s penalty",
+    async (penalty) => {
+        timer.phase = "stopped";
+        timer.elapsedMs = 12340;
+        const onSave = vi.fn(async (input: SolveInput) => ({
+            ...input,
+            created_at: input.recorded_at,
+        }));
+        const { container } = await renderTimer({ onSave });
+        await act(async () => timer.onComplete?.(12340, penalty));
+
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({ duration_ms: 12340, penalty }),
+        );
+        expect(container.querySelector(".timer-readout")?.textContent).toBe(
+            "12.34",
+        );
+    },
+);
+
+it("keeps the clock unchanged when history is edited, deleted, or cleared", async () => {
     timer.phase = "stopped";
     timer.elapsedMs = 12340;
-    const { container } = await renderTimer();
-    await act(async () => timer.onComplete?.(12340, "plus2"));
-    expect(container.querySelector(".timer-readout")?.textContent).toBe(
-        "14.34",
-    );
+    const olderSolve: Solve = {
+        id: "older-solve",
+        duration_ms: 20000,
+        penalty: "none",
+        scramble: "F R U",
+        recorded_at: "2026-01-01T00:00:00Z",
+        created_at: "2026-01-01T00:00:00Z",
+    };
+    const onSave = vi.fn(async (input: SolveInput) => ({
+        ...input,
+        created_at: input.recorded_at,
+    }));
+    const { container, replaceSolves } = await renderTimer({
+        solves: [olderSolve],
+        onSave,
+    });
+    await act(async () => timer.onComplete?.(12340, "none"));
+    const saved = await onSave.mock.results[0].value;
+    const readout = () =>
+        container.querySelector(".timer-readout")?.textContent;
+
+    for (const penalty of ["plus2", "dnf", "none"] as const) {
+        replaceSolves([{ ...saved, penalty }, olderSolve]);
+        expect(readout()).toBe("12.34");
+    }
+    replaceSolves([olderSolve]);
+    expect(readout()).toBe("12.34");
+    replaceSolves([]);
+    expect(readout()).toBe("12.34");
+    expect(timer.reset).not.toHaveBeenCalled();
+});
+
+it("starts with a fresh clock even when session history exists", async () => {
+    const { container } = await renderTimer({
+        solves: [
+            {
+                id: "previous-solve",
+                duration_ms: 20000,
+                penalty: "plus2",
+                scramble: "F R U",
+                recorded_at: "2026-01-01T00:00:00Z",
+                created_at: "2026-01-01T00:00:00Z",
+            },
+        ],
+    });
+    expect(container.querySelector(".timer-readout")?.textContent).toBe("0.00");
 });
 
 it("retries the same pending solve after a failed save", async () => {

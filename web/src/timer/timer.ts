@@ -18,10 +18,7 @@ export function inspectionPenalty(elapsedMs: number): Penalty {
 }
 
 export function formatInspectionTime(elapsedMs: number): string {
-    const penalty = inspectionPenalty(elapsedMs);
-    if (penalty === "dnf") return "DNF";
-    if (penalty === "plus2") return "+2";
-    return String(Math.ceil(Math.max(0, 15_000 - elapsedMs) / 1000));
+    return String(Math.ceil((15_000 - elapsedMs) / 1000));
 }
 
 export function formatTime(
