@@ -72,7 +72,6 @@ it("waits for a save before advancing the scramble or accepting another solve", 
     act(() => timer.complete?.(12340, "plus2"));
     expect(result.current.saveState).toBe("saving");
     expect(result.current.scramble).toBe("R U R'");
-    expect(result.current.hasUnsavedSolve).toBe(true);
     expect(timer.enabled).toBe(false);
     act(() => timer.complete?.(9999, "none"));
     expect(create).toHaveBeenCalledOnce();
@@ -80,7 +79,6 @@ it("waits for a save before advancing the scramble or accepting another solve", 
     await act(async () => finishSave());
     expect(result.current.saveState).toBe("idle");
     expect(result.current.scramble).toBe("F R U");
-    expect(result.current.hasUnsavedSolve).toBe(false);
     expect(timer.enabled).toBe(true);
     expect(repository.getSnapshot().session[0]).toMatchObject({
         duration_ms: 12340,
@@ -121,19 +119,6 @@ it("does not clear a newer result when an older deletion finishes", async () => 
     expect(timer.reset).not.toHaveBeenCalled();
     act(() => result.current.forgetResult(newId));
     expect(result.current.latestResultId).toBe("");
-    expect(timer.reset).toHaveBeenCalledOnce();
-});
-
-it("discards an unsaved result when App explicitly resets practice", async () => {
-    const create = vi.fn().mockRejectedValue(new Error("offline"));
-    const { result } = renderPractice({ ...guestSolveStore, create });
-    await waitFor(() => expect(result.current.scrambleLoading).toBe(false));
-    await act(async () => timer.complete?.(12340, "none"));
-    act(() => result.current.reset());
-    expect(result.current.hasUnsavedSolve).toBe(false);
-    expect(result.current.saveState).toBe("idle");
-    expect(result.current.latestResultId).toBe("");
-    expect(result.current.scramble).toBe("R U R'");
     expect(timer.reset).toHaveBeenCalledOnce();
 });
 

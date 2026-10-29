@@ -117,12 +117,6 @@ export function usePracticeSession({
         if (id === latestResultIdRef.current) clearResult();
     }
 
-    function reset() {
-        setPendingSolve(null);
-        setSaveState("idle");
-        clearResult();
-    }
-
     return {
         phase,
         elapsedMs,
@@ -130,12 +124,10 @@ export function usePracticeSession({
         scrambleLoading,
         latestResultId,
         saveState,
-        hasUnsavedSolve: pendingSolve !== null,
         busy:
             pendingSolve !== null || (phase !== "idle" && phase !== "stopped"),
         generateScramble,
         retrySave,
         forgetResult,
-        reset,
     };
 }
