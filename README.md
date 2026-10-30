@@ -15,7 +15,7 @@ starting point.
 
 ![Practice page with a scramble, timer, and solve history](docs/timer.png)
 
-## Progress
+## Track Progress
 
 ![Account page with personal bests, practice activity, and progression over time](docs/account-preview.png)
 
