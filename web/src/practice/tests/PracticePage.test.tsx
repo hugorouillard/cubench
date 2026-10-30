@@ -10,14 +10,13 @@ import {
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Penalty, Solve, SolveInput } from "../../types";
-import { TimerPage } from "../TimerPage";
+import { PracticePage } from "../PracticePage";
 import type { TimerPhase } from "../useTimer";
 
 const timer = vi.hoisted(() => ({
     phase: "idle" as TimerPhase,
     elapsedMs: 0,
     onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
-    reset: vi.fn(),
 }));
 
 vi.mock("cubing/scramble", () => ({
@@ -25,7 +24,7 @@ vi.mock("cubing/scramble", () => ({
         toString: (): string => "R U R'",
     })),
 }));
-vi.mock("../../session/SessionPanel", () => ({ SessionPanel: () => null }));
+vi.mock("../SessionPanel", () => ({ SessionPanel: () => null }));
 vi.mock("../useTimer", () => ({
     useTimer: (
         _enabled: boolean,
@@ -36,7 +35,6 @@ vi.mock("../useTimer", () => ({
         return {
             phase: timer.phase,
             elapsedMs: timer.elapsedMs,
-            reset: timer.reset,
         };
     },
 }));
@@ -50,7 +48,7 @@ beforeEach(() => {
 });
 
 async function renderTimer(
-    overrides: Partial<ComponentProps<typeof TimerPage>> = {},
+    overrides: Partial<ComponentProps<typeof PracticePage>> = {},
 ) {
     const onError = vi.fn();
     const onStateChange = vi.fn();
@@ -66,7 +64,7 @@ async function renderTimer(
             return solve;
         }
         return (
-            <TimerPage
+            <PracticePage
                 pendingMutationIds={[]}
                 theme="catppuccin-mocha"
                 disabled={false}
@@ -160,7 +158,6 @@ it("keeps the clock unchanged when history is edited, deleted, or cleared", asyn
     expect(readout()).toBe("12.34");
     replaceSolves([]);
     expect(readout()).toBe("12.34");
-    expect(timer.reset).not.toHaveBeenCalled();
 });
 
 it("starts with a fresh clock even when session history exists", async () => {

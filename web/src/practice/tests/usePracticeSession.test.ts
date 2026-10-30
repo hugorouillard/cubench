@@ -12,7 +12,6 @@ const timer = vi.hoisted(() => ({
     complete: null as ((durationMs: number, penalty: Penalty) => void) | null,
     enabled: false,
     inspectionEnabled: false,
-    reset: vi.fn(),
 }));
 vi.mock("cubing/scramble", () => ({ randomScrambleForEvent: scramble }));
 vi.mock("../useTimer", () => ({
@@ -24,7 +23,7 @@ vi.mock("../useTimer", () => ({
         timer.complete = onComplete;
         timer.enabled = enabled;
         timer.inspectionEnabled = inspectionEnabled;
-        return { phase: "stopped", elapsedMs: 12340, reset: timer.reset };
+        return { phase: "stopped", elapsedMs: 12340 };
     },
 }));
 
@@ -103,23 +102,6 @@ it("retries the same failed solve rather than making a new attempt", async () =>
     expect(create.mock.calls[1][0]).toEqual(create.mock.calls[0][0]);
     expect(result.current.saveState).toBe("idle");
     expect(result.current.busy).toBe(false);
-});
-
-it("does not clear a newer result when an older deletion finishes", async () => {
-    const { result } = renderPractice();
-    await waitFor(() => expect(result.current.scrambleLoading).toBe(false));
-    await act(async () => timer.complete?.(12340, "none"));
-    const oldId = result.current.latestResultId;
-    const finishDeletion = result.current.forgetResult;
-    await act(async () => timer.complete?.(10000, "none"));
-    const newId = result.current.latestResultId;
-
-    act(() => finishDeletion(oldId));
-    expect(result.current.latestResultId).toBe(newId);
-    expect(timer.reset).not.toHaveBeenCalled();
-    act(() => result.current.forgetResult(newId));
-    expect(result.current.latestResultId).toBe("");
-    expect(timer.reset).toHaveBeenCalledOnce();
 });
 
 it("passes the parent's enablement and inspection settings to the timer", async () => {

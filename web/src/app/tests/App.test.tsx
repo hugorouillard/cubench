@@ -11,14 +11,13 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProfilePreview } from "../../account/profilePreview";
+import type { TimerPhase } from "../../practice/useTimer";
 import type { SolveStore } from "../../solves/solveStore";
-import type { TimerPhase } from "../../timer/useTimer";
 import type { Penalty, Solve, UserProfile } from "../../types";
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }));
 const timer = vi.hoisted(() => ({
     onComplete: null as ((durationMs: number, penalty: Penalty) => void) | null,
-    reset: vi.fn(),
     phase: "stopped" as TimerPhase,
 }));
 const account = {
@@ -37,7 +36,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 vi.mock("cubing/scramble", () => ({ randomScrambleForEvent: scramble.random }));
-vi.mock("../../session/SessionPanel", () => ({
+vi.mock("../../practice/SessionPanel", () => ({
     SessionPanel: ({
         solves,
         onPenalty,
@@ -74,14 +73,14 @@ vi.mock("../../session/SessionPanel", () => ({
         </div>
     ),
 }));
-vi.mock("../../timer/useTimer", () => ({
+vi.mock("../../practice/useTimer", () => ({
     useTimer: (
         _enabled: boolean,
         _inspectionEnabled: boolean,
         onComplete: (durationMs: number, penalty: Penalty) => void,
     ) => {
         timer.onComplete = onComplete;
-        return { phase: timer.phase, elapsedMs: 12_340, reset: timer.reset };
+        return { phase: timer.phase, elapsedMs: 12_340 };
     },
 }));
 vi.mock("../../account/AccountPage", () => ({
@@ -453,7 +452,6 @@ describe("current session", () => {
 
         await screen.findByRole("heading", { name: "Lifetime profile" });
         expect(location.hash).toBe("#profile");
-        expect(timer.reset).not.toHaveBeenCalled();
     });
 
     it("waits for session restoration before showing the login forms", async () => {
@@ -524,10 +522,9 @@ describe("current session", () => {
                 name: "Account menu for Speed Cuber",
             }),
         ).toBeTruthy();
-        expect(timer.reset).not.toHaveBeenCalled();
     });
 
-    it("switches between the timer and account profile without resetting practice on profile edits", async () => {
+    it("preserves session solves when navigating and editing the profile", async () => {
         vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(account));
         const store: SolveStore = {
             create: vi.fn(async (solve) => ({
@@ -577,7 +574,6 @@ describe("current session", () => {
             }).textContent,
         ).toBe("Updated Cuber");
         expect(location.hash).toBe("#profile");
-        expect(timer.reset).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByRole("button", { name: "Timer" }));
         expect(screen.getByTestId("solve-count").textContent).toBe("1");

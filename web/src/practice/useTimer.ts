@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Penalty } from "../types";
-import { inspectionPenalty } from "./timer";
+import { inspectionPenalty } from "./inspection";
 
 export type TimerPhase =
     | "idle"
@@ -194,16 +194,5 @@ export function useTimer(
         return () => cancelAnimationFrame(animationFrame);
     }, [phase]);
 
-    const reset = useCallback(() => {
-        if (phaseRef.current === "running") return;
-        if (holdTimeoutRef.current !== null) {
-            clearTimeout(holdTimeoutRef.current);
-            holdTimeoutRef.current = null;
-        }
-        phaseRef.current = "idle";
-        setPhase("idle");
-        setElapsedMs(0);
-    }, []);
-
-    return { phase, elapsedMs, reset };
+    return { phase, elapsedMs };
 }

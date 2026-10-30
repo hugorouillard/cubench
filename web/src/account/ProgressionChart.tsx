@@ -9,8 +9,8 @@ import {
     getLineChartOptions,
     getTooltipOptions,
 } from "../Charts";
+import { formatTime } from "../formatTime";
 import { chronologicalSolves, completedDuration } from "../solves/stats";
-import { formatTime } from "../timer/timer";
 import type { Solve } from "../types";
 import { formatAccountDate } from "./format";
 

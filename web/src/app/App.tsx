@@ -12,14 +12,15 @@ import { getSolves } from "../api";
 import { AuthPage } from "../auth/AuthPage";
 import { AuthProvider } from "../auth/AuthProvider";
 import { useAuth } from "../auth/useAuth";
+import { formatTime } from "../formatTime";
+import { PracticePage, type PracticePageState } from "../practice/PracticePage";
+import { togglePenalty } from "../solves/penalties";
 import { createSolveRepository } from "../solves/solveRepository";
 import {
     accountSolveStore,
     guestSolveStore,
     type SolveStore,
 } from "../solves/solveStore";
-import { TimerPage, type TimerPageState } from "../timer/TimerPage";
-import { formatTime, togglePenalty } from "../timer/timer";
 import type { Penalty, Solve } from "../types";
 import { AccountNavigation } from "./AccountNavigation";
 import { ErrorNotification } from "./ErrorNotification";
@@ -56,10 +57,11 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         isLoginPath() ? "login" : "timer",
     );
     const [profilePreview] = useState(createProfilePreview);
-    const [{ phase, saveState }, setTimerPageState] = useState<TimerPageState>({
-        phase: "idle",
-        saveState: "idle",
-    });
+    const [{ phase, saveState }, setPracticePageState] =
+        useState<PracticePageState>({
+            phase: "idle",
+            saveState: "idle",
+        });
     const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([]);
     const [error, setError] = useState("");
     const [theme, setTheme] = useState<Theme>(initialTheme);
@@ -212,7 +214,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 />
             )}
             {view === "timer" ? (
-                <TimerPage
+                <PracticePage
                     key={accountId ?? "guest"}
                     solves={solves}
                     pendingMutationIds={pendingMutationIds}
@@ -223,7 +225,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                     onDelete={(solve) => handleDelete(solve, false)}
                     onClear={handleClearSolves}
                     onError={setError}
-                    onStateChange={setTimerPageState}
+                    onStateChange={setPracticePageState}
                 />
             ) : view === "login" ? (
                 authChecking || account ? (

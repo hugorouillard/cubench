@@ -1,8 +1,14 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Solve } from "../../types";
+import type { Penalty, Solve } from "../../types";
 import { SessionPanel } from "../SessionPanel";
 
 vi.mock("../SessionChart", () => ({
@@ -54,6 +60,28 @@ describe("SessionPanel", () => {
             screen.getByRole("button", { name: "Clear times" }),
         ).toBeTruthy();
     });
+
+    it.each<[Penalty, string, string | null]>([
+        ["none", "11.50", null],
+        ["plus2", "13.50", "+2 · raw 11.50"],
+        ["dnf", "DNF", "raw 11.50"],
+    ])(
+        "presents a %s solve with its result and raw time when penalized",
+        (penalty, result, detail) => {
+            render(
+                <SessionPanel
+                    {...defaultProps}
+                    solves={[{ ...solves[0], penalty }]}
+                />,
+            );
+            const summary = within(
+                screen.getByTitle("Show actions for solve 1"),
+            );
+            expect(summary.getByText(result)).toBeTruthy();
+            if (detail) expect(summary.getByText(detail)).toBeTruthy();
+            else expect(summary.queryByText(/raw/)).toBeNull();
+        },
+    );
 
     it("reveals a solve action disclosure when its summary is selected", () => {
         render(<SessionPanel {...defaultProps} solves={solves} />);

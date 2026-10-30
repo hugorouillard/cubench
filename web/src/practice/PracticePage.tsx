@@ -2,22 +2,23 @@ import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLayoutEffect, useState } from "react";
 import type { Theme } from "../app/theme";
-import { SessionPanel } from "../session/SessionPanel";
+import { formatTime } from "../formatTime";
 import { summarizeSolves } from "../solves/stats";
 import type { Penalty, Solve, SolveInput } from "../types";
+import { formatInspectionTime } from "./inspection";
 import { PracticeSettings } from "./PracticeSettings";
-import { formatInspectionTime, formatTime } from "./timer";
+import { SessionPanel } from "./SessionPanel";
 import { type SaveState, usePracticeSession } from "./usePracticeSession";
 import type { TimerPhase } from "./useTimer";
-import "./TimerPage.css";
+import "./PracticePage.css";
 
 // Only the state the shell needs for focus styling and unsaved-result handling.
-export type TimerPageState = {
+export type PracticePageState = {
     phase: TimerPhase;
     saveState: SaveState;
 };
 
-type TimerPageProps = {
+type PracticePageProps = {
     solves: Solve[];
     pendingMutationIds: string[];
     theme: Theme;
@@ -27,7 +28,7 @@ type TimerPageProps = {
     onDelete: (solve: Solve) => Promise<void>;
     onClear: () => void;
     onError: (message: string) => void;
-    onStateChange: (state: TimerPageState) => void;
+    onStateChange: (state: PracticePageState) => void;
 };
 
 function phaseInstruction(
@@ -45,7 +46,7 @@ function phaseInstruction(
     return "hold space to start";
 }
 
-export function TimerPage({
+export function PracticePage({
     solves,
     pendingMutationIds,
     theme,
@@ -56,7 +57,7 @@ export function TimerPage({
     onClear,
     onError,
     onStateChange,
-}: TimerPageProps) {
+}: PracticePageProps) {
     const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false);
     const [hideTimer, setHideTimer] = useState(false);
     const [inspectionEnabled, setInspectionEnabled] = useState(false);

@@ -1,5 +1,5 @@
 import { randomScrambleForEvent } from "cubing/scramble";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import type { Penalty, Solve, SolveInput } from "../types";
 import { useTimer } from "./useTimer";
 
@@ -27,10 +27,6 @@ export function usePracticeSession({
     const [scrambleLoading, setScrambleLoading] = useState(true);
     const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
     const [saveState, setSaveState] = useState<SaveState>("idle");
-    const [latestResultId, setLatestResultId] = useState("");
-    // A deletion can finish after another solve becomes the latest result.
-    const latestResultIdRef = useRef(latestResultId);
-    latestResultIdRef.current = latestResultId;
     const reportInitialError = useEffectEvent((error: unknown) =>
         onError(errorMessage(error)),
     );
@@ -88,16 +84,10 @@ export function usePracticeSession({
             recorded_at: new Date().toISOString(),
         };
         setPendingSolve(solve);
-        setLatestResultId(solve.id);
-        latestResultIdRef.current = solve.id;
         void persistSolve(solve);
     }
 
-    const {
-        phase,
-        elapsedMs,
-        reset: resetTimer,
-    } = useTimer(
+    const { phase, elapsedMs } = useTimer(
         Boolean(enabled && scramble && !scrambleLoading && !pendingSolve),
         inspectionEnabled,
         completeSolve,
@@ -107,27 +97,15 @@ export function usePracticeSession({
         if (pendingSolve) await persistSolve(pendingSolve);
     }
 
-    function clearResult() {
-        setLatestResultId("");
-        latestResultIdRef.current = "";
-        resetTimer();
-    }
-
-    function forgetResult(id: string) {
-        if (id === latestResultIdRef.current) clearResult();
-    }
-
     return {
         phase,
         elapsedMs,
         scramble,
         scrambleLoading,
-        latestResultId,
         saveState,
         busy:
             pendingSolve !== null || (phase !== "idle" && phase !== "stopped"),
         generateScramble,
         retrySave,
-        forgetResult,
     };
 }

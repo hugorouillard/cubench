@@ -1,8 +1,8 @@
 import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { lazy, Suspense, useState } from "react";
+import { formatTime } from "../formatTime";
 import { buildSessionHistory, completedDuration } from "../solves/stats";
-import { formatTime } from "../timer/timer";
 import type { Penalty, Solve } from "../types";
 import "./SessionPanel.css";
 
@@ -151,10 +151,11 @@ export function SessionPanel({
                             const isBest = solve.id === bestSolveId;
                             const pending = pendingSolveIds.includes(solve.id);
                             const rawTime = formatTime(solve.duration_ms);
-                            const result = formatTime(
-                                solve.duration_ms,
-                                solve.penalty,
-                            );
+                            const duration = completedDuration(solve);
+                            const result =
+                                duration === null
+                                    ? "DNF"
+                                    : formatTime(duration);
                             return (
                                 <li
                                     className={`${index === 0 ? "is-latest " : ""}${isBest ? "is-best " : ""}${openSolveId === solve.id ? "is-actions-visible" : ""}`.trim()}
