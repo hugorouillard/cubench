@@ -1,103 +1,37 @@
 # Cubench
 
-A visually pleasing 3×3 speedcubing timer with solve history and progress
-tracking. Built with React, TypeScript, FastAPI, and SQLite.
+A web-based speedcubing timer inspired by [Monkeytype](https://monkeytype.com/).
 
-**[Try it](https://cubench.hugorouillard.dev/)** ·
-**[Explore account features](https://cubench.hugorouillard.dev/#preview)** ·
-**[Report a bug or share feedback](https://github.com/hugorouillard/cubench/issues)**
+Open the page, start practicing, and see your progress over time.
+A clean interface, thoughtful defaults, and plenty to customize when you want to.
 
-![Cubench's timer in the Catppuccin Mocha theme, with a scramble, statistics, and solve history](docs/timer.png)
+csTimer is powerful, but getting the experience I wanted meant too much manual
+setup and management. Cubench is my attempt to build that experience into the
+starting point.
 
-## About the project
+**[Try Cubench](https://cubench.hugorouillard.dev/)**
 
-The goal is a speedcubing timer with two main benefits:
+## Practice
 
-1. works immediately without requiring you to set up a particular workflow to get useful progression stats.
-2. its behavior and visuals are highly configurable while still having sensible defaults.
+![Practice page with a scramble, timer, and solve history](docs/timer.png)
 
-## Try it now
+## Progress
 
-- **Time solves:** hold **Space** until the timer says “release to start,”
-  release to start, then press **Space** again to stop. You can try the timer
-  without a cube. **Escape** stops a running solve as a DNF (did not finish).
-- **Explore progress tracking:** open the **sign-in page** and choose
-  **preview account features** to browse a read-only profile with fictional
-  solves. Date filters, chart series, and sortable history work without signing in.
-
-Guest solves stay in memory for the current visit and are lost on refresh or
-when the page is closed. The preview's sample data is separate from your solves.
-
-Accounts save new solves across visits and devices, and provide a personal
-dashboard and JSON export. Registration is currently invite-only during this
-small feedback phase. **[Request an invite](mailto:rouillard.hugo1@gmail.com?subject=Cubench%20invite%20request)**
-if you'd like to use an account. Signing in starts a fresh timer session;
-guest solves are not transferred.
-
-![Account preview showing sample personal bests, activity, and progress charts](docs/account-preview.png)
+![Account page with personal bests, practice activity, and progression over time](docs/account-preview.png)
 
 ## Development
 
-### Requirements
+Built with React, TypeScript, FastAPI, and SQLite.
 
-- Node.js 24 or newer
-- [pnpm](https://pnpm.io/installation) (version pinned in `web/package.json`)
-- Python 3.12 or newer
-- [uv](https://docs.astral.sh/uv/)
-- [just](https://just.systems/)
-
-### Setup & Useful commands
+With the [required tools](docs/development.md#requirements) installed:
 
 ```bash
 git clone https://github.com/hugorouillard/cubench.git
 cd cubench
 cp .env.example .env
+just install
+just dev
 ```
 
-In `.env`, replace `CUBENCH_INVITE_CODE` with a code of your choosing to enable
-local registration. Enter that same code in the app's **create account** form.
-
-For testing with a real account, development mode automatically creates one
-with the **same sample solve history as the preview**. Run the app and sign in
-at `/login` with username `cubench_dev` and password `dev-password`.
-
-```bash
-just install   # install deps
-just dev       # start dev instance
-just test      # run all backend and frontend tests
-just format    # format frontend code, organize imports, and apply safe lint fixes
-just lint      # check frontend formatting, imports, and lint rules
-just check     # run all tests, Biome checks, and production build
-```
-
-Frontend formatting and linting use Biome's defaults in `web/biome.json`.
-The sole rule exception allows intentional ARIA groups without requiring form
-fieldsets. CI and deployment run the same read-only Biome checks through
-`just check`'s frontend equivalent. Run `just format` before committing; for
-editor integration, use the Biome extension with the project's local version.
-
-Before running browser tests for the first time, install Playwright's Chromium
-browser and system dependencies (repeat after a Playwright upgrade):
-
-```bash
-pnpm --dir web exec playwright install --with-deps chromium
-```
-
-`just install` uses the committed pnpm lockfile without updating it. To change
-frontend dependencies, use `pnpm --dir web add` or `pnpm --dir web remove` and
-commit both `web/package.json` and `web/pnpm-lock.yaml`.
-
-`just test` and `just check` cover the whole project. Their pnpm equivalents,
-`pnpm --dir web test` and `pnpm --dir web run check`, cover only the frontend.
-Both test commands include unit tests, timezone variations, and Playwright E2E tests.
-
-For targeted runs:
-
-```bash
-just test-api                              # backend tests
-just test-web                              # all frontend tests
-pnpm --dir web run test:unit                # all unit tests, including timezone variations
-pnpm --dir web run test:unit:default        # unit tests in the default timezone only
-pnpm --dir web run test:unit:timezones       # timezone-sensitive unit tests in New York and Auckland
-pnpm --dir web run test:e2e                 # browser tests only
-```
+See the [development guide](docs/development.md) for local accounts, tests,
+formatting, and dependency management.
