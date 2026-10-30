@@ -1,5 +1,5 @@
-import { effectiveDuration } from "../timer/timer";
 import type { Solve } from "../types";
+import { effectiveDuration } from "./penalties";
 
 export type DatedSolveRecord = {
     durationMs: number;

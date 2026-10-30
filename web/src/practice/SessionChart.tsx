@@ -6,8 +6,8 @@ import {
     getLineChartOptions,
     getTooltipOptions,
 } from "../Charts";
+import { formatTime } from "../formatTime";
 import { buildSessionHistory } from "../solves/stats";
-import { formatTime } from "../timer/timer";
 import type { Solve } from "../types";
 
 type SessionChartProps = {

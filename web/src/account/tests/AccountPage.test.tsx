@@ -372,7 +372,19 @@ describe("account page", () => {
             solves[11].recorded_at,
         ]);
         const recent = screen.getByRole("region", { name: "recent solves" });
-        expect(within(recent).getAllByRole("row")).toHaveLength(11);
+        const rows = within(recent).getAllByRole("row");
+        expect(rows).toHaveLength(11);
+        // Result and penalty are solve information, not clock formatting.
+        expect(
+            rows.slice(1, 4).map((row) => {
+                const cells = within(row).getAllByRole("cell");
+                return [cells[1].textContent, cells[2].textContent];
+            }),
+        ).toEqual([
+            ["13.00", "+2"],
+            ["DNF", "DNF"],
+            ["10.00", "—"],
+        ]);
         fireEvent.click(
             within(recent).getByRole("button", { name: "load more" }),
         );

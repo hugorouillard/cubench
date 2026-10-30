@@ -8,10 +8,11 @@ import { faUser as faUserRegular } from "free-regular-svg-icons-v5";
 import { faUser } from "free-solid-svg-icons-v5";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
+import type { AppView } from "./useAppNavigation";
 import "./AccountNavigation.css";
 
 type AccountNavigationProps = {
-    currentPage: "timer" | "profile" | "preview" | "login";
+    currentPage: AppView;
     onNavigate: (page: "profile" | "login") => void;
     beforeLogout: () => boolean;
     onError: (message: string) => void;

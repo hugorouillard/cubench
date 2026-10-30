@@ -1,25 +1,24 @@
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { randomScrambleForEvent } from "cubing/scramble";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { Theme } from "../app/theme";
-import { SessionPanel } from "../session/SessionPanel";
+import { formatTime } from "../formatTime";
 import { summarizeSolves } from "../solves/stats";
 import type { Penalty, Solve, SolveInput } from "../types";
+import { formatInspectionTime } from "./inspection";
 import { PracticeSettings } from "./PracticeSettings";
-import { formatInspectionTime, formatTime } from "./timer";
-import { type TimerPhase, useTimer } from "./useTimer";
-import "./TimerPage.css";
-
-type SaveState = "idle" | "saving" | "failed";
+import { SessionPanel } from "./SessionPanel";
+import { type SaveState, usePracticeSession } from "./usePracticeSession";
+import type { TimerPhase } from "./useTimer";
+import "./PracticePage.css";
 
 // Only the state the shell needs for focus styling and unsaved-result handling.
-export type TimerPageState = {
+export type PracticePageState = {
     phase: TimerPhase;
     saveState: SaveState;
 };
 
-type TimerPageProps = {
+type PracticePageProps = {
     solves: Solve[];
     pendingMutationIds: string[];
     theme: Theme;
@@ -29,12 +28,8 @@ type TimerPageProps = {
     onDelete: (solve: Solve) => Promise<void>;
     onClear: () => void;
     onError: (message: string) => void;
-    onStateChange: (state: TimerPageState) => void;
+    onStateChange: (state: PracticePageState) => void;
 };
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Something went wrong";
-}
 
 function phaseInstruction(
     phase: TimerPhase,
@@ -51,7 +46,7 @@ function phaseInstruction(
     return "hold space to start";
 }
 
-export function TimerPage({
+export function PracticePage({
     solves,
     pendingMutationIds,
     theme,
@@ -62,92 +57,26 @@ export function TimerPage({
     onClear,
     onError,
     onStateChange,
-}: TimerPageProps) {
+}: PracticePageProps) {
     const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false);
     const [hideTimer, setHideTimer] = useState(false);
     const [inspectionEnabled, setInspectionEnabled] = useState(false);
-    const [scramble, setScramble] = useState("");
-    const [scrambleLoading, setScrambleLoading] = useState(true);
-    const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
-    const [saveState, setSaveState] = useState<SaveState>("idle");
-    const [latestResultId, setLatestResultId] = useState("");
-
-    useEffect(() => {
-        let cancelled = false;
-        randomScrambleForEvent("333")
-            .then((nextScramble) => {
-                if (cancelled) return;
-                setScramble(nextScramble.toString());
-                setScrambleLoading(false);
-            })
-            .catch((initialError: unknown) => {
-                if (!cancelled) onError(errorMessage(initialError));
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [onError]);
-
-    async function generateScramble() {
-        setScramble("");
-        setScrambleLoading(true);
-        try {
-            const nextScramble = await randomScrambleForEvent("333");
-            setScramble(nextScramble.toString());
-        } catch (scrambleError) {
-            onError(errorMessage(scrambleError));
-        } finally {
-            setScrambleLoading(false);
-        }
-    }
-
-    async function persistSolve(solve: SolveInput) {
-        setSaveState("saving");
-        onError("");
-        try {
-            await onSave(solve);
-            setPendingSolve(null);
-            setSaveState("idle");
-            await generateScramble();
-        } catch (saveError) {
-            setSaveState("failed");
-            onError(`Failed to save result: ${errorMessage(saveError)}`);
-        }
-    }
-
-    function handleTimerComplete(durationMs: number, penalty: Penalty) {
-        if (!scramble || pendingSolve) return;
-        const solve: SolveInput = {
-            id: crypto.randomUUID(),
-            duration_ms: durationMs,
-            penalty,
-            scramble,
-            recorded_at: new Date().toISOString(),
-        };
-        setPendingSolve(solve);
-        setLatestResultId(solve.id);
-        void persistSolve(solve);
-    }
-
     const {
         phase,
         elapsedMs,
-        reset: resetTimer,
-    } = useTimer(
-        Boolean(
-            scramble &&
-                !scrambleLoading &&
-                !pendingSolve &&
-                !disabled &&
-                !practiceSettingsOpen,
-        ),
+        scramble,
+        scrambleLoading,
+        saveState,
+        busy,
+        generateScramble,
+        retrySave,
+    } = usePracticeSession({
+        onSave,
+        enabled: !disabled && !practiceSettingsOpen,
         inspectionEnabled,
-        handleTimerComplete,
-    );
-    const controlsDisabled =
-        disabled ||
-        Boolean(pendingSolve) ||
-        (phase !== "idle" && phase !== "stopped");
+        onError,
+    });
+    const controlsDisabled = disabled || busy;
 
     useLayoutEffect(() => {
         onStateChange({ phase, saveState });
@@ -158,18 +87,6 @@ export function TimerPage({
         [onStateChange],
     );
 
-    const lastSolve = solves[0];
-    const latestResult = solves.find((solve) => solve.id === latestResultId);
-
-    useLayoutEffect(() => {
-        // A cleared session or deleted result should no longer be on the clock.
-        // An unsaved result is intentionally absent from the repository.
-        if (latestResultId && !latestResult && saveState === "idle") {
-            setLatestResultId("");
-            resetTimer();
-        }
-    }, [latestResultId, latestResult, saveState, resetTimer]);
-
     const summary = summarizeSolves(solves);
     const statTime = (duration: number | null) =>
         duration === null ? "--" : formatTime(duration);
@@ -179,15 +96,7 @@ export function TimerPage({
         phase === "inspection-ready";
     const displayedTime = inspectionActive
         ? formatInspectionTime(elapsedMs)
-        : phase === "running"
-          ? formatTime(elapsedMs)
-          : phase === "stopped"
-            ? latestResult
-                ? formatTime(latestResult.duration_ms, latestResult.penalty)
-                : formatTime(elapsedMs)
-            : lastSolve
-              ? formatTime(lastSolve.duration_ms, lastSolve.penalty)
-              : "0.00";
+        : formatTime(elapsedMs);
 
     return (
         <main className="practice-view page-width">
@@ -261,10 +170,7 @@ export function TimerPage({
                                     className="post-solve-retry"
                                     type="button"
                                     disabled={disabled}
-                                    onClick={() => {
-                                        if (pendingSolve)
-                                            void persistSolve(pendingSolve);
-                                    }}
+                                    onClick={() => void retrySave()}
                                 >
                                     <FontAwesomeIcon
                                         className="app-icon"

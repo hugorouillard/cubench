@@ -1,8 +1,12 @@
 import { faCrown, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMemo, useState } from "react";
-import { newestSolvesFirst, personalBestIds } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../formatTime";
+import {
+    completedDuration,
+    newestSolvesFirst,
+    personalBestIds,
+} from "../solves/stats";
 import type { Penalty, Solve } from "../types";
 import { formatAccountDate } from "./format";
 
@@ -67,129 +71,139 @@ export function RecentSolves({
                                 </tr>
                             </thead>
                             <tbody>
-                                {recent.slice(0, limit).map((solve) => (
-                                    <tr key={solve.id}>
-                                        <td className="account-recent-pb">
-                                            {bestIds.has(solve.id) && (
-                                                <FontAwesomeIcon
-                                                    icon={faCrown}
-                                                    title="personal best"
-                                                    aria-label="personal best"
-                                                />
-                                            )}
-                                        </td>
-                                        <td className="account-recent-result">
-                                            {formatTime(
-                                                solve.duration_ms,
-                                                solve.penalty,
-                                            )}
-                                        </td>
-                                        <td>
-                                            {solve.penalty === "plus2"
-                                                ? "+2"
-                                                : solve.penalty === "dnf"
-                                                  ? "DNF"
-                                                  : "—"}
-                                        </td>
-                                        <td className="account-recent-scramble">
-                                            <details>
-                                                <summary>view scramble</summary>
-                                                <span>{solve.scramble}</span>
-                                            </details>
-                                        </td>
-                                        <td>
-                                            <time dateTime={solve.recorded_at}>
-                                                {formatAccountDate(
-                                                    solve.recorded_at,
+                                {recent.slice(0, limit).map((solve) => {
+                                    const duration = completedDuration(solve);
+                                    return (
+                                        <tr key={solve.id}>
+                                            <td className="account-recent-pb">
+                                                {bestIds.has(solve.id) && (
+                                                    <FontAwesomeIcon
+                                                        icon={faCrown}
+                                                        title="personal best"
+                                                        aria-label="personal best"
+                                                    />
                                                 )}
-                                                <small>
-                                                    {new Date(
-                                                        solve.recorded_at,
-                                                    ).toLocaleTimeString(
-                                                        "en-GB",
-                                                        {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        },
-                                                    )}
-                                                </small>
-                                            </time>
-                                        </td>
-                                        {onPenalty && onDelete && (
-                                            <td className="account-recent-actions">
-                                                <div>
-                                                    <button
-                                                        type="button"
-                                                        disabled={pendingIds.includes(
-                                                            solve.id,
-                                                        )}
-                                                        aria-pressed={
-                                                            solve.penalty ===
-                                                            "plus2"
-                                                        }
-                                                        aria-label={`Toggle +2 penalty for ${formatTime(solve.duration_ms)} solve`}
-                                                        onClick={() =>
-                                                            void withPending(
-                                                                solve,
-                                                                () =>
-                                                                    onPenalty(
-                                                                        solve,
-                                                                        "plus2",
-                                                                    ),
-                                                            )
-                                                        }
-                                                    >
-                                                        +2
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        disabled={pendingIds.includes(
-                                                            solve.id,
-                                                        )}
-                                                        aria-pressed={
-                                                            solve.penalty ===
-                                                            "dnf"
-                                                        }
-                                                        aria-label={`Toggle DNF penalty for ${formatTime(solve.duration_ms)} solve`}
-                                                        onClick={() =>
-                                                            void withPending(
-                                                                solve,
-                                                                () =>
-                                                                    onPenalty(
-                                                                        solve,
-                                                                        "dnf",
-                                                                    ),
-                                                            )
-                                                        }
-                                                    >
-                                                        dnf
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        disabled={pendingIds.includes(
-                                                            solve.id,
-                                                        )}
-                                                        aria-label={`Delete ${formatTime(solve.duration_ms)} solve`}
-                                                        onClick={() =>
-                                                            void withPending(
-                                                                solve,
-                                                                () =>
-                                                                    onDelete(
-                                                                        solve,
-                                                                    ),
-                                                            )
-                                                        }
-                                                    >
-                                                        <FontAwesomeIcon
-                                                            icon={faTrashCan}
-                                                            aria-hidden="true"
-                                                        />
-                                                    </button>
-                                                </div>
                                             </td>
-                                        )}
-                                    </tr>
-                                ))}
+                                            <td className="account-recent-result">
+                                                {duration === null
+                                                    ? "DNF"
+                                                    : formatTime(duration)}
+                                            </td>
+                                            <td>
+                                                {solve.penalty === "plus2"
+                                                    ? "+2"
+                                                    : solve.penalty === "dnf"
+                                                      ? "DNF"
+                                                      : "—"}
+                                            </td>
+                                            <td className="account-recent-scramble">
+                                                <details>
+                                                    <summary>
+                                                        view scramble
+                                                    </summary>
+                                                    <span>
+                                                        {solve.scramble}
+                                                    </span>
+                                                </details>
+                                            </td>
+                                            <td>
+                                                <time
+                                                    dateTime={solve.recorded_at}
+                                                >
+                                                    {formatAccountDate(
+                                                        solve.recorded_at,
+                                                    )}
+                                                    <small>
+                                                        {new Date(
+                                                            solve.recorded_at,
+                                                        ).toLocaleTimeString(
+                                                            "en-GB",
+                                                            {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            },
+                                                        )}
+                                                    </small>
+                                                </time>
+                                            </td>
+                                            {onPenalty && onDelete && (
+                                                <td className="account-recent-actions">
+                                                    <div>
+                                                        <button
+                                                            type="button"
+                                                            disabled={pendingIds.includes(
+                                                                solve.id,
+                                                            )}
+                                                            aria-pressed={
+                                                                solve.penalty ===
+                                                                "plus2"
+                                                            }
+                                                            aria-label={`Toggle +2 penalty for ${formatTime(solve.duration_ms)} solve`}
+                                                            onClick={() =>
+                                                                void withPending(
+                                                                    solve,
+                                                                    () =>
+                                                                        onPenalty(
+                                                                            solve,
+                                                                            "plus2",
+                                                                        ),
+                                                                )
+                                                            }
+                                                        >
+                                                            +2
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={pendingIds.includes(
+                                                                solve.id,
+                                                            )}
+                                                            aria-pressed={
+                                                                solve.penalty ===
+                                                                "dnf"
+                                                            }
+                                                            aria-label={`Toggle DNF penalty for ${formatTime(solve.duration_ms)} solve`}
+                                                            onClick={() =>
+                                                                void withPending(
+                                                                    solve,
+                                                                    () =>
+                                                                        onPenalty(
+                                                                            solve,
+                                                                            "dnf",
+                                                                        ),
+                                                                )
+                                                            }
+                                                        >
+                                                            dnf
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={pendingIds.includes(
+                                                                solve.id,
+                                                            )}
+                                                            aria-label={`Delete ${formatTime(solve.duration_ms)} solve`}
+                                                            onClick={() =>
+                                                                void withPending(
+                                                                    solve,
+                                                                    () =>
+                                                                        onDelete(
+                                                                            solve,
+                                                                        ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <FontAwesomeIcon
+                                                                icon={
+                                                                    faTrashCan
+                                                                }
+                                                                aria-hidden="true"
+                                                            />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

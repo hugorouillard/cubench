@@ -1,5 +1,4 @@
 import {
-    useEffect,
     useEffectEvent,
     useLayoutEffect,
     useMemo,
@@ -13,20 +12,26 @@ import { getSolves } from "../api";
 import { AuthPage } from "../auth/AuthPage";
 import { AuthProvider } from "../auth/AuthProvider";
 import { useAuth } from "../auth/useAuth";
+import { formatTime } from "../formatTime";
+import { PracticePage, type PracticePageState } from "../practice/PracticePage";
+import { togglePenalty } from "../solves/penalties";
 import { createSolveRepository } from "../solves/solveRepository";
 import {
     accountSolveStore,
     guestSolveStore,
     type SolveStore,
 } from "../solves/solveStore";
-import { TimerPage, type TimerPageState } from "../timer/TimerPage";
-import { formatTime, togglePenalty } from "../timer/timer";
-import type { Account, Penalty, Solve } from "../types";
+import type { Penalty, Solve } from "../types";
 import { AccountNavigation } from "./AccountNavigation";
 import { ErrorNotification } from "./ErrorNotification";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { applyTheme, type Theme } from "./theme";
+import {
+    type AppView,
+    isLoginPath,
+    useAppNavigation,
+} from "./useAppNavigation";
 import "./App.css";
 
 function errorMessage(error: unknown): string {
@@ -37,24 +42,6 @@ type AppProps = {
     initialTheme: Theme;
     solveStore?: SolveStore;
 };
-
-type AppView = "timer" | "profile" | "preview" | "login";
-
-function pathForView(view: AppView): string {
-    const path = view === "login" ? "/login" : "/";
-    const hash = view === "profile" || view === "preview" ? `#${view}` : "";
-    return `${path}${location.search}${hash}`;
-}
-
-function isLoginPath(): boolean {
-    return location.pathname === "/login" || location.pathname === "/login/";
-}
-
-function requestedView(account: Account | null): AppView {
-    if (isLoginPath()) return account ? "timer" : "login";
-    if (location.hash === "#preview") return "preview";
-    return account && location.hash === "#profile" ? "profile" : "timer";
-}
 
 function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     const {
@@ -70,10 +57,11 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         isLoginPath() ? "login" : "timer",
     );
     const [profilePreview] = useState(createProfilePreview);
-    const [{ phase, saveState }, setTimerPageState] = useState<TimerPageState>({
-        phase: "idle",
-        saveState: "idle",
-    });
+    const [{ phase, saveState }, setPracticePageState] =
+        useState<PracticePageState>({
+            phase: "idle",
+            saveState: "idle",
+        });
     const [pendingMutationIds, setPendingMutationIds] = useState<string[]>([]);
     const [error, setError] = useState("");
     const [theme, setTheme] = useState<Theme>(initialTheme);
@@ -95,24 +83,17 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         repository.getSnapshot,
     );
 
-    function navigate(nextView: AppView, replace = false) {
-        const target = pathForView(nextView);
-        if (
-            `${location.pathname}${location.search}${location.hash}` !== target
-        ) {
-            window.history[replace ? "replaceState" : "pushState"](
-                null,
-                "",
-                target,
-            );
-        }
-        setView(nextView);
-    }
+    const { navigate, restoreView } = useAppNavigation({
+        account,
+        view,
+        onViewChange: setView,
+        disabled: authChecking || authBusy,
+    });
 
     const synchronizeIdentity = useEffectEvent((changed: boolean) => {
         if (changed) resetCurrentSession();
         if (changed || (account && isLoginPath())) navigate("timer", true);
-        else setView(requestedView(account));
+        else restoreView();
     });
 
     useLayoutEffect(() => {
@@ -125,19 +106,6 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
         previousAccountId.current = accountId;
         synchronizeIdentity(changed);
     }, [accountId, authChecking]);
-
-    useEffect(() => {
-        function handlePopState() {
-            const nextView = requestedView(account);
-            if (nextView !== view && (authChecking || authBusy)) {
-                window.history.replaceState(null, "", pathForView(view));
-                return;
-            }
-            setView(nextView);
-        }
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, [account, authChecking, authBusy, view]);
 
     function resetCurrentSession() {
         repository.clearSession();
@@ -246,7 +214,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                 />
             )}
             {view === "timer" ? (
-                <TimerPage
+                <PracticePage
                     key={accountId ?? "guest"}
                     solves={solves}
                     pendingMutationIds={pendingMutationIds}
@@ -257,7 +225,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
                     onDelete={(solve) => handleDelete(solve, false)}
                     onClear={handleClearSolves}
                     onError={setError}
-                    onStateChange={setTimerPageState}
+                    onStateChange={setPracticePageState}
                 />
             ) : view === "login" ? (
                 authChecking || account ? (
