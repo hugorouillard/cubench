@@ -39,8 +39,10 @@
     color: var(--main-color);
 }
 
-.brand-mark .app-icon {
-    font-size: 2.1rem;
+.brand-mark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .brand-copy {

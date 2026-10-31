@@ -1,5 +1,5 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faCube, faStopwatch } from "@fortawesome/free-solid-svg-icons";
+import { faStopwatch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog, faInfo } from "free-solid-svg-icons-v5";
 import type { ReactNode } from "react";
@@ -32,7 +32,13 @@ export function Header({
                     tabIndex={disabled ? -1 : 0}
                 >
                     <span className="brand-mark" aria-hidden="true">
-                        <FontAwesomeIcon className="app-icon" icon={faCube} />
+                        <svg
+                            viewBox="0 0 48 48"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <use href="/favicon.svg#cubench-mark" />
+                        </svg>
                     </span>
                     <span className="brand-copy">
                         <strong>cubench</strong>
