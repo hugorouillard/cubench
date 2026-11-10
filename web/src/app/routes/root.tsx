@@ -7,27 +7,27 @@ import {
     useState,
     useSyncExternalStore,
 } from "react";
-import { AccountPage } from "../account/AccountPage";
-import { createProfilePreview } from "../account/profilePreview";
-import { getSolves } from "../api";
-import { AuthPage } from "../auth/AuthPage";
-import { AuthProvider } from "../auth/AuthProvider";
-import { useAuth } from "../auth/useAuth";
-import { createSolveRepository } from "../solves/solveRepository";
+import { AccountPage } from "../../account/AccountPage";
+import { createProfilePreview } from "../../account/profilePreview";
+import { getSolves } from "../../api";
+import { AuthPage } from "../../auth/AuthPage";
+import { AuthProvider } from "../../auth/AuthProvider";
+import { useAuth } from "../../auth/useAuth";
+import { createSolveRepository } from "../../solves/solveRepository";
 import {
     accountSolveStore,
     guestSolveStore,
     type SolveStore,
-} from "../solves/solveStore";
-import { TimerPage, type TimerPageState } from "../timer/TimerPage";
-import { formatTime, togglePenalty } from "../timer/timer";
-import type { Account, Penalty, Solve } from "../types";
-import { AccountNavigation } from "./AccountNavigation";
-import { ErrorNotification } from "./ErrorNotification";
-import { Footer } from "./Footer";
-import { Header } from "./Header";
-import { applyTheme, type Theme } from "./theme";
-import "./App.css";
+} from "../../solves/solveStore";
+import { TimerPage, type TimerPageState } from "../../timer/TimerPage";
+import { formatTime, togglePenalty } from "../../timer/timer";
+import type { Account, Penalty, Solve } from "../../types";
+import { AccountNavigation } from "../AccountNavigation";
+import { ErrorNotification } from "../ErrorNotification";
+import { Footer } from "../Footer";
+import { Header } from "../Header";
+import { applyTheme, type Theme } from "../theme";
+import "../App.css";
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong";
@@ -284,7 +284,7 @@ function AppShell({ initialTheme, solveStore: solveStoreOverride }: AppProps) {
     );
 }
 
-export default function App(props: AppProps) {
+export default function AppRoot(props: AppProps) {
     return (
         <AuthProvider>
             <AppShell {...props} />
