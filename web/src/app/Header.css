@@ -73,13 +73,13 @@
     margin-left: 1rem;
 }
 
-.main-nav button {
+.main-nav button,
+.main-nav a {
     width: 2.25rem;
     height: 2.25rem;
     display: inline-grid;
     place-items: center;
     border: 0;
-    border-radius: var(--roundness);
     color: var(--timer-icon-color);
     background: transparent;
     cursor: pointer;

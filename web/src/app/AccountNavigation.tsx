@@ -1,21 +1,21 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core"
 import {
     faArrowRightFromBracket,
     faChartLine,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser as faUserRegular } from "free-regular-svg-icons-v5";
-import { faUser } from "free-solid-svg-icons-v5";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "../auth/useAuth";
-import "./AccountNavigation.css";
+} from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faUser as faUserRegular } from "free-regular-svg-icons-v5"
+import { faUser } from "free-solid-svg-icons-v5"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useAuth } from "../auth/useAuth"
+import "./AccountNavigation.css"
 
 type AccountNavigationProps = {
-    currentPage: "timer" | "profile" | "preview" | "login";
-    onNavigate: (page: "profile" | "login") => void;
-    beforeLogout: () => boolean;
-    onError: (message: string) => void;
-};
+    currentPage: "timer" | "profile" | "preview" | "login"
+    onNavigate: (page: "profile" | "login") => void
+    beforeLogout: () => boolean
+    onError: (message: string) => void
+}
 
 export function AccountNavigation({
     currentPage,
@@ -23,58 +23,58 @@ export function AccountNavigation({
     beforeLogout,
     onError,
 }: AccountNavigationProps) {
-    const { account, checking, pending, logout } = useAuth();
-    const [open, setOpen] = useState(false);
-    const menuRef = useRef<HTMLElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const dismissedRef = useRef(false);
-    const disabled = checking || pending !== null;
+    const { account, checking, pending, logout } = useAuth()
+    const [open, setOpen] = useState(false)
+    const menuRef = useRef<HTMLElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
+    const dismissedRef = useRef(false)
+    const disabled = checking || pending !== null
     const dismissMenu = useCallback(() => {
-        dismissedRef.current = true;
-        setOpen(false);
-    }, []);
+        dismissedRef.current = true
+        setOpen(false)
+    }, [])
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) return
 
         function handlePointerDown(event: PointerEvent) {
             if (
                 event.target instanceof Node &&
                 !menuRef.current?.contains(event.target)
             ) {
-                dismissMenu();
+                dismissMenu()
             }
         }
 
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") {
-                dismissMenu();
-                buttonRef.current?.focus();
+                dismissMenu()
+                buttonRef.current?.focus()
             }
         }
 
-        document.addEventListener("pointerdown", handlePointerDown);
-        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("pointerdown", handlePointerDown)
+        document.addEventListener("keydown", handleKeyDown)
         return () => {
-            document.removeEventListener("pointerdown", handlePointerDown);
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [open, dismissMenu]);
+            document.removeEventListener("pointerdown", handlePointerDown)
+            document.removeEventListener("keydown", handleKeyDown)
+        }
+    }, [open, dismissMenu])
 
     function openProfile() {
-        dismissMenu();
-        onNavigate("profile");
+        dismissMenu()
+        onNavigate("profile")
     }
 
     async function signOut() {
-        dismissMenu();
-        if (!beforeLogout()) return;
+        dismissMenu()
+        if (!beforeLogout()) return
         try {
-            await logout();
+            await logout()
         } catch (error) {
             const message =
-                error instanceof Error ? error.message : "Something went wrong";
-            onError(`Could not sign out: ${message}`);
+                error instanceof Error ? error.message : "Something went wrong"
+            onError(`Could not sign out: ${message}`)
         }
     }
 
@@ -90,12 +90,12 @@ export function AccountNavigation({
                     !dismissedRef.current &&
                     !disabled
                 ) {
-                    setOpen(true);
+                    setOpen(true)
                 }
             }}
             onPointerLeave={(event) => {
-                if (event.pointerType !== "mouse") return;
-                dismissedRef.current = false;
+                if (event.pointerType !== "mouse") return
+                dismissedRef.current = false
                 if (
                     !(
                         document.activeElement instanceof HTMLElement &&
@@ -103,12 +103,11 @@ export function AccountNavigation({
                         document.activeElement.matches(":focus-visible")
                     )
                 ) {
-                    setOpen(false);
+                    setOpen(false)
                 }
             }}
             onFocusCapture={() => {
-                if (account && !dismissedRef.current && !disabled)
-                    setOpen(true);
+                if (account && !dismissedRef.current && !disabled) setOpen(true)
             }}
             onBlur={(event) => {
                 if (
@@ -117,8 +116,8 @@ export function AccountNavigation({
                         event.currentTarget.contains(event.relatedTarget)
                     )
                 ) {
-                    dismissedRef.current = false;
-                    setOpen(false);
+                    dismissedRef.current = false
+                    setOpen(false)
                 }
             }}
         >
@@ -130,16 +129,16 @@ export function AccountNavigation({
                         type="button"
                         onPointerDown={(event) => {
                             if (event.pointerType === "touch")
-                                dismissedRef.current = true;
+                                dismissedRef.current = true
                         }}
                         onClick={() => {
                             if (
                                 window.matchMedia?.("(pointer: coarse)").matches
                             ) {
-                                dismissedRef.current = open;
-                                setOpen(!open);
+                                dismissedRef.current = open
+                                setOpen(!open)
                             } else {
-                                openProfile();
+                                openProfile()
                             }
                         }}
                         disabled={disabled}
@@ -219,5 +218,5 @@ export function AccountNavigation({
                 </button>
             )}
         </nav>
-    );
+    )
 }
