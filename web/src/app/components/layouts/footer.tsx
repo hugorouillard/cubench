@@ -1,6 +1,6 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDiscord } from "free-brands-svg-icons-v5";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faDiscord } from "free-brands-svg-icons-v5"
 import {
     faCode,
     faCodeBranch,
@@ -9,18 +9,15 @@ import {
     faLock,
     faPalette,
     faShieldAlt,
-} from "free-solid-svg-icons-v5";
-import { isTheme, THEME_OPTIONS, type Theme } from "./theme";
-import "./Footer.css";
+} from "free-solid-svg-icons-v5"
+import { THEME_OPTIONS, type Theme } from "../../theme"
+import "./footer.css"
 
-declare const __CUBENCH_VERSION__: string;
+declare const __CUBENCH_VERSION__: string
 
-type FooterProps = {
-    theme: Theme;
-    onThemeChange: (theme: Theme) => void;
-};
+export function Footer() {
+    const theme: Theme = "catppuccin-mocha"
 
-export function Footer({ theme, onThemeChange }: FooterProps) {
     return (
         <footer className="site-footer site-footer--timer page-width focus-chrome">
             <nav className="footer-links" aria-label="Footer">
@@ -111,15 +108,7 @@ export function Footer({ theme, onThemeChange }: FooterProps) {
                         aria-hidden="true"
                     />
                     <span className="sr-only">Theme</span>
-                    <select
-                        value={theme}
-                        onChange={(event) => {
-                            const value = event.currentTarget.value;
-                            if (isTheme(value)) {
-                                onThemeChange(value);
-                            }
-                        }}
-                    >
+                    <select value={theme}>
                         {THEME_OPTIONS.map((option) => (
                             <option key={option.id} value={option.id}>
                                 {option.label}
@@ -144,5 +133,5 @@ export function Footer({ theme, onThemeChange }: FooterProps) {
                 </a>
             </div>
         </footer>
-    );
+    )
 }

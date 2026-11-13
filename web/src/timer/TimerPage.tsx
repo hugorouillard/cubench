@@ -1,54 +1,54 @@
-import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { randomScrambleForEvent } from "cubing/scramble";
-import { useEffect, useLayoutEffect, useState } from "react";
-import type { Theme } from "../app/theme";
-import { SessionPanel } from "../session/SessionPanel";
-import { summarizeSolves } from "../solves/stats";
-import type { Penalty, Solve, SolveInput } from "../types";
-import { PracticeSettings } from "./PracticeSettings";
-import { formatInspectionTime, formatTime } from "./timer";
-import { type TimerPhase, useTimer } from "./useTimer";
-import "./TimerPage.css";
+import { faRotateRight } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { randomScrambleForEvent } from "cubing/scramble"
+import { useEffect, useLayoutEffect, useState } from "react"
+import type { Theme } from "../app/theme"
+import { SessionPanel } from "../session/SessionPanel"
+import { summarizeSolves } from "../solves/stats"
+import type { Penalty, Solve, SolveInput } from "../types"
+import { PracticeSettings } from "./PracticeSettings"
+import { formatInspectionTime, formatTime } from "./timer"
+import { type TimerPhase, useTimer } from "./useTimer"
+import "./TimerPage.css"
 
-type SaveState = "idle" | "saving" | "failed";
+type SaveState = "idle" | "saving" | "failed"
 
 // Only the state the shell needs for focus styling and unsaved-result handling.
 export type TimerPageState = {
-    phase: TimerPhase;
-    saveState: SaveState;
-};
+    phase: TimerPhase
+    saveState: SaveState
+}
 
 type TimerPageProps = {
-    solves: Solve[];
-    pendingMutationIds: string[];
-    theme: Theme;
-    disabled: boolean;
-    onSave: (solve: SolveInput) => Promise<Solve>;
-    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
-    onDelete: (solve: Solve) => Promise<void>;
-    onClear: () => void;
-    onError: (message: string) => void;
-    onStateChange: (state: TimerPageState) => void;
-};
+    solves: Solve[]
+    pendingMutationIds: string[]
+    theme: Theme
+    disabled: boolean
+    onSave: (solve: SolveInput) => Promise<Solve>
+    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>
+    onDelete: (solve: Solve) => Promise<void>
+    onClear: () => void
+    onError: (message: string) => void
+    onStateChange: (state: TimerPageState) => void
+}
 
 function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Something went wrong";
+    return error instanceof Error ? error.message : "Something went wrong"
 }
 
 function phaseInstruction(
     phase: TimerPhase,
     inspectionEnabled: boolean,
 ): string {
-    if (phase === "holding") return "keep holding";
-    if (phase === "ready") return "release to start";
-    if (phase === "inspection") return "space to start";
-    if (phase === "inspection-holding") return "keep holding";
-    if (phase === "inspection-ready") return "release to start";
-    if (phase === "running") return "space to stop";
-    if (inspectionEnabled) return "space to inspect";
-    if (phase === "stopped") return "hold space for next solve";
-    return "hold space to start";
+    if (phase === "holding") return "keep holding"
+    if (phase === "ready") return "release to start"
+    if (phase === "inspection") return "space to start"
+    if (phase === "inspection-holding") return "keep holding"
+    if (phase === "inspection-ready") return "release to start"
+    if (phase === "running") return "space to stop"
+    if (inspectionEnabled) return "space to inspect"
+    if (phase === "stopped") return "hold space for next solve"
+    return "hold space to start"
 }
 
 export function TimerPage({
@@ -63,70 +63,70 @@ export function TimerPage({
     onError,
     onStateChange,
 }: TimerPageProps) {
-    const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false);
-    const [hideTimer, setHideTimer] = useState(false);
-    const [inspectionEnabled, setInspectionEnabled] = useState(false);
-    const [scramble, setScramble] = useState("");
-    const [scrambleLoading, setScrambleLoading] = useState(true);
-    const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null);
-    const [saveState, setSaveState] = useState<SaveState>("idle");
-    const [latestResultId, setLatestResultId] = useState("");
+    const [practiceSettingsOpen, setPracticeSettingsOpen] = useState(false)
+    const [hideTimer, setHideTimer] = useState(false)
+    const [inspectionEnabled, setInspectionEnabled] = useState(false)
+    const [scramble, setScramble] = useState("")
+    const [scrambleLoading, setScrambleLoading] = useState(true)
+    const [pendingSolve, setPendingSolve] = useState<SolveInput | null>(null)
+    const [saveState, setSaveState] = useState<SaveState>("idle")
+    const [latestResultId, setLatestResultId] = useState("")
 
     useEffect(() => {
-        let cancelled = false;
+        let cancelled = false
         randomScrambleForEvent("333")
             .then((nextScramble) => {
-                if (cancelled) return;
-                setScramble(nextScramble.toString());
-                setScrambleLoading(false);
+                if (cancelled) return
+                setScramble(nextScramble.toString())
+                setScrambleLoading(false)
             })
             .catch((initialError: unknown) => {
-                if (!cancelled) onError(errorMessage(initialError));
-            });
+                if (!cancelled) onError(errorMessage(initialError))
+            })
         return () => {
-            cancelled = true;
-        };
-    }, [onError]);
+            cancelled = true
+        }
+    }, [onError])
 
     async function generateScramble() {
-        setScramble("");
-        setScrambleLoading(true);
+        setScramble("")
+        setScrambleLoading(true)
         try {
-            const nextScramble = await randomScrambleForEvent("333");
-            setScramble(nextScramble.toString());
+            const nextScramble = await randomScrambleForEvent("333")
+            setScramble(nextScramble.toString())
         } catch (scrambleError) {
-            onError(errorMessage(scrambleError));
+            onError(errorMessage(scrambleError))
         } finally {
-            setScrambleLoading(false);
+            setScrambleLoading(false)
         }
     }
 
     async function persistSolve(solve: SolveInput) {
-        setSaveState("saving");
-        onError("");
+        setSaveState("saving")
+        onError("")
         try {
-            await onSave(solve);
-            setPendingSolve(null);
-            setSaveState("idle");
-            await generateScramble();
+            await onSave(solve)
+            setPendingSolve(null)
+            setSaveState("idle")
+            await generateScramble()
         } catch (saveError) {
-            setSaveState("failed");
-            onError(`Failed to save result: ${errorMessage(saveError)}`);
+            setSaveState("failed")
+            onError(`Failed to save result: ${errorMessage(saveError)}`)
         }
     }
 
     function handleTimerComplete(durationMs: number, penalty: Penalty) {
-        if (!scramble || pendingSolve) return;
+        if (!scramble || pendingSolve) return
         const solve: SolveInput = {
             id: crypto.randomUUID(),
             duration_ms: durationMs,
             penalty,
             scramble,
             recorded_at: new Date().toISOString(),
-        };
-        setPendingSolve(solve);
-        setLatestResultId(solve.id);
-        void persistSolve(solve);
+        }
+        setPendingSolve(solve)
+        setLatestResultId(solve.id)
+        void persistSolve(solve)
     }
 
     const {
@@ -143,40 +143,40 @@ export function TimerPage({
         ),
         inspectionEnabled,
         handleTimerComplete,
-    );
+    )
     const controlsDisabled =
         disabled ||
         Boolean(pendingSolve) ||
-        (phase !== "idle" && phase !== "stopped");
+        (phase !== "idle" && phase !== "stopped")
 
     useLayoutEffect(() => {
-        onStateChange({ phase, saveState });
-    }, [phase, saveState, onStateChange]);
+        onStateChange({ phase, saveState })
+    }, [phase, saveState, onStateChange])
 
     useLayoutEffect(
         () => () => onStateChange({ phase: "idle", saveState: "idle" }),
         [onStateChange],
-    );
+    )
 
-    const lastSolve = solves[0];
-    const latestResult = solves.find((solve) => solve.id === latestResultId);
+    const lastSolve = solves[0]
+    const latestResult = solves.find((solve) => solve.id === latestResultId)
 
     useLayoutEffect(() => {
         // A cleared session or deleted result should no longer be on the clock.
         // An unsaved result is intentionally absent from the repository.
         if (latestResultId && !latestResult && saveState === "idle") {
-            setLatestResultId("");
-            resetTimer();
+            setLatestResultId("")
+            resetTimer()
         }
-    }, [latestResultId, latestResult, saveState, resetTimer]);
+    }, [latestResultId, latestResult, saveState, resetTimer])
 
-    const summary = summarizeSolves(solves);
+    const summary = summarizeSolves(solves)
     const statTime = (duration: number | null) =>
-        duration === null ? "--" : formatTime(duration);
+        duration === null ? "--" : formatTime(duration)
     const inspectionActive =
         phase === "inspection" ||
         phase === "inspection-holding" ||
-        phase === "inspection-ready";
+        phase === "inspection-ready"
     const displayedTime = inspectionActive
         ? formatInspectionTime(elapsedMs)
         : phase === "running"
@@ -187,7 +187,7 @@ export function TimerPage({
                 : formatTime(elapsedMs)
             : lastSolve
               ? formatTime(lastSolve.duration_ms, lastSolve.penalty)
-              : "0.00";
+              : "0.00"
 
     return (
         <main className="practice-view page-width">
@@ -263,7 +263,7 @@ export function TimerPage({
                                     disabled={disabled}
                                     onClick={() => {
                                         if (pendingSolve)
-                                            void persistSolve(pendingSolve);
+                                            void persistSolve(pendingSolve)
                                     }}
                                 >
                                     <FontAwesomeIcon
@@ -288,5 +288,5 @@ export function TimerPage({
                 />
             </div>
         </main>
-    );
+    )
 }

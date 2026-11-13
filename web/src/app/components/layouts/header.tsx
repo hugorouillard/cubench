@@ -2,15 +2,10 @@ import type { IconDefinition } from "@fortawesome/fontawesome-svg-core"
 import { faStopwatch } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCog, faInfo } from "free-solid-svg-icons-v5"
-import type { ReactNode } from "react"
 import { Link, NavLink } from "react-router"
-import "./Header.css"
+import "./header.css"
 
-type HeaderProps = {
-    children: ReactNode
-}
-
-export function Header({ children }: HeaderProps) {
+export const Header = () => {
     return (
         <header className="site-header site-header--timer page-width focus-chrome">
             <div className="site-header-main">
@@ -70,7 +65,7 @@ export function Header({ children }: HeaderProps) {
                         />
                     </button>
                 </nav>
-                {children}
+                <Link to="/login">Sign in</Link>
             </div>
         </header>
     )
