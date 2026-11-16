@@ -1,46 +1,41 @@
 import {
     faArrowRightToBracket,
     faUserPlus,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type FormEvent, useState } from "react";
-import { INVITE_REQUEST_URL } from "./project";
-import { useAuth } from "./useAuth";
-import "./AuthPage.css";
-
-type AuthPageProps = {
-    onPreview: () => void;
-};
+} from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { type FormEvent, useState } from "react"
+import { useAuth } from "./useAuth"
+import "./AuthPage.css"
 
 type AuthFormProps = {
-    mode: "login" | "register";
-};
+    mode: "login" | "register"
+}
 
 function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Something went wrong";
+    return error instanceof Error ? error.message : "Something went wrong"
 }
 
 function AuthForm({ mode }: AuthFormProps) {
-    const { login, register, checking, pending } = useAuth();
-    const busy = checking || pending !== null;
-    const submitting = pending === mode;
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [inviteCode, setInviteCode] = useState("");
-    const [error, setError] = useState("");
-    const isRegister = mode === "register";
-    const action = isRegister ? "create account" : "sign in";
+    const { login, register, checking, pending } = useAuth()
+    const busy = checking || pending !== null
+    const submitting = pending === mode
+    const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
+    const [inviteCode, setInviteCode] = useState("")
+    const [error, setError] = useState("")
+    const isRegister = mode === "register"
+    const action = isRegister ? "create account" : "sign in"
 
     async function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        if (busy) return;
-        setError("");
+        event.preventDefault()
+        if (busy) return
+        setError("")
         try {
             if (isRegister)
-                await register({ username, password, invite_code: inviteCode });
-            else await login({ username, password });
+                await register({ username, password, invite_code: inviteCode })
+            else await login({ username, password })
         } catch (authError) {
-            setError(errorMessage(authError));
+            setError(errorMessage(authError))
         }
     }
 
@@ -122,12 +117,12 @@ function AuthForm({ mode }: AuthFormProps) {
                 </button>
             </form>
         </section>
-    );
+    )
 }
 
-export function AuthPage({ onPreview }: AuthPageProps) {
-    const { checking, pending } = useAuth();
-    const busy = checking || pending !== null;
+export const AuthPage = () => {
+    const { checking, pending } = useAuth()
+    const busy = checking || pending !== null
 
     return (
         <main className="auth-page page-width">
@@ -136,14 +131,13 @@ export function AuthPage({ onPreview }: AuthPageProps) {
                 <AuthForm mode="login" />
             </div>
             <div className="auth-footer">
-                <button type="button" onClick={onPreview} disabled={busy}>
+                <button type="button" disabled={busy}>
                     preview account features
                 </button>
                 <p id="invite-code-help">
                     accounts are invite-only during the beta period (
-                    <a href={INVITE_REQUEST_URL}>request an invite</a>).
                 </p>
             </div>
         </main>
-    );
+    )
 }

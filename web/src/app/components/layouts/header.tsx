@@ -4,8 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCog, faInfo } from "free-solid-svg-icons-v5"
 import { Link, NavLink } from "react-router"
 import "./header.css"
+import { useAuth } from "../../../auth/useAuth"
 
 export const Header = () => {
+    const { account, logout } = useAuth()
+    console.log("##########", account)
     return (
         <header className="site-header site-header--timer page-width focus-chrome">
             <div className="site-header-main">
@@ -64,8 +67,15 @@ export const Header = () => {
                             aria-hidden="true"
                         />
                     </button>
+                    {account ? (
+                        <>
+                            <NavLink to="/profile">Profile</NavLink>
+                            <button onClick={logout}>Log Out</button>
+                        </>
+                    ) : (
+                        <NavLink to="/login">Sign In</NavLink>
+                    )}
                 </nav>
-                <Link to="/login">Sign in</Link>
             </div>
         </header>
     )
