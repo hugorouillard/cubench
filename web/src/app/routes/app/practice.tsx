@@ -8,8 +8,7 @@ import {
     useSyncExternalStore,
 } from "react"
 import { SessionPanel } from "../../../session/SessionPanel"
-import { createSolveRepository } from "../../../solves/solveRepository"
-import { guestSolveStore } from "../../../solves/solveStore"
+import type { SolveRepository } from "../../../solves/solveRepository"
 import { summarizeSolves } from "../../../solves/stats"
 import { PracticeSettings } from "../../../timer/PracticeSettings"
 import {
@@ -22,6 +21,7 @@ import { useTimer } from "../../../timer/useTimer"
 import type { Penalty, Solve, SolveInput } from "../../../types"
 import { ErrorNotification } from "../../ErrorNotification"
 import "./timer-page.css"
+import { useOutletContext } from "react-router"
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong"
@@ -45,9 +45,7 @@ function phaseInstruction(
 }
 
 const PracticeRoute = () => {
-    const [repository] = useState(() =>
-        createSolveRepository(guestSolveStore, async () => []),
-    )
+    const repository = useOutletContext<SolveRepository>()
     const { session: solves } = useSyncExternalStore(
         repository.subscribe,
         repository.getSnapshot,
