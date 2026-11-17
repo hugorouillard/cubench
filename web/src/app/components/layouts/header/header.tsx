@@ -4,11 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCog, faInfo } from "free-solid-svg-icons-v5"
 import { Link, NavLink } from "react-router"
 import "./header.css"
-import { useAuth } from "../../../auth/useAuth"
+import { useAuth } from "../../../../auth/useAuth"
+import { AccountMenu } from "./account-menu"
 
 export const Header = () => {
-    const { account, logout } = useAuth()
-    console.log("##########", account)
+    const { account } = useAuth()
     return (
         <header className="site-header site-header--timer page-width focus-chrome">
             <div className="site-header-main">
@@ -68,10 +68,7 @@ export const Header = () => {
                         />
                     </button>
                     {account ? (
-                        <>
-                            <NavLink to="/profile">Profile</NavLink>
-                            <button onClick={logout}>Log Out</button>
-                        </>
+                        <AccountMenu account={account}></AccountMenu>
                     ) : (
                         <NavLink to="/login">Sign In</NavLink>
                     )}

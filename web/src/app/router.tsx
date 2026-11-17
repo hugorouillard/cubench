@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router"
 import { RouterProvider } from "react-router/dom"
 import PracticeRoute from "./routes/app/practice"
+import ProfileRoute from "./routes/app/profile"
 import LoginRoute from "./routes/auth/login"
 import AppRoot from "./routes/root"
 
@@ -19,7 +20,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "profile",
-                element: <h1>placeholder profile page</h1>,
+                element: <ProfileRoute></ProfileRoute>,
             },
         ],
     },
