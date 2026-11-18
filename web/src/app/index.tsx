@@ -1,4 +1,4 @@
-import { AuthProvider } from "../auth/AuthProvider"
+import { AuthProvider } from "../features/auth/AuthProvider"
 import { AppRouter } from "./router"
 
 export const App = () => {

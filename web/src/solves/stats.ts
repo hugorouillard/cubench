@@ -1,4 +1,4 @@
-import { effectiveDuration } from "../timer/timer";
+import { effectiveDuration } from "../features/timer/timer";
 import type { Solve } from "../types";
 
 export type DatedSolveRecord = {

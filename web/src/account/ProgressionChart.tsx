@@ -10,7 +10,7 @@ import {
     getTooltipOptions,
 } from "../Charts";
 import { chronologicalSolves, completedDuration } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../features/timer/timer";
 import type { Solve } from "../types";
 import { formatAccountDate } from "./format";
 

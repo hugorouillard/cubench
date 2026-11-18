@@ -2,7 +2,7 @@ import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { lazy, Suspense, useState } from "react";
 import { buildSessionHistory, completedDuration } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../features/timer/timer";
 import type { Penalty, Solve } from "../types";
 import "./SessionPanel.css";
 

@@ -1,4 +1,4 @@
-import type { Penalty } from "../types";
+import type { Penalty } from "../../types";
 
 export function effectiveDuration(
     durationMs: number,

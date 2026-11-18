@@ -5,8 +5,8 @@ import { faUser } from "free-solid-svg-icons-v5"
 import { useCallback, useEffect, useRef, useState } from "react"
 import "./account-menu.css"
 import { useNavigate } from "react-router"
-import { useAuth } from "../../../../auth/useAuth"
-import type { Account } from "../../../../types"
+import { useAuth } from "../../../features/auth/useAuth"
+import type { Account } from "../../../types"
 
 type AccountMenuProps = {
     account: Account

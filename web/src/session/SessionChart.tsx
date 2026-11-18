@@ -7,7 +7,7 @@ import {
     getTooltipOptions,
 } from "../Charts";
 import { buildSessionHistory } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../features/timer/timer";
 import type { Solve } from "../types";
 
 type SessionChartProps = {

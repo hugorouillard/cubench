@@ -10,14 +10,14 @@ import {
 import { SessionPanel } from "../../../session/SessionPanel"
 import type { SolveRepository } from "../../../solves/solveRepository"
 import { summarizeSolves } from "../../../solves/stats"
-import { PracticeSettings } from "../../../timer/PracticeSettings"
+import { PracticeSettings } from "../../../features/timer/PracticeSettings"
 import {
     formatInspectionTime,
     formatTime,
     togglePenalty,
-} from "../../../timer/timer"
-import type { TimerPhase } from "../../../timer/useTimer"
-import { useTimer } from "../../../timer/useTimer"
+} from "../../../features/timer/timer"
+import type { TimerPhase } from "../../../features/timer/useTimer"
+import { useTimer } from "../../../features/timer/useTimer"
 import type { Penalty, Solve, SolveInput } from "../../../types"
 import { ErrorNotification } from "../../ErrorNotification"
 import "./timer-page.css"

@@ -1,5 +1,5 @@
 import type { DatedSolveRecord } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../features/timer/timer";
 import { formatAccountDate } from "./format";
 
 type Best = {

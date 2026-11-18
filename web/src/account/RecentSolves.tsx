@@ -2,7 +2,7 @@ import { faCrown, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMemo, useState } from "react";
 import { newestSolvesFirst, personalBestIds } from "../solves/stats";
-import { formatTime } from "../timer/timer";
+import { formatTime } from "../features/timer/timer";
 import type { Penalty, Solve } from "../types";
 import { formatAccountDate } from "./format";
 

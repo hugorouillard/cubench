@@ -9,7 +9,7 @@ import {
     within,
 } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import type { TimerPhase } from "../../../../timer/useTimer"
+import type { TimerPhase } from "../../../../features/timer/useTimer"
 import type { Penalty } from "../../../../types"
 import PracticeRoute from "../practice"
 
@@ -24,7 +24,7 @@ const timer = vi.hoisted(() => ({
 vi.mock("cubing/scramble", () => ({
     randomScrambleForEvent: scramble.random,
 }))
-vi.mock("../../../../timer/useTimer", () => ({
+vi.mock("../../../../features/timer/useTimer", () => ({
     useTimer: (
         _enabled: boolean,
         _inspectionEnabled: boolean,

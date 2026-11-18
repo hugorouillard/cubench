@@ -4,7 +4,7 @@ import type {
     LoginInput,
     RegistrationInput,
     UserProfile,
-} from "../types";
+} from "../../types";
 
 export type AuthOperation = "login" | "register" | "logout";
 

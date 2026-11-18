@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Outlet } from "react-router"
 import { createSolveRepository } from "../../solves/solveRepository"
 import { guestSolveStore } from "../../solves/solveStore"
-import { AppLayout } from "../components/layouts/app-layout"
+import { AppLayout } from "../../components/layouts/app-layout"
 
 const AppRoot = () => {
     const [repository] = useState(() =>

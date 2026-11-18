@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { AuthPage } from "../../../auth/AuthPage"
-import { useAuth } from "../../../auth/useAuth"
+import { AuthPage } from "../../../features/auth/AuthPage"
+import { useAuth } from "../../../features/auth/useAuth"
 
 const LoginRoute = () => {
     const navigate = useNavigate()

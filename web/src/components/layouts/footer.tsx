@@ -10,7 +10,7 @@ import {
     faPalette,
     faShieldAlt,
 } from "free-solid-svg-icons-v5"
-import { THEME_OPTIONS, type Theme } from "../../theme"
+import { THEME_OPTIONS, type Theme } from "../../app/theme"
 import "./footer.css"
 
 declare const __CUBENCH_VERSION__: string

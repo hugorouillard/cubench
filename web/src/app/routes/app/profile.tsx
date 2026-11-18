@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { useAuth } from "../../../auth/useAuth"
+import { useAuth } from "../../../features/auth/useAuth"
 
 const ProfileRoute = () => {
     const { account, checking } = useAuth()

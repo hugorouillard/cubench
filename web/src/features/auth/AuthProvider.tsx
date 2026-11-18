@@ -6,8 +6,8 @@ import {
     useRef,
     useState,
 } from "react";
-import * as api from "../api";
-import type { Account, UserProfile } from "../types";
+import * as api from "../../api";
+import type { Account, UserProfile } from "../../types";
 import {
     AuthContext,
     type AuthContextValue,

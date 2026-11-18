@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCog, faInfo } from "free-solid-svg-icons-v5"
 import { Link, NavLink } from "react-router"
 import "./header.css"
-import { useAuth } from "../../../../auth/useAuth"
+import { useAuth } from "../../../features/auth/useAuth"
 import { AccountMenu } from "./account-menu"
 
 export const Header = () => {

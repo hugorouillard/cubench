@@ -2,12 +2,12 @@
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../../api";
-import type { Account } from "../../types";
+import * as api from "../../../api";
+import type { Account } from "../../../types";
 import { AuthProvider } from "../AuthProvider";
 import { useAuth } from "../useAuth";
 
-vi.mock("../../api", async (importOriginal) => ({
+vi.mock("../../../api", async (importOriginal) => ({
     ...(await importOriginal<typeof api>()),
     getAuthSession: vi.fn(),
     login: vi.fn(),

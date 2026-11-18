@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Penalty } from "../types";
+import type { Penalty } from "../../types";
 import { inspectionPenalty } from "./timer";
 
 export type TimerPhase =
