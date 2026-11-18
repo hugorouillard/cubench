@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router"
 import { RouterProvider } from "react-router/dom"
+import AccountRoute from "./routes/app/account"
 import PracticeRoute from "./routes/app/practice"
-import ProfileRoute from "./routes/app/profile"
 import LoginRoute from "./routes/auth/login"
 import AppRoot from "./routes/root"
 
@@ -19,8 +19,8 @@ const router = createBrowserRouter([
                 element: <LoginRoute />,
             },
             {
-                path: "profile",
-                element: <ProfileRoute></ProfileRoute>,
+                path: "account",
+                element: <AccountRoute />,
             },
         ],
     },

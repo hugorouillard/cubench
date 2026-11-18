@@ -1,65 +1,65 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faPen } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserCircle } from "free-solid-svg-icons-v5";
-import { useEffect, useRef } from "react";
-import type { ActivitySummary } from "../solves/activity";
-import type { LifetimeSolveSummary } from "../solves/stats";
-import type { UserProfile } from "../types";
-import { formatAccountDate, formatSolvingTime } from "./format";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core"
+import { faPen } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faUserCircle } from "free-solid-svg-icons-v5"
+import { useEffect, useRef } from "react"
+import type { ActivitySummary } from "../solves/activity"
+import type { LifetimeSolveSummary } from "../solves/stats"
+import type { AccountDetails } from "../types"
+import { formatAccountDate, formatSolvingTime } from "./format"
 
 type AccountSummaryProps = {
-    profile: UserProfile;
-    lifetime: LifetimeSolveSummary & ActivitySummary;
-    onEdit?: () => void;
-};
+    account: AccountDetails
+    lifetime: LifetimeSolveSummary & ActivitySummary
+    onEdit?: () => void
+}
 
 function FittedName({ name }: { name: string }) {
-    const nameRef = useRef<HTMLHeadingElement>(null);
+    const nameRef = useRef<HTMLHeadingElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: Refit when the rendered name changes, even if the container size is unchanged.
     useEffect(() => {
-        const heading = nameRef.current;
-        const container = heading?.parentElement;
+        const heading = nameRef.current
+        const container = heading?.parentElement
         if (!heading || !container || typeof ResizeObserver === "undefined")
-            return;
+            return
 
         const fitName = () => {
-            if (!container.clientWidth) return;
-            heading.style.fontSize = "10px";
-            const measuredWidth = heading.getBoundingClientRect().width;
+            if (!container.clientWidth) return
+            heading.style.fontSize = "10px"
+            const measuredWidth = heading.getBoundingClientRect().width
             if (!measuredWidth) {
-                heading.style.fontSize = "";
-                return;
+                heading.style.fontSize = ""
+                return
             }
             const maximum =
                 2 *
-                parseFloat(getComputedStyle(document.documentElement).fontSize);
-            heading.style.fontSize = `${Math.min(maximum, Math.max(10, (container.clientWidth / measuredWidth) * 10))}px`;
-        };
+                parseFloat(getComputedStyle(document.documentElement).fontSize)
+            heading.style.fontSize = `${Math.min(maximum, Math.max(10, (container.clientWidth / measuredWidth) * 10))}px`
+        }
 
-        const observer = new ResizeObserver(fitName);
-        observer.observe(container);
-        fitName();
-        void document.fonts.ready.then(fitName);
-        return () => observer.disconnect();
-    }, [name]);
+        const observer = new ResizeObserver(fitName)
+        observer.observe(container)
+        fitName()
+        void document.fonts.ready.then(fitName)
+        return () => observer.disconnect()
+    }, [name])
 
     return (
         <h1 id="account-name" ref={nameRef}>
             {name}
         </h1>
-    );
+    )
 }
 
 export function AccountSummary({
-    profile,
+    account,
     lifetime,
     onEdit,
 }: AccountSummaryProps) {
     return (
         <section
-            className={`account-summary${profile.bio ? " has-bio" : ""}`}
+            className={`account-summary${account.bio ? " has-bio" : ""}`}
             aria-labelledby="account-name"
         >
             <div className="account-summary-body">
@@ -70,11 +70,11 @@ export function AccountSummary({
                         aria-hidden="true"
                     />
                     <div className="account-summary-identity-text">
-                        <FittedName name={profile.display_name} />
+                        <FittedName name={account.display_name} />
                         <div className="account-joined">
                             Joined{" "}
-                            <time dateTime={profile.created_at}>
-                                {formatAccountDate(profile.created_at)}
+                            <time dateTime={account.created_at}>
+                                {formatAccountDate(account.created_at)}
                             </time>
                         </div>
                         {lifetime.currentStreak > 0 && (
@@ -98,11 +98,11 @@ export function AccountSummary({
                     </div>
                 </div>
                 <span className="account-divider" aria-hidden="true" />
-                {profile.bio && (
+                {account.bio && (
                     <>
                         <div className="account-bio">
                             <span>bio</span>
-                            <p>{profile.bio}</p>
+                            <p>{account.bio}</p>
                         </div>
                         <span
                             className="account-divider account-bio-divider"
@@ -138,12 +138,12 @@ export function AccountSummary({
                     className="account-edit"
                     type="button"
                     onClick={onEdit}
-                    aria-label="Edit profile"
-                    title="Edit profile"
+                    aria-label="Edit account"
+                    title="Edit account"
                 >
                     <FontAwesomeIcon icon={faPen} aria-hidden="true" />
                 </button>
             )}
         </section>
-    );
+    )
 }

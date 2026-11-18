@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 Penalty = Literal["none", "plus2", "dnf"]
 
 
-class ProfileUpdate(BaseModel):
+class AccountUpdate(BaseModel):
     display_name: str = Field(min_length=1, max_length=40)
     bio: str = Field(max_length=160)
 
@@ -17,7 +17,7 @@ class ProfileUpdate(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
-class Profile(ProfileUpdate):
+class AccountDetails(AccountUpdate):
     id: int
     created_at: datetime
 
@@ -56,5 +56,5 @@ class Solve(SolveCreate):
 class ExportData(BaseModel):
     version: int
     exported_at: datetime
-    profile: Profile
+    account: AccountDetails
     solves: list[Solve]

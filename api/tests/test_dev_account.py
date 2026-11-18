@@ -63,7 +63,7 @@ def test_restart_preserves_edits_and_does_not_duplicate_history(tmp_path, monkey
             f"/api/solves/{solve_id}", json={"penalty": "dnf"}
         ).status_code == 200
         assert client.patch(
-            "/api/profile", json={"display_name": "Practice", "bio": "testing"}
+            "/api/account", json={"display_name": "Practice", "bio": "testing"}
         ).status_code == 200
 
     with TestClient(app) as client:
@@ -71,7 +71,7 @@ def test_restart_preserves_edits_and_does_not_duplicate_history(tmp_path, monkey
             "/api/auth/login",
             json={"username": DEV_USERNAME, "password": DEV_PASSWORD},
         ).status_code == 200
-        assert client.get("/api/profile").json()["display_name"] == "Practice"
+        assert client.get("/api/account").json()["display_name"] == "Practice"
         restarted_solves = client.get("/api/solves").json()
         assert len(restarted_solves) == len(solves)
         assert restarted_solves[0]["penalty"] == "dnf"

@@ -1,58 +1,58 @@
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { updateProfile } from "../api";
-import type { UserProfile, UserProfileInput } from "../types";
+import { faXmark } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { type FormEvent, useEffect, useRef, useState } from "react"
+import { updateAccount } from "../api"
+import type { AccountDetails, AccountInput } from "../types"
 
-function fields(profile: UserProfile): UserProfileInput {
-    return { display_name: profile.display_name, bio: profile.bio };
+function fields(account: AccountDetails): AccountInput {
+    return { display_name: account.display_name, bio: account.bio }
 }
 
-export function ProfileEditor({
+export function AccountEditor({
     open,
-    profile,
+    account,
     onClose,
     onSaved,
     onError,
 }: {
-    open: boolean;
-    profile: UserProfile;
-    onClose: () => void;
-    onSaved: (profile: UserProfile) => void;
-    onError: (message: string) => void;
+    open: boolean
+    account: AccountDetails
+    onClose: () => void
+    onSaved: (account: AccountDetails) => void
+    onError: (message: string) => void
 }) {
-    const dialogRef = useRef<HTMLDialogElement>(null);
-    const [draft, setDraft] = useState<UserProfileInput>(() => fields(profile));
-    const [saving, setSaving] = useState(false);
+    const dialogRef = useRef<HTMLDialogElement>(null)
+    const [draft, setDraft] = useState<AccountInput>(() => fields(account))
+    const [saving, setSaving] = useState(false)
 
     useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog) return;
+        const dialog = dialogRef.current
+        if (!dialog) return
         if (open && !dialog.open) {
-            setDraft(fields(profile));
-            dialog.showModal();
-        } else if (!open && dialog.open) dialog.close();
-    }, [open, profile]);
+            setDraft(fields(account))
+            dialog.showModal()
+        } else if (!open && dialog.open) dialog.close()
+    }, [open, account])
 
     async function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+        event.preventDefault()
         const input = {
             display_name: draft.display_name.trim(),
             bio: draft.bio.trim(),
-        };
-        if (!input.display_name) return;
+        }
+        if (!input.display_name) return
 
-        setSaving(true);
+        setSaving(true)
         try {
-            const saved = await updateProfile(input);
-            onSaved(saved);
-            onClose();
+            const saved = await updateAccount(input)
+            onSaved(saved)
+            onClose()
         } catch (error) {
             onError(
-                `Could not update profile: ${error instanceof Error ? error.message : "Something went wrong"}`,
-            );
+                `Could not update account: ${error instanceof Error ? error.message : "Something went wrong"}`,
+            )
         } finally {
-            setSaving(false);
+            setSaving(false)
         }
     }
 
@@ -64,20 +64,20 @@ export function ProfileEditor({
             aria-labelledby="account-editor-title"
             onClose={onClose}
             onCancel={(event) => {
-                if (saving) event.preventDefault();
+                if (saving) event.preventDefault()
             }}
             onMouseDown={(event) => {
-                if (event.target === event.currentTarget && !saving) onClose();
+                if (event.target === event.currentTarget && !saving) onClose()
             }}
         >
             <form onSubmit={(event) => void submit(event)}>
                 <header>
-                    <h2 id="account-editor-title">edit profile</h2>
+                    <h2 id="account-editor-title">edit account</h2>
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={saving}
-                        aria-label="Close profile editor"
+                        aria-label="Close account editor"
                     >
                         <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                     </button>
@@ -115,10 +115,10 @@ export function ProfileEditor({
                         cancel
                     </button>
                     <button type="submit" disabled={saving}>
-                        {saving ? "saving..." : "save profile"}
+                        {saving ? "saving..." : "save account"}
                     </button>
                 </div>
             </form>
         </dialog>
-    );
+    )
 }

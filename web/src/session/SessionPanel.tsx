@@ -1,37 +1,37 @@
-import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { lazy, Suspense, useState } from "react";
-import { buildSessionHistory, completedDuration } from "../solves/stats";
-import { formatTime } from "../features/timer/timer";
-import type { Penalty, Solve } from "../types";
-import "./SessionPanel.css";
+import { faTrashCan } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { lazy, Suspense, useState } from "react"
+import { formatTime } from "../features/timer/timer"
+import { buildSessionHistory, completedDuration } from "../solves/stats"
+import type { Penalty, Solve } from "../types"
+import "./SessionPanel.css"
 
 const SessionChart = lazy(() =>
     import("./SessionChart").then((module) => ({
         default: module.SessionChart,
     })),
-);
+)
 
 type SessionPanelProps = {
-    solves: Solve[];
-    disabled: boolean;
-    pendingSolveIds: string[];
-    theme: string;
-    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
-    onDelete: (solve: Solve) => Promise<void>;
-    onClear: () => void;
-};
+    solves: Solve[]
+    disabled: boolean
+    pendingSolveIds: string[]
+    theme: string
+    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>
+    onDelete: (solve: Solve) => Promise<void>
+    onClear: () => void
+}
 
 function formatSolveDate(value: string): string {
-    const date = new Date(value);
-    const today = new Date();
+    const date = new Date(value)
+    const today = new Date()
     if (date.toDateString() === today.toDateString()) {
         return date.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
-        });
+        })
     }
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    return date.toLocaleDateString([], { month: "short", day: "numeric" })
 }
 
 export function SessionPanel({
@@ -43,22 +43,22 @@ export function SessionPanel({
     onDelete,
     onClear,
 }: SessionPanelProps) {
-    const [openSolveId, setOpenSolveId] = useState("");
+    const [openSolveId, setOpenSolveId] = useState("")
     const successful = solves
         .map((solve) => ({ solve, duration: completedDuration(solve) }))
         .filter(
             (item): item is { solve: Solve; duration: number } =>
                 item.duration !== null,
-        );
+        )
     const bestSolveId = successful.length
         ? successful.reduce((best, item) =>
               item.duration < best.duration ? item : best,
           ).solve.id
-        : "";
-    const hasTrend = successful.length >= 3;
+        : ""
+    const hasTrend = successful.length >= 3
     const hasAverage = buildSessionHistory(solves).some(
         (point) => point.ao5Ms !== null,
-    );
+    )
 
     return (
         <aside
@@ -147,14 +147,14 @@ export function SessionPanel({
 
                     <ol className="session-solve-list">
                         {solves.map((solve, index) => {
-                            const solveNumber = solves.length - index;
-                            const isBest = solve.id === bestSolveId;
-                            const pending = pendingSolveIds.includes(solve.id);
-                            const rawTime = formatTime(solve.duration_ms);
+                            const solveNumber = solves.length - index
+                            const isBest = solve.id === bestSolveId
+                            const pending = pendingSolveIds.includes(solve.id)
+                            const rawTime = formatTime(solve.duration_ms)
                             const result = formatTime(
                                 solve.duration_ms,
                                 solve.penalty,
-                            );
+                            )
                             return (
                                 <li
                                     className={`${index === 0 ? "is-latest " : ""}${isBest ? "is-best " : ""}${openSolveId === solve.id ? "is-actions-visible" : ""}`.trim()}
@@ -251,11 +251,11 @@ export function SessionPanel({
                                         </button>
                                     </div>
                                 </li>
-                            );
+                            )
                         })}
                     </ol>
                 </>
             )}
         </aside>
-    );
+    )
 }

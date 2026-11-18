@@ -1,13 +1,13 @@
-import type { DatedSolveRecord } from "../solves/stats";
-import { formatTime } from "../features/timer/timer";
-import { formatAccountDate } from "./format";
+import { formatTime } from "../features/timer/timer"
+import type { DatedSolveRecord } from "../solves/stats"
+import { formatAccountDate } from "./format"
 
 type Best = {
-    label: string;
-    value: number | null;
-    achievedAt?: string;
-    context?: string;
-};
+    label: string
+    value: number | null
+    achievedAt?: string
+    context?: string
+}
 
 export function PersonalBests({
     single,
@@ -15,10 +15,10 @@ export function PersonalBests({
     ao12,
     ao50,
 }: {
-    single: DatedSolveRecord | null;
-    ao5: DatedSolveRecord | null;
-    ao12: DatedSolveRecord | null;
-    ao50: number | null;
+    single: DatedSolveRecord | null
+    ao5: DatedSolveRecord | null
+    ao12: DatedSolveRecord | null
+    ao50: number | null
 }) {
     const bests: Best[] = [
         {
@@ -37,7 +37,7 @@ export function PersonalBests({
             achievedAt: ao12?.achievedAt,
         },
         { label: "ao50", value: ao50, context: "50 attempts" },
-    ];
+    ]
 
     return (
         <section
@@ -65,5 +65,5 @@ export function PersonalBests({
                 ))}
             </div>
         </section>
-    );
+    )
 }

@@ -7,9 +7,6 @@ import {
     useState,
     useSyncExternalStore,
 } from "react"
-import { SessionPanel } from "../../../session/SessionPanel"
-import type { SolveRepository } from "../../../solves/solveRepository"
-import { summarizeSolves } from "../../../solves/stats"
 import { PracticeSettings } from "../../../features/timer/PracticeSettings"
 import {
     formatInspectionTime,
@@ -18,6 +15,9 @@ import {
 } from "../../../features/timer/timer"
 import type { TimerPhase } from "../../../features/timer/useTimer"
 import { useTimer } from "../../../features/timer/useTimer"
+import { SessionPanel } from "../../../session/SessionPanel"
+import type { SolveRepository } from "../../../solves/solveRepository"
+import { summarizeSolves } from "../../../solves/stats"
 import type { Penalty, Solve, SolveInput } from "../../../types"
 import { ErrorNotification } from "../../ErrorNotification"
 import "./timer-page.css"

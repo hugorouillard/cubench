@@ -5,20 +5,20 @@ import {
     useMemo,
     useRef,
     useState,
-} from "react";
-import { localDate } from "../dates/localCalendar";
-import type { ActivitySummary, SolveCountByDay } from "../solves/activity";
+} from "react"
+import { localDate } from "../dates/localCalendar"
+import type { ActivitySummary, SolveCountByDay } from "../solves/activity"
 import {
     type ActivityRange,
     activityLevel,
     activityThresholds,
     buildActivityCalendar,
-} from "./activityCalendar";
-import { formatAccountDate } from "./format";
-import "./DailyActivityChart.css";
+} from "./activityCalendar"
+import { formatAccountDate } from "./format"
+import "./DailyActivityChart.css"
 
 function solveCount(count: number): string {
-    return `${count} ${count === 1 ? "solve" : "solves"}`;
+    return `${count} ${count === 1 ? "solve" : "solves"}`
 }
 
 export function DailyActivityChart({
@@ -27,44 +27,43 @@ export function DailyActivityChart({
     today,
     summary,
 }: {
-    activity: SolveCountByDay;
-    firstYear: number;
-    today: string;
-    summary: ActivitySummary;
+    activity: SolveCountByDay
+    firstYear: number
+    today: string
+    summary: ActivitySummary
 }) {
-    const titleId = useId();
-    const [range, setRange] = useState<ActivityRange>({ kind: "rolling" });
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const currentYear = localDate(today).getFullYear();
+    const titleId = useId()
+    const [range, setRange] = useState<ActivityRange>({ kind: "rolling" })
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const currentYear = localDate(today).getFullYear()
     // Keep a selected historical year available if its last solve is deleted.
     const earliestYear = Math.min(
         firstYear,
         range.kind === "year" ? range.year : currentYear,
-    );
+    )
     const years = Array.from(
         { length: currentYear - earliestYear + 1 },
         (_, index) => currentYear - index,
-    );
+    )
     const { weeks, cells, months, totalAttempts } = useMemo(
         () => buildActivityCalendar(activity, range, today),
         [activity, range, today],
-    );
-    const days = cells.filter((cell) => cell.inRange);
-    const thresholds = activityThresholds(days.map((cell) => cell.count));
-    const layoutStyle = { "--calendar-weeks": weeks.length } as CSSProperties;
+    )
+    const days = cells.filter((cell) => cell.inRange)
+    const thresholds = activityThresholds(days.map((cell) => cell.count))
+    const layoutStyle = { "--calendar-weeks": weeks.length } as CSSProperties
     const columns = {
         gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
-    };
-    const rangeValue =
-        range.kind === "rolling" ? "current" : String(range.year);
-    const period = range.kind === "rolling" ? "the last 12 months" : range.year;
+    }
+    const rangeValue = range.kind === "rolling" ? "current" : String(range.year)
+    const period = range.kind === "rolling" ? "the last 12 months" : range.year
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: Reset scrolling only on mount and range changes, not when solve data updates.
     useEffect(() => {
-        const scroll = scrollRef.current;
+        const scroll = scrollRef.current
         if (scroll && scroll.scrollWidth > scroll.clientWidth)
-            scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth;
-    }, [rangeValue]);
+            scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth
+    }, [rangeValue])
 
     return (
         <section className="account-calendar" aria-labelledby={titleId}>
@@ -77,11 +76,11 @@ export function DailyActivityChart({
                         aria-label="Activity range"
                         value={rangeValue}
                         onChange={(event) => {
-                            const value = event.target.value;
+                            const value = event.target.value
                             if (value === "current")
-                                setRange({ kind: "rolling" });
+                                setRange({ kind: "rolling" })
                             else if (years.includes(Number(value)))
-                                setRange({ kind: "year", year: Number(value) });
+                                setRange({ kind: "year", year: Number(value) })
                         }}
                     >
                         <option value="current">last 12 months</option>
@@ -127,14 +126,14 @@ export function DailyActivityChart({
                                 const level = activityLevel(
                                     cell.count,
                                     thresholds,
-                                );
+                                )
                                 return (
                                     <i
                                         key={cell.key}
                                         className={`account-activity-level-${level}${cell.inRange ? "" : " is-outside"}`}
                                         title={`${formatAccountDate(cell.date)}: ${solveCount(cell.count)}`}
                                     />
-                                );
+                                )
                             })}
                         </div>
                         <div
@@ -150,5 +149,5 @@ export function DailyActivityChart({
                 </div>
             </div>
         </section>
-    );
+    )
 }

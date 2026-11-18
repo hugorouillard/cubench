@@ -1,29 +1,29 @@
-import { faChartLine, faCrown } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { ChartData, ChartOptions } from "chart.js";
-import { useMemo, useState } from "react";
-import { Line } from "react-chartjs-2";
+import { faChartLine, faCrown } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import type { ChartData, ChartOptions } from "chart.js"
+import { useMemo, useState } from "react"
+import { Line } from "react-chartjs-2"
 import {
     formatTimeAxisTick,
     getChartColors,
     getLineChartOptions,
     getTooltipOptions,
-} from "../Charts";
-import { chronologicalSolves, completedDuration } from "../solves/stats";
-import { formatTime } from "../features/timer/timer";
-import type { Solve } from "../types";
-import { formatAccountDate } from "./format";
+} from "../Charts"
+import { formatTime } from "../features/timer/timer"
+import { chronologicalSolves, completedDuration } from "../solves/stats"
+import type { Solve } from "../types"
+import { formatAccountDate } from "./format"
 
 const AVERAGE_SERIES = [
     { key: "ao5", label: "Avg of 5", size: 5 },
     { key: "ao12", label: "Avg of 12", size: 12 },
     { key: "ao50", label: "Avg of 50", size: 50 },
-] as const;
-type Series = "pb" | (typeof AVERAGE_SERIES)[number]["key"];
+] as const
+type Series = "pb" | (typeof AVERAGE_SERIES)[number]["key"]
 const SERIES: { key: Series; label: string }[] = [
     { key: "pb", label: "PB" },
     ...AVERAGE_SERIES,
-];
+]
 
 function blendHex(
     background: string,
@@ -31,33 +31,33 @@ function blendHex(
     amount: number,
 ): string {
     const channels = [1, 3, 5].map((offset) => {
-        const start = parseInt(background.slice(offset, offset + 2), 16);
-        const end = parseInt(foreground.slice(offset, offset + 2), 16);
+        const start = parseInt(background.slice(offset, offset + 2), 16)
+        const end = parseInt(foreground.slice(offset, offset + 2), 16)
         return Math.round(start * (1 - amount) + end * amount)
             .toString(16)
-            .padStart(2, "0");
-    });
-    return `#${channels.join("")}`;
+            .padStart(2, "0")
+    })
+    return `#${channels.join("")}`
 }
 
 export function AccountProgression({
     solves,
     theme,
 }: {
-    solves: Solve[];
-    theme: string;
+    solves: Solve[]
+    theme: string
 }) {
     const [visible, setVisible] = useState<Record<Series, boolean>>({
         pb: true,
         ao5: true,
         ao12: true,
         ao50: true,
-    });
+    })
     // Transform attempts into dots once; every series below is a view of these dots.
     const plotted = useMemo(
         () =>
             chronologicalSolves(solves).flatMap((solve, index) => {
-                const singleMs = completedDuration(solve);
+                const singleMs = completedDuration(solve)
                 return singleMs === null
                     ? []
                     : [
@@ -66,11 +66,11 @@ export function AccountProgression({
                               recordedAt: solve.recorded_at,
                               solveNumber: index + 1,
                           },
-                      ];
+                      ]
             }),
         [solves],
-    );
-    const singles = plotted.map(({ singleMs }) => singleMs);
+    )
+    const singles = plotted.map(({ singleMs }) => singleMs)
     const rollingMean = (size: number) =>
         singles.map((_, index) =>
             index < size - 1
@@ -80,26 +80,26 @@ export function AccountProgression({
                           .slice(index - size + 1, index + 1)
                           .reduce((sum, time) => sum + time, 0) / size,
                   ),
-        );
-    let best = Infinity;
+        )
+    let best = Infinity
     const personalBests = singles.map((time) => {
-        best = Math.min(best, time);
-        return best;
-    });
-    const firstPb = personalBests[0];
-    const currentPb = personalBests.at(-1);
+        best = Math.min(best, time)
+        return best
+    })
+    const firstPb = personalBests[0]
+    const currentPb = personalBests.at(-1)
     const timeSolving = solves.reduce(
         (sum, solve) => sum + solve.duration_ms,
         0,
-    );
+    )
     const improvementPerHour =
         firstPb != null && currentPb != null && timeSolving > 0
             ? (firstPb - currentPb) / 1000 / (timeSolving / 3_600_000)
-            : null;
+            : null
     // biome-ignore lint/correctness/useExhaustiveDependencies: Theme changes invalidate colors read from CSS custom properties.
-    const colors = useMemo(getChartColors, [theme]);
-    const baseOptions = getLineChartOptions();
-    const visibleAverages = AVERAGE_SERIES.filter(({ key }) => visible[key]);
+    const colors = useMemo(getChartColors, [theme])
+    const baseOptions = getLineChartOptions()
+    const visibleAverages = AVERAGE_SERIES.filter(({ key }) => visible[key])
     const averageColors = Object.fromEntries(
         visibleAverages.map(({ key }, index) => [
             key,
@@ -109,12 +109,12 @@ export function AccountProgression({
                 [0.45, 0.7, 1][index + 3 - visibleAverages.length],
             ),
         ]),
-    ) as Record<(typeof AVERAGE_SERIES)[number]["key"], string>;
+    ) as Record<(typeof AVERAGE_SERIES)[number]["key"], string>
     const singleColor = blendHex(
         colors.background,
         colors.main,
         [1, 0.55, 0.4, 0.25][visibleAverages.length],
-    );
+    )
 
     const data: ChartData<"line", (number | null)[], string> = {
         labels: plotted.map(({ solveNumber }) => `#${solveNumber}`),
@@ -158,7 +158,7 @@ export function AccountProgression({
                 order: 2,
             })),
         ],
-    };
+    }
     const options: ChartOptions<"line"> = {
         ...baseOptions,
         interaction: { mode: "nearest", intersect: false },
@@ -171,13 +171,13 @@ export function AccountProgression({
                 callbacks: {
                     title: () => "",
                     label: (context) => {
-                        const result = plotted[context.dataIndex];
-                        if (!result) return "";
-                        const date = new Date(result.recordedAt);
+                        const result = plotted[context.dataIndex]
+                        if (!result) return ""
+                        const date = new Date(result.recordedAt)
                         return [
                             `solve #${result.solveNumber}: ${formatTime(result.singleMs)}`,
                             `${formatAccountDate(result.recordedAt)} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                        ];
+                        ]
                     },
                 },
             },
@@ -203,7 +203,7 @@ export function AccountProgression({
                 },
             },
         },
-    };
+    }
 
     return (
         <section
@@ -264,5 +264,5 @@ export function AccountProgression({
                 </div>
             </div>
         </section>
-    );
+    )
 }

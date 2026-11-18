@@ -14,7 +14,7 @@ HISTORY_PATH = Path(__file__).with_name("preview_history.json")
 
 
 def seed_dev_account(db_path: Path, now: datetime | None = None) -> None:
-    """Seed once; preserve profile edits and solves across subsequent restarts."""
+    """Seed once; preserve account edits and solves across subsequent restarts."""
 
     with connect(db_path) as connection:
         existing = connection.execute(
@@ -22,7 +22,9 @@ def seed_dev_account(db_path: Path, now: datetime | None = None) -> None:
         ).fetchone()
         if existing is not None:
             if not verify_password(DEV_PASSWORD, existing["password_hash"]):
-                raise ConfigError(f"{DEV_USERNAME} is reserved for the development account")
+                raise ConfigError(
+                    f"{DEV_USERNAME} is reserved for the development account"
+                )
             return
 
         history = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
@@ -51,7 +53,9 @@ def seed_dev_account(db_path: Path, now: datetime | None = None) -> None:
                 session_start = (local_now - timedelta(days=day)).replace(
                     hour=18, minute=0, second=0, microsecond=0
                 )
-            for attempt, (duration_ms, penalty, scramble) in enumerate(samples[:attempts]):
+            for attempt, (duration_ms, penalty, scramble) in enumerate(
+                samples[:attempts]
+            ):
                 recorded_at = session_start + timedelta(seconds=attempt * 90)
                 timestamp = recorded_at.astimezone().isoformat()
                 solve_id = str(uuid5(NAMESPACE_URL, f"cubench-preview-{day}-{attempt}"))
@@ -62,6 +66,14 @@ def seed_dev_account(db_path: Path, now: datetime | None = None) -> None:
                         recorded_at, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (account_id, solve_id, duration_ms, penalty, scramble, timestamp, timestamp),
+                    (
+                        account_id,
+                        solve_id,
+                        duration_ms,
+                        penalty,
+                        scramble,
+                        timestamp,
+                        timestamp,
+                    ),
                 )
         connection.commit()

@@ -4,20 +4,20 @@ import {
     faSliders,
     faStopwatch,
     faXmark,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useRef } from "react";
-import "./PracticeSettings.css";
+} from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { useEffect, useRef } from "react"
+import "./PracticeSettings.css"
 
 type PracticeSettingsProps = {
-    open: boolean;
-    disabled: boolean;
-    hideTimer: boolean;
-    inspectionEnabled: boolean;
-    onOpenChange: (open: boolean) => void;
-    onHideTimerChange: (hidden: boolean) => void;
-    onInspectionChange: (enabled: boolean) => void;
-};
+    open: boolean
+    disabled: boolean
+    hideTimer: boolean
+    inspectionEnabled: boolean
+    onOpenChange: (open: boolean) => void
+    onHideTimerChange: (hidden: boolean) => void
+    onInspectionChange: (enabled: boolean) => void
+}
 
 export function PracticeSettings({
     open,
@@ -28,14 +28,14 @@ export function PracticeSettings({
     onHideTimerChange,
     onInspectionChange,
 }: PracticeSettingsProps) {
-    const dialogRef = useRef<HTMLDialogElement>(null);
+    const dialogRef = useRef<HTMLDialogElement>(null)
 
     useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog) return;
-        if (open && !dialog.open) dialog.showModal();
-        else if (!open && dialog.open) dialog.close();
-    }, [open]);
+        const dialog = dialogRef.current
+        if (!dialog) return
+        if (open && !dialog.open) dialog.showModal()
+        else if (!open && dialog.open) dialog.close()
+    }, [open])
 
     return (
         <>
@@ -54,8 +54,8 @@ export function PracticeSettings({
                             className={hideTimer ? "is-active" : ""}
                             type="button"
                             onClick={(event) => {
-                                onHideTimerChange(!hideTimer);
-                                event.currentTarget.blur();
+                                onHideTimerChange(!hideTimer)
+                                event.currentTarget.blur()
                             }}
                             disabled={disabled}
                             aria-pressed={hideTimer}
@@ -72,8 +72,8 @@ export function PracticeSettings({
                             className={inspectionEnabled ? "is-active" : ""}
                             type="button"
                             onClick={(event) => {
-                                onInspectionChange(!inspectionEnabled);
-                                event.currentTarget.blur();
+                                onInspectionChange(!inspectionEnabled)
+                                event.currentTarget.blur()
                             }}
                             disabled={disabled}
                             aria-pressed={inspectionEnabled}
@@ -143,17 +143,17 @@ export function PracticeSettings({
                             !document.querySelector("dialog[open]") &&
                             document.activeElement instanceof HTMLElement
                         ) {
-                            document.activeElement.blur();
+                            document.activeElement.blur()
                         }
-                    });
+                    })
                 }}
                 onCancel={(event) => {
-                    event.preventDefault();
-                    onOpenChange(false);
+                    event.preventDefault()
+                    onOpenChange(false)
                 }}
                 onMouseDown={(event) => {
                     if (event.target === event.currentTarget)
-                        onOpenChange(false);
+                        onOpenChange(false)
                 }}
             >
                 <div className="dialog-panel">
@@ -242,5 +242,5 @@ export function PracticeSettings({
                 </div>
             </dialog>
         </>
-    );
+    )
 }

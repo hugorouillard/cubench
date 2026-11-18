@@ -1,14 +1,11 @@
-import {
-    faCircleExclamation,
-    faXmark,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import "./ErrorNotification.css";
+import { faCircleExclamation, faXmark } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import "./ErrorNotification.css"
 
 type ErrorNotificationProps = {
-    message: string;
-    onDismiss: () => void;
-};
+    message: string
+    onDismiss: () => void
+}
 
 export function ErrorNotification({
     message,
@@ -40,5 +37,5 @@ export function ErrorNotification({
                 />
             </button>
         </aside>
-    );
+    )
 }

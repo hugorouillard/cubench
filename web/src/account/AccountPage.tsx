@@ -6,40 +6,40 @@ import {
     useMemo,
     useState,
     useSyncExternalStore,
-} from "react";
-import { getProfile } from "../api";
-import { localDate } from "../dates/localCalendar";
-import { useToday } from "../dates/useToday";
-import { countSolvesByDay, summarizeActivity } from "../solves/activity";
-import type { SolveRepository } from "../solves/solveRepository";
-import { lifetimeSolveSummary } from "../solves/stats";
-import type { Penalty, Solve, UserProfile } from "../types";
-import { AccountSummary } from "./AccountSummary";
-import { DailyActivityChart } from "./DailyActivityChart";
-import { PersonalBests } from "./PersonalBests";
-import { ProfileEditor } from "./ProfileEditor";
-import type { ProfilePreview } from "./profilePreview";
-import { RecentSolves } from "./RecentSolves";
-import "./AccountPage.css";
+} from "react"
+import { getAccount } from "../api"
+import { localDate } from "../dates/localCalendar"
+import { useToday } from "../dates/useToday"
+import { countSolvesByDay, summarizeActivity } from "../solves/activity"
+import type { SolveRepository } from "../solves/solveRepository"
+import { lifetimeSolveSummary } from "../solves/stats"
+import type { AccountDetails, Penalty, Solve } from "../types"
+import { AccountSummary } from "./AccountSummary"
+import { AccountEditor } from "./account-editor"
+import type { AccountPreview } from "./account-preview"
+import { DailyActivityChart } from "./DailyActivityChart"
+import { PersonalBests } from "./PersonalBests"
+import { RecentSolves } from "./RecentSolves"
+import "./AccountPage.css"
 
 const AccountProgression = lazy(() =>
     import("./ProgressionChart").then((module) => ({
         default: module.AccountProgression,
     })),
-);
+)
 
 export type AccountPageProps = {
-    repository: SolveRepository;
-    preview?: ProfilePreview;
-    theme?: string;
-    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>;
-    onDelete: (solve: Solve) => Promise<void>;
-    onError: (message: string) => void;
-    onProfileChange: (profile: UserProfile) => void;
-};
+    repository: SolveRepository
+    preview?: AccountPreview
+    theme?: string
+    onPenalty: (solve: Solve, penalty: Penalty) => Promise<void>
+    onDelete: (solve: Solve) => Promise<void>
+    onError: (message: string) => void
+    onAccountChange: (account: AccountDetails) => void
+}
 
 function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Something went wrong";
+    return error instanceof Error ? error.message : "Something went wrong"
 }
 
 export function AccountPage({
@@ -49,61 +49,61 @@ export function AccountPage({
     onPenalty,
     onDelete,
     onError,
-    onProfileChange,
+    onAccountChange,
 }: AccountPageProps) {
-    const [profile, setProfile] = useState<UserProfile | null>(
-        preview?.profile ?? null,
-    );
+    const [account, setAccount] = useState<AccountDetails | null>(
+        preview?.account ?? null,
+    )
     const { history } = useSyncExternalStore(
         repository.subscribe,
         repository.getSnapshot,
-    );
-    const solves = preview?.solves ?? history;
-    const [loading, setLoading] = useState(!preview);
-    const [loadFailed, setLoadFailed] = useState(false);
-    const [editorOpen, setEditorOpen] = useState(false);
-    const reportLoadError = useEffectEvent(onError);
+    )
+    const solves = preview?.solves ?? history
+    const [loading, setLoading] = useState(!preview)
+    const [loadFailed, setLoadFailed] = useState(false)
+    const [editorOpen, setEditorOpen] = useState(false)
+    const reportLoadError = useEffectEvent(onError)
 
     useEffect(() => {
-        if (preview) return;
-        let cancelled = false;
+        if (preview) return
+        let cancelled = false
 
-        void Promise.allSettled([getProfile(), repository.loadHistory()]).then(
-            ([profileResult, solvesResult]) => {
-                if (cancelled) return;
-                if (profileResult.status === "fulfilled")
-                    setProfile(profileResult.value);
+        void Promise.allSettled([getAccount(), repository.loadHistory()]).then(
+            ([accountResult, solvesResult]) => {
+                if (cancelled) return
+                if (accountResult.status === "fulfilled")
+                    setAccount(accountResult.value)
                 else
                     reportLoadError(
-                        `Could not load profile: ${errorMessage(profileResult.reason)}`,
-                    );
+                        `Could not load account: ${errorMessage(accountResult.reason)}`,
+                    )
                 if (solvesResult.status === "rejected")
                     reportLoadError(
                         `Could not load solve history: ${errorMessage(solvesResult.reason)}`,
-                    );
+                    )
                 setLoadFailed(
-                    profileResult.status === "rejected" ||
+                    accountResult.status === "rejected" ||
                         solvesResult.status === "rejected",
-                );
-                setLoading(false);
+                )
+                setLoading(false)
             },
-        );
+        )
 
         return () => {
-            cancelled = true;
-        };
-    }, [preview, repository]);
+            cancelled = true
+        }
+    }, [preview, repository])
 
-    const today = useToday();
-    const solveCounts = useMemo(() => countSolvesByDay(solves), [solves]);
+    const today = useToday()
+    const solveCounts = useMemo(() => countSolvesByDay(solves), [solves])
     const activitySummary = useMemo(
         () => summarizeActivity(solveCounts, today),
         [solveCounts, today],
-    );
-    const records = useMemo(() => lifetimeSolveSummary(solves), [solves]);
-    const lifetime = { ...records, ...activitySummary };
+    )
+    const records = useMemo(() => lifetimeSolveSummary(solves), [solves])
+    const lifetime = { ...records, ...activitySummary }
 
-    if (loading || loadFailed || !profile) {
+    if (loading || loadFailed || !account) {
         return (
             <main
                 className="account-page account-page-state page-width"
@@ -115,22 +115,22 @@ export function AccountPage({
                         : "Account unavailable. Try opening this page again."}
                 </p>
             </main>
-        );
+        )
     }
 
     // Imported/backdated attempts remain selectable even if they predate account creation.
     const firstYear = Math.min(
-        new Date(profile.created_at).getFullYear(),
+        new Date(account.created_at).getFullYear(),
         records.earliestSolveAt
             ? new Date(records.earliestSolveAt).getFullYear()
             : Infinity,
         localDate(today).getFullYear(),
-    );
+    )
 
     return (
         <main className="account-page page-width">
             <AccountSummary
-                profile={profile}
+                account={account}
                 lifetime={lifetime}
                 onEdit={preview ? undefined : () => setEditorOpen(true)}
             />
@@ -161,17 +161,17 @@ export function AccountPage({
                 onDelete={preview ? undefined : onDelete}
             />
             {!preview && (
-                <ProfileEditor
+                <AccountEditor
                     open={editorOpen}
-                    profile={profile}
+                    account={account}
                     onClose={() => setEditorOpen(false)}
                     onSaved={(updated) => {
-                        setProfile(updated);
-                        onProfileChange(updated);
+                        setAccount(updated)
+                        onAccountChange(updated)
                     }}
                     onError={onError}
                 />
             )}
         </main>
-    );
+    )
 }

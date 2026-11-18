@@ -90,9 +90,7 @@ def test_solves_are_isolated_by_account(account_client: TestClient) -> None:
     )
     assert response.status_code == 201
     assert account_client.get("/api/solves").json() == []
-    update = account_client.patch(
-        f"/api/solves/{shared_id}", json={"penalty": "dnf"}
-    )
+    update = account_client.patch(f"/api/solves/{shared_id}", json={"penalty": "dnf"})
     assert update.status_code == 404
     assert account_client.delete(f"/api/solves/{shared_id}").status_code == 404
     created = account_client.post("/api/solves", json=solve_payload(shared_id))
@@ -111,7 +109,7 @@ def test_solve_routes_require_authentication(client: TestClient) -> None:
     assert client.get("/api/export").status_code == 401
 
 
-def test_export_contains_profile_and_solves(account_client: TestClient) -> None:
+def test_export_contains_account_and_solves(account_client: TestClient) -> None:
     account_a_solve = solve_payload()
     account_client.post("/api/solves", json=account_a_solve)
 
@@ -130,8 +128,8 @@ def test_export_contains_profile_and_solves(account_client: TestClient) -> None:
     response = account_client.get("/api/export")
 
     assert response.status_code == 200
-    assert response.json()["version"] == 3
-    assert response.json()["profile"]["display_name"] == "user-b"
+    assert response.json()["version"] == 4
+    assert response.json()["account"]["display_name"] == "user-b"
     assert [solve["id"] for solve in response.json()["solves"]] == [
         account_b_solve["id"]
     ]

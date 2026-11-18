@@ -11,9 +11,9 @@ from cubench_api.config import ConfigDependency, load_runtime_config
 from cubench_api.database import connect, database_is_ready, initialize_database
 from cubench_api.dev_account import seed_dev_account
 from cubench_api.schemas import (
+    AccountDetails,
+    AccountUpdate,
     ExportData,
-    Profile,
-    ProfileUpdate,
     Solve,
     SolveCreate,
     SolveUpdate,
@@ -49,13 +49,13 @@ def health_ready(config: ConfigDependency) -> JSONResponse:
     return JSONResponse(status_code=503, content={"status": "unavailable"})
 
 
-@app.get("/api/profile", response_model=Profile)
-def get_profile(account: AccountDependency) -> dict:
+@app.get("/api/account", response_model=AccountDetails)
+def get_account(account: AccountDependency) -> dict:
     return account.model_dump()
 
 
-@app.patch("/api/profile", response_model=Profile)
-def update_profile(payload: ProfileUpdate, account: AccountDependency) -> dict:
+@app.patch("/api/account", response_model=AccountDetails)
+def update_account(payload: AccountUpdate, account: AccountDependency) -> dict:
     with connect() as connection:
         connection.execute(
             "UPDATE accounts SET display_name = ?, bio = ? WHERE id = ?",
@@ -163,7 +163,7 @@ def delete_solve(solve_id: UUID, account: AccountDependency) -> Response:
 @app.get("/api/export", response_model=ExportData)
 def export_data(account: AccountDependency) -> dict:
     with connect() as connection:
-        profile = connection.execute(
+        account_details = connection.execute(
             "SELECT id, display_name, bio, created_at FROM accounts WHERE id = ?",
             (account.id,),
         ).fetchone()
@@ -175,8 +175,8 @@ def export_data(account: AccountDependency) -> dict:
             (account.id,),
         ).fetchall()
     return {
-        "version": 3,
+        "version": 4,
         "exported_at": datetime.now(UTC).isoformat(),
-        "profile": dict(profile),
+        "account": dict(account_details),
         "solves": [dict(row) for row in solves],
     }

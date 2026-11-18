@@ -1,33 +1,33 @@
-import { faCrown, faTrashCan } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useMemo, useState } from "react";
-import { newestSolvesFirst, personalBestIds } from "../solves/stats";
-import { formatTime } from "../features/timer/timer";
-import type { Penalty, Solve } from "../types";
-import { formatAccountDate } from "./format";
+import { faCrown, faTrashCan } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { useMemo, useState } from "react"
+import { formatTime } from "../features/timer/timer"
+import { newestSolvesFirst, personalBestIds } from "../solves/stats"
+import type { Penalty, Solve } from "../types"
+import { formatAccountDate } from "./format"
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10
 
 export function RecentSolves({
     solves,
     onPenalty,
     onDelete,
 }: {
-    solves: Solve[];
-    onPenalty?: (solve: Solve, penalty: Penalty) => Promise<void>;
-    onDelete?: (solve: Solve) => Promise<void>;
+    solves: Solve[]
+    onPenalty?: (solve: Solve, penalty: Penalty) => Promise<void>
+    onDelete?: (solve: Solve) => Promise<void>
 }) {
-    const [limit, setLimit] = useState(PAGE_SIZE);
-    const [pendingIds, setPendingIds] = useState<string[]>([]);
-    const recent = useMemo(() => newestSolvesFirst(solves), [solves]);
-    const bestIds = useMemo(() => personalBestIds(solves), [solves]);
+    const [limit, setLimit] = useState(PAGE_SIZE)
+    const [pendingIds, setPendingIds] = useState<string[]>([])
+    const recent = useMemo(() => newestSolvesFirst(solves), [solves])
+    const bestIds = useMemo(() => personalBestIds(solves), [solves])
 
     async function withPending(solve: Solve, action: () => Promise<void>) {
-        setPendingIds((current) => [...current, solve.id]);
+        setPendingIds((current) => [...current, solve.id])
         try {
-            await action();
+            await action()
         } finally {
-            setPendingIds((current) => current.filter((id) => id !== solve.id));
+            setPendingIds((current) => current.filter((id) => id !== solve.id))
         }
     }
 
@@ -207,5 +207,5 @@ export function RecentSolves({
                 </>
             )}
         </section>
-    );
+    )
 }

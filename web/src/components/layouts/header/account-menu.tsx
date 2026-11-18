@@ -51,9 +51,9 @@ export const AccountMenu = ({ account }: AccountMenuProps) => {
         }
     }, [open, dismissMenu])
 
-    function openProfile() {
+    function openAccount() {
         dismissMenu()
-        navigate("/profile")
+        navigate("/account")
     }
 
     async function signOut() {
@@ -112,7 +112,7 @@ export const AccountMenu = ({ account }: AccountMenuProps) => {
                         dismissedRef.current = open
                         setOpen(!open)
                     } else {
-                        openProfile()
+                        openAccount()
                     }
                 }}
                 aria-label={`Account menu for ${account.display_name}`}

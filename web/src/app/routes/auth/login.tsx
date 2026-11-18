@@ -9,7 +9,7 @@ const LoginRoute = () => {
 
     useEffect(() => {
         if (!checking && account) {
-            navigate("/profile", { replace: true })
+            navigate("/account", { replace: true })
         }
     }, [account, checking, navigate])
 

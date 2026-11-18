@@ -1,16 +1,16 @@
-import { execFileSync } from "node:child_process";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { execFileSync } from "node:child_process"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
 
 function appVersion(): string {
-    if (process.env.CUBENCH_VERSION) return process.env.CUBENCH_VERSION;
+    if (process.env.CUBENCH_VERSION) return process.env.CUBENCH_VERSION
 
     try {
         return execFileSync("git", ["describe", "--tags", "--always"], {
             encoding: "utf8",
-        }).trim();
+        }).trim()
     } catch {
-        return "development";
+        return "development"
     }
 }
 
@@ -32,4 +32,4 @@ export default defineConfig({
             "/api": "http://localhost:8000",
         },
     },
-});
+})

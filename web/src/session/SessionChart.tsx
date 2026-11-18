@@ -1,25 +1,25 @@
-import type { ChartData, ChartOptions } from "chart.js";
-import { Line } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js"
+import { Line } from "react-chartjs-2"
 import {
     formatTimeAxisTick,
     getChartColors,
     getLineChartOptions,
     getTooltipOptions,
-} from "../Charts";
-import { buildSessionHistory } from "../solves/stats";
-import { formatTime } from "../features/timer/timer";
-import type { Solve } from "../types";
+} from "../Charts"
+import { formatTime } from "../features/timer/timer"
+import { buildSessionHistory } from "../solves/stats"
+import type { Solve } from "../types"
 
 type SessionChartProps = {
-    solves: Solve[];
-    theme: string;
-};
+    solves: Solve[]
+    theme: string
+}
 
 export function SessionChart({ solves, theme: _theme }: SessionChartProps) {
-    const history = buildSessionHistory(solves);
-    const colors = getChartColors();
-    const baseOptions = getLineChartOptions();
-    const compactPoints = history.length > 50;
+    const history = buildSessionHistory(solves)
+    const colors = getChartColors()
+    const baseOptions = getLineChartOptions()
+    const compactPoints = history.length > 50
     const data: ChartData<"line", (number | null)[], string> = {
         labels: history.map((_, index) => `#${index + 1}`),
         datasets: [
@@ -57,7 +57,7 @@ export function SessionChart({ solves, theme: _theme }: SessionChartProps) {
                 spanGaps: false,
             },
         ],
-    };
+    }
     const options: ChartOptions<"line"> = {
         ...baseOptions,
         interaction: { mode: "nearest", intersect: true },
@@ -67,19 +67,19 @@ export function SessionChart({ solves, theme: _theme }: SessionChartProps) {
                 ...getTooltipOptions(colors),
                 callbacks: {
                     title: (items) => {
-                        const index = items[0]?.dataIndex;
-                        return index === undefined ? "" : `solve #${index + 1}`;
+                        const index = items[0]?.dataIndex
+                        return index === undefined ? "" : `solve #${index + 1}`
                     },
                     label: (context) => {
-                        const { solve } = history[context.dataIndex];
+                        const { solve } = history[context.dataIndex]
                         if (context.dataset.label === "DNF") {
-                            return `DNF · raw ${formatTime(solve.duration_ms)}`;
+                            return `DNF · raw ${formatTime(solve.duration_ms)}`
                         }
 
-                        const value = context.parsed.y;
+                        const value = context.parsed.y
                         return value === null
                             ? ""
-                            : `${context.dataset.label}: ${formatTime(value)}`;
+                            : `${context.dataset.label}: ${formatTime(value)}`
                     },
                 },
             },
@@ -101,7 +101,7 @@ export function SessionChart({ solves, theme: _theme }: SessionChartProps) {
                 },
             },
         },
-    };
+    }
 
     return (
         <Line
@@ -110,5 +110,5 @@ export function SessionChart({ solves, theme: _theme }: SessionChartProps) {
             role="img"
             aria-label={`Chart of ${history.length} session solves with adjusted singles, DNF attempts, and ao5`}
         />
-    );
+    )
 }

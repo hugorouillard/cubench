@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import type { Penalty, Solve } from "../../types";
+import { describe, expect, it } from "vitest"
+import type { Penalty, Solve } from "../../types"
 import {
     buildSessionHistory,
     lifetimeSolveSummary,
@@ -7,14 +7,14 @@ import {
     personalBestIds,
     summarizeSolves,
     trimmedAverage,
-} from "../stats";
+} from "../stats"
 
 function solve(
     durationMs: number,
     penalty: Penalty = "none",
     index = 0,
 ): Solve {
-    const timestamp = new Date(Date.UTC(2026, 0, index + 1)).toISOString();
+    const timestamp = new Date(Date.UTC(2026, 0, index + 1)).toISOString()
     return {
         id: String(index),
         duration_ms: durationMs,
@@ -22,7 +22,7 @@ function solve(
         scramble: "R U",
         recorded_at: timestamp,
         created_at: timestamp,
-    };
+    }
 }
 
 it("sorts newest first with an id tie-breaker without mutating its input", () => {
@@ -30,14 +30,14 @@ it("sorts newest first with an id tie-breaker without mutating its input", () =>
         solve(10_000),
         { ...solve(11_000, "none", 1), id: "a" },
         { ...solve(12_000, "none", 1), id: "b" },
-    ];
+    ]
     expect(newestSolvesFirst(input).map(({ id }) => id)).toEqual([
         "b",
         "a",
         "0",
-    ]);
-    expect(input.map(({ id }) => id)).toEqual(["0", "a", "b"]);
-});
+    ])
+    expect(input.map(({ id }) => id)).toEqual(["0", "a", "b"])
+})
 
 describe("trimmedAverage", () => {
     it("drops the fastest and slowest results", () => {
@@ -45,8 +45,8 @@ describe("trimmedAverage", () => {
             trimmedAverage(
                 [1, 11, 12, 13, 100].map((seconds) => solve(seconds * 1000)),
             ),
-        ).toBe(12_000);
-    });
+        ).toBe(12_000)
+    })
 
     it("allows one DNF but rejects two", () => {
         const solves = [
@@ -55,24 +55,24 @@ describe("trimmedAverage", () => {
             solve(12_000),
             solve(13_000),
             solve(14_000, "dnf"),
-        ];
-        expect(trimmedAverage(solves)).toBe(12_000);
+        ]
+        expect(trimmedAverage(solves)).toBe(12_000)
         expect(
             trimmedAverage([
                 ...solves.slice(0, 3),
                 solve(13_000, "dnf"),
                 solve(14_000, "dnf"),
             ]),
-        ).toBeNull();
-    });
-});
+        ).toBeNull()
+    })
+})
 
 describe("solve summary", () => {
     it("uses the latest attempts for current averages, regardless of input order", () => {
         const solves = Array.from({ length: 12 }, (_, index) =>
             solve((10 + index) * 1000, "none", index),
-        );
-        const shuffled = [...solves.slice(6), ...solves.slice(0, 6)];
+        )
+        const shuffled = [...solves.slice(6), ...solves.slice(0, 6)]
         for (const input of [solves, solves.toReversed(), shuffled]) {
             expect(summarizeSolves(input)).toEqual({
                 mean: 15_500,
@@ -80,9 +80,9 @@ describe("solve summary", () => {
                 currentAo5: 19_000,
                 bestAo5: 12_000,
                 currentAo12: 15_500,
-            });
+            })
         }
-    });
+    })
 
     it("includes +2 and excludes DNFs from the mean and best single", () => {
         expect(
@@ -97,26 +97,26 @@ describe("solve summary", () => {
             currentAo5: null,
             bestAo5: null,
             currentAo12: null,
-        });
-    });
+        })
+    })
 
     it("waits for a full window of attempts", () => {
         const solves = Array.from({ length: 12 }, (_, index) =>
             solve(10_000, "none", index),
-        );
-        expect(summarizeSolves(solves.slice(0, 4)).currentAo5).toBeNull();
-        expect(summarizeSolves(solves.slice(0, 5)).currentAo5).toBe(10_000);
-        expect(summarizeSolves(solves.slice(0, 11)).currentAo12).toBeNull();
-        expect(summarizeSolves(solves).currentAo12).toBe(10_000);
+        )
+        expect(summarizeSolves(solves.slice(0, 4)).currentAo5).toBeNull()
+        expect(summarizeSolves(solves.slice(0, 5)).currentAo5).toBe(10_000)
+        expect(summarizeSolves(solves.slice(0, 11)).currentAo12).toBeNull()
+        expect(summarizeSolves(solves).currentAo12).toBe(10_000)
         expect(summarizeSolves([])).toEqual({
             mean: null,
             bestSingle: null,
             currentAo5: null,
             bestAo5: null,
             currentAo12: null,
-        });
-    });
-});
+        })
+    })
+})
 
 describe("lifetime records", () => {
     it("keeps the first achievement date and counts raw time including DNFs", () => {
@@ -126,7 +126,7 @@ describe("lifetime records", () => {
                 index === 0 ? "plus2" : index === 4 ? "dnf" : "none",
                 index,
             ),
-        );
+        )
         expect(lifetimeSolveSummary(solves.toReversed())).toEqual({
             loggedCount: 12,
             totalRawDurationMs: 158_000,
@@ -141,8 +141,8 @@ describe("lifetime records", () => {
                 achievedAt: solves[11].recorded_at,
             },
             bestAo50: null,
-        });
-    });
+        })
+    })
 
     it("retains the existing trimmed ao50 over attempts, including penalties and DNFs", () => {
         const solves = Array.from({ length: 51 }, (_, index) =>
@@ -151,11 +151,11 @@ describe("lifetime records", () => {
                 index < 2 ? "dnf" : index < 5 ? "plus2" : "none",
                 index,
             ),
-        );
-        expect(lifetimeSolveSummary(solves.slice(0, 49)).bestAo50).toBeNull();
-        expect(lifetimeSolveSummary(solves.slice(0, 50)).bestAo50).toBeNull();
-        expect(lifetimeSolveSummary(solves.toReversed()).bestAo50).toBe(10_125);
-    });
+        )
+        expect(lifetimeSolveSummary(solves.slice(0, 49)).bestAo50).toBeNull()
+        expect(lifetimeSolveSummary(solves.slice(0, 50)).bestAo50).toBeNull()
+        expect(lifetimeSolveSummary(solves.toReversed()).bestAo50).toBe(10_125)
+    })
 
     it("has no records without successful solves", () => {
         expect(lifetimeSolveSummary([])).toEqual({
@@ -166,12 +166,12 @@ describe("lifetime records", () => {
             bestAo5: null,
             bestAo12: null,
             bestAo50: null,
-        });
+        })
         expect(
             lifetimeSolveSummary([solve(10_000, "dnf")]).bestSingle,
-        ).toBeNull();
-    });
-});
+        ).toBeNull()
+    })
+})
 
 it("marks only improving completed solves as personal bests", () => {
     expect(
@@ -182,8 +182,8 @@ it("marks only improving completed solves as personal bests", () => {
             solve(9_000, "none", 3),
             solve(8_000, "dnf", 4),
         ]),
-    ).toEqual(new Set(["0", "1", "2"]));
-});
+    ).toEqual(new Set(["0", "1", "2"]))
+})
 
 it("returns chronological session singles and trimmed ao5s, retaining DNF attempts", () => {
     const solves = [
@@ -193,7 +193,7 @@ it("returns chronological session singles and trimmed ao5s, retaining DNF attemp
         solve(11_000, "none", 3),
         solve(11_000, "dnf", 4),
         solve(11_000, "dnf", 5),
-    ];
+    ]
     expect(buildSessionHistory(solves.toReversed())).toEqual([
         { solve: solves[0], singleMs: 12_000, ao5Ms: null },
         { solve: solves[1], singleMs: 9_000, ao5Ms: null },
@@ -201,6 +201,6 @@ it("returns chronological session singles and trimmed ao5s, retaining DNF attemp
         { solve: solves[3], singleMs: 11_000, ao5Ms: null },
         { solve: solves[4], singleMs: null, ao5Ms: 11_333 },
         { solve: solves[5], singleMs: null, ao5Ms: null },
-    ]);
-    expect(buildSessionHistory([])).toEqual([]);
-});
+    ])
+    expect(buildSessionHistory([])).toEqual([])
+})

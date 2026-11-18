@@ -30,9 +30,7 @@ class Account(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    username: str = Field(
-        min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_-]+$"
-    )
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_-]+$")
     password: str = Field(min_length=8, max_length=128)
     invite_code: str = Field(min_length=1, max_length=256)
 
@@ -123,9 +121,7 @@ def _account(row: sqlite3.Row) -> Account:
     )
 
 
-def _set_session_cookie(
-    response: Response, token: str, config: RuntimeConfig
-) -> None:
+def _set_session_cookie(response: Response, token: str, config: RuntimeConfig) -> None:
     response.set_cookie(
         SESSION_COOKIE,
         token,
@@ -163,16 +159,18 @@ def require_account(
 AccountDependency = Annotated[Account, Depends(require_account)]
 
 
-@router.post(
-    "/register", response_model=Account, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=Account, status_code=status.HTTP_201_CREATED)
 def register(
     payload: RegisterRequest, response: Response, config: ConfigDependency
 ) -> Account:
     if payload.username == DEV_USERNAME:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reserved username")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Reserved username"
+        )
     expected_invite = _invite_code(config)
-    if not secrets.compare_digest(payload.invite_code.encode(), expected_invite.encode()):
+    if not secrets.compare_digest(
+        payload.invite_code.encode(), expected_invite.encode()
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid invite code"
         )

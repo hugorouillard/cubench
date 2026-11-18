@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { Penalty } from "../../types";
-import { inspectionPenalty } from "./timer";
+import { useCallback, useEffect, useRef, useState } from "react"
+import type { Penalty } from "../../types"
+import { inspectionPenalty } from "./timer"
 
 export type TimerPhase =
     | "idle"
@@ -10,9 +10,9 @@ export type TimerPhase =
     | "inspection-holding"
     | "inspection-ready"
     | "running"
-    | "stopped";
+    | "stopped"
 
-const HOLD_DELAY_MS = 350;
+const HOLD_DELAY_MS = 350
 
 function isTypingTarget(target: EventTarget | null): boolean {
     return (
@@ -22,7 +22,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
                 'input, select, textarea, button, [contenteditable="true"]',
             ),
         )
-    );
+    )
 }
 
 export function useTimer(
@@ -30,30 +30,30 @@ export function useTimer(
     inspectionEnabled: boolean,
     onComplete: (durationMs: number, penalty: Penalty) => void,
 ) {
-    const [phase, setPhase] = useState<TimerPhase>("idle");
-    const [elapsedMs, setElapsedMs] = useState(0);
-    const phaseRef = useRef<TimerPhase>("idle");
-    const enabledRef = useRef(enabled);
-    const inspectionEnabledRef = useRef(inspectionEnabled);
-    const startedAtRef = useRef(0);
-    const solvePenaltyRef = useRef<Penalty>("none");
-    const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const onCompleteRef = useRef(onComplete);
+    const [phase, setPhase] = useState<TimerPhase>("idle")
+    const [elapsedMs, setElapsedMs] = useState(0)
+    const phaseRef = useRef<TimerPhase>("idle")
+    const enabledRef = useRef(enabled)
+    const inspectionEnabledRef = useRef(inspectionEnabled)
+    const startedAtRef = useRef(0)
+    const solvePenaltyRef = useRef<Penalty>("none")
+    const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const onCompleteRef = useRef(onComplete)
 
-    enabledRef.current = enabled;
-    inspectionEnabledRef.current = inspectionEnabled;
-    onCompleteRef.current = onComplete;
+    enabledRef.current = enabled
+    inspectionEnabledRef.current = inspectionEnabled
+    onCompleteRef.current = onComplete
 
     useEffect(() => {
         function transition(nextPhase: TimerPhase) {
-            phaseRef.current = nextPhase;
-            setPhase(nextPhase);
+            phaseRef.current = nextPhase
+            setPhase(nextPhase)
         }
 
         function clearHoldTimeout() {
             if (holdTimeoutRef.current !== null) {
-                clearTimeout(holdTimeoutRef.current);
-                holdTimeoutRef.current = null;
+                clearTimeout(holdTimeoutRef.current)
+                holdTimeoutRef.current = null
             }
         }
 
@@ -61,10 +61,10 @@ export function useTimer(
             const durationMs = Math.max(
                 0,
                 Math.round(performance.now() - startedAtRef.current),
-            );
-            setElapsedMs(durationMs);
-            transition("stopped");
-            onCompleteRef.current(durationMs, penalty);
+            )
+            setElapsedMs(durationMs)
+            transition("stopped")
+            onCompleteRef.current(durationMs, penalty)
         }
 
         function handleKeyDown(event: KeyboardEvent) {
@@ -73,9 +73,9 @@ export function useTimer(
                 !event.repeat &&
                 phaseRef.current === "running"
             ) {
-                event.preventDefault();
-                stopTimer("dnf");
-                return;
+                event.preventDefault()
+                stopTimer("dnf")
+                return
             }
 
             if (
@@ -83,23 +83,23 @@ export function useTimer(
                 event.repeat ||
                 isTypingTarget(event.target)
             )
-                return;
-            event.preventDefault();
+                return
+            event.preventDefault()
 
             if (phaseRef.current === "running") {
-                stopTimer(solvePenaltyRef.current);
-                return;
+                stopTimer(solvePenaltyRef.current)
+                return
             }
 
             if (phaseRef.current === "inspection") {
-                transition("inspection-holding");
-                clearHoldTimeout();
+                transition("inspection-holding")
+                clearHoldTimeout()
                 holdTimeoutRef.current = setTimeout(() => {
                     if (phaseRef.current === "inspection-holding") {
-                        transition("inspection-ready");
+                        transition("inspection-ready")
                     }
-                }, HOLD_DELAY_MS);
-                return;
+                }, HOLD_DELAY_MS)
+                return
             }
 
             if (
@@ -107,44 +107,44 @@ export function useTimer(
                 (phaseRef.current === "idle" || phaseRef.current === "stopped")
             ) {
                 if (inspectionEnabledRef.current) {
-                    startedAtRef.current = performance.now();
-                    setElapsedMs(0);
-                    transition("inspection");
-                    return;
+                    startedAtRef.current = performance.now()
+                    setElapsedMs(0)
+                    transition("inspection")
+                    return
                 }
 
-                transition("holding");
-                clearHoldTimeout();
+                transition("holding")
+                clearHoldTimeout()
                 holdTimeoutRef.current = setTimeout(() => {
-                    if (phaseRef.current === "holding") transition("ready");
-                }, HOLD_DELAY_MS);
+                    if (phaseRef.current === "holding") transition("ready")
+                }, HOLD_DELAY_MS)
             }
         }
 
         function handleKeyUp(event: KeyboardEvent) {
-            if (event.code !== "Space" || isTypingTarget(event.target)) return;
-            event.preventDefault();
+            if (event.code !== "Space" || isTypingTarget(event.target)) return
+            event.preventDefault()
 
             if (phaseRef.current === "holding") {
-                clearHoldTimeout();
-                transition("idle");
+                clearHoldTimeout()
+                transition("idle")
             } else if (phaseRef.current === "inspection-holding") {
-                clearHoldTimeout();
-                transition("inspection");
+                clearHoldTimeout()
+                transition("inspection")
             } else if (phaseRef.current === "ready") {
-                clearHoldTimeout();
-                solvePenaltyRef.current = "none";
-                startedAtRef.current = performance.now();
-                setElapsedMs(0);
-                transition("running");
+                clearHoldTimeout()
+                solvePenaltyRef.current = "none"
+                startedAtRef.current = performance.now()
+                setElapsedMs(0)
+                transition("running")
             } else if (phaseRef.current === "inspection-ready") {
-                clearHoldTimeout();
+                clearHoldTimeout()
                 solvePenaltyRef.current = inspectionPenalty(
                     performance.now() - startedAtRef.current,
-                );
-                startedAtRef.current = performance.now();
-                setElapsedMs(0);
-                transition("running");
+                )
+                startedAtRef.current = performance.now()
+                setElapsedMs(0)
+                transition("running")
             }
         }
 
@@ -153,27 +153,27 @@ export function useTimer(
                 phaseRef.current === "holding" ||
                 phaseRef.current === "ready"
             ) {
-                clearHoldTimeout();
-                transition("idle");
+                clearHoldTimeout()
+                transition("idle")
             } else if (
                 phaseRef.current === "inspection-holding" ||
                 phaseRef.current === "inspection-ready"
             ) {
-                clearHoldTimeout();
-                transition("inspection");
+                clearHoldTimeout()
+                transition("inspection")
             }
         }
 
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-        window.addEventListener("blur", handleBlur);
+        window.addEventListener("keydown", handleKeyDown)
+        window.addEventListener("keyup", handleKeyUp)
+        window.addEventListener("blur", handleBlur)
         return () => {
-            clearHoldTimeout();
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-            window.removeEventListener("blur", handleBlur);
-        };
-    }, []);
+            clearHoldTimeout()
+            window.removeEventListener("keydown", handleKeyDown)
+            window.removeEventListener("keyup", handleKeyUp)
+            window.removeEventListener("blur", handleBlur)
+        }
+    }, [])
 
     useEffect(() => {
         if (
@@ -182,28 +182,28 @@ export function useTimer(
             phase !== "inspection-ready" &&
             phase !== "running"
         ) {
-            return;
+            return
         }
 
-        let animationFrame = 0;
+        let animationFrame = 0
         function updateDisplay() {
-            setElapsedMs(performance.now() - startedAtRef.current);
-            animationFrame = requestAnimationFrame(updateDisplay);
+            setElapsedMs(performance.now() - startedAtRef.current)
+            animationFrame = requestAnimationFrame(updateDisplay)
         }
-        animationFrame = requestAnimationFrame(updateDisplay);
-        return () => cancelAnimationFrame(animationFrame);
-    }, [phase]);
+        animationFrame = requestAnimationFrame(updateDisplay)
+        return () => cancelAnimationFrame(animationFrame)
+    }, [phase])
 
     const reset = useCallback(() => {
-        if (phaseRef.current === "running") return;
+        if (phaseRef.current === "running") return
         if (holdTimeoutRef.current !== null) {
-            clearTimeout(holdTimeoutRef.current);
-            holdTimeoutRef.current = null;
+            clearTimeout(holdTimeoutRef.current)
+            holdTimeoutRef.current = null
         }
-        phaseRef.current = "idle";
-        setPhase("idle");
-        setElapsedMs(0);
-    }, []);
+        phaseRef.current = "idle"
+        setPhase("idle")
+        setElapsedMs(0)
+    }, [])
 
-    return { phase, elapsedMs, reset };
+    return { phase, elapsedMs, reset }
 }

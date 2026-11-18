@@ -8,7 +8,7 @@ import {
     PointElement,
     type Tick,
     Tooltip,
-} from "chart.js";
+} from "chart.js"
 
 ChartJS.register(
     CategoryScale,
@@ -17,15 +17,15 @@ ChartJS.register(
     LineElement,
     LineController,
     Tooltip,
-);
+)
 ChartJS.defaults.font.family = getComputedStyle(
     document.documentElement,
-).fontFamily;
+).fontFamily
 
 export function getChartColors() {
-    const style = getComputedStyle(document.documentElement);
+    const style = getComputedStyle(document.documentElement)
     const color = (variable: string, fallback: string) =>
-        style.getPropertyValue(variable).trim() || fallback;
+        style.getPropertyValue(variable).trim() || fallback
 
     return {
         background: color("--bg-color", "#1e1e2e"),
@@ -35,10 +35,10 @@ export function getChartColors() {
         surface: color("--sub-alt-color", "#181825"),
         error: color("--error-readable-color", "#eba0ac"),
         line: color("--line-color", "#313244"),
-    };
+    }
 }
 
-type ChartColors = ReturnType<typeof getChartColors>;
+type ChartColors = ReturnType<typeof getChartColors>
 
 export function getLineChartOptions(): ChartOptions<"line"> {
     return {
@@ -47,7 +47,7 @@ export function getLineChartOptions(): ChartOptions<"line"> {
         animation: false,
         normalized: true,
         plugins: { legend: { display: false } },
-    };
+    }
 }
 
 export function formatTimeAxisTick(
@@ -55,27 +55,27 @@ export function formatTimeAxisTick(
     _index: number,
     ticks: Tick[],
 ): string {
-    const valueMs = Number(value);
-    const tickValues = ticks.map((tick) => tick.value);
+    const valueMs = Number(value)
+    const tickValues = ticks.map((tick) => tick.value)
     const allTicksOnStep = (stepMs: number) =>
         tickValues.every(
             (tickMs) =>
                 Math.abs(tickMs - Math.round(tickMs / stepMs) * stepMs) < 0.001,
-        );
+        )
     // Show only the precision needed to represent every tick on this axis.
-    const decimals = allTicksOnStep(1_000) ? 0 : allTicksOnStep(100) ? 1 : 2;
+    const decimals = allTicksOnStep(1_000) ? 0 : allTicksOnStep(100) ? 1 : 2
 
     const roundedSeconds =
         Math.round(Math.abs(valueMs) / (1_000 / 10 ** decimals)) /
-        10 ** decimals;
-    const minutes = Math.floor(roundedSeconds / 60);
-    const seconds = roundedSeconds - minutes * 60;
-    const secondText = seconds.toFixed(decimals);
+        10 ** decimals
+    const minutes = Math.floor(roundedSeconds / 60)
+    const seconds = roundedSeconds - minutes * 60
+    const secondText = seconds.toFixed(decimals)
     const time =
         minutes > 0
             ? `${minutes}:${secondText.padStart(decimals ? decimals + 3 : 2, "0")}`
-            : secondText;
-    return valueMs < 0 ? `-${time}` : time;
+            : secondText
+    return valueMs < 0 ? `-${time}` : time
 }
 
 export function getTooltipOptions(colors: ChartColors) {
@@ -86,5 +86,5 @@ export function getTooltipOptions(colors: ChartColors) {
         bodyColor: colors.muted,
         borderColor: colors.line,
         borderWidth: 1,
-    };
+    }
 }
