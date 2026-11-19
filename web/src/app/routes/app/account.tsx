@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useNavigate } from "react-router"
 import { useAuth } from "../../../features/auth/useAuth"
 
-const AccountRoute = () => {
+export const AccountRoute = () => {
     const { account, checking } = useAuth()
     const navigate = useNavigate()
 
@@ -16,5 +16,3 @@ const AccountRoute = () => {
     if (!account) return null
     return <h1>{account.display_name}</h1>
 }
-
-export default AccountRoute

@@ -1,8 +1,5 @@
 import { createBrowserRouter } from "react-router"
 import { RouterProvider } from "react-router/dom"
-import AccountRoute from "./routes/app/account"
-import PracticeRoute from "./routes/app/practice"
-import LoginRoute from "./routes/auth/login"
 import AppRoot from "./routes/root"
 
 const router = createBrowserRouter([
@@ -12,15 +9,24 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <PracticeRoute />,
+                lazy: () =>
+                    import("./routes/app/practice").then((module) => ({
+                        Component: module.PracticeRoute,
+                    })),
             },
             {
                 path: "login",
-                element: <LoginRoute />,
+                lazy: () =>
+                    import("./routes/auth/login").then((module) => ({
+                        Component: module.LoginRoute,
+                    })),
             },
             {
                 path: "account",
-                element: <AccountRoute />,
+                lazy: () =>
+                    import("./routes/app/account").then((module) => ({
+                        Component: module.AccountRoute,
+                    })),
             },
         ],
     },

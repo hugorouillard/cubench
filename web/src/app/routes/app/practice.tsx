@@ -44,7 +44,7 @@ function phaseInstruction(
     return "hold space to start"
 }
 
-const PracticeRoute = () => {
+export const PracticeRoute = () => {
     const repository = useOutletContext<SolveRepository>()
     const { session: solves } = useSyncExternalStore(
         repository.subscribe,
@@ -349,5 +349,3 @@ const PracticeRoute = () => {
         </>
     )
 }
-
-export default PracticeRoute

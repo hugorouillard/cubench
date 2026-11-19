@@ -3,7 +3,7 @@ import { useNavigate } from "react-router"
 import { AuthPage } from "../../../features/auth/AuthPage"
 import { useAuth } from "../../../features/auth/useAuth"
 
-const LoginRoute = () => {
+export const LoginRoute = () => {
     const navigate = useNavigate()
     const { account, checking } = useAuth()
 
@@ -15,5 +15,3 @@ const LoginRoute = () => {
 
     return <AuthPage />
 }
-
-export default LoginRoute
