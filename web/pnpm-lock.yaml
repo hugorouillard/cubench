@@ -206,6 +206,9 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: ^3.5.0
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.2.8)
+      '@tanstack/react-query':
+        specifier: ^5.108.2
+        version: 5.108.2(@types/react@19.2.18)(react@19.2.8)
       chart.js:
         specifier: ^4.5.1
         version: 4.5.1
@@ -565,6 +568,18 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  '@tanstack/query-core@5.108.2':
+    resolution: {integrity: sha512-0l+0xDKqn71hfJBKaAvFP/X7WYM0TbscEk6nK1pHaWQUWUEA+WJD0VlT8wF+HIJANMV9B/DouPWwDnX3w/l9BA==}
+
+  '@tanstack/react-query@5.108.2':
+    resolution: {integrity: sha512-wV6hEjVGTfh9rvu3uREYW0hgBfS9klDejGelhPY575jD5jg6qbAb1nzT7hR1Q+wemR66ZjtE5p9pAGUwqK8zbg==}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -1345,6 +1360,15 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
+
+  '@tanstack/query-core@5.108.2': {}
+
+  '@tanstack/react-query@5.108.2(@types/react@19.2.18)(react@19.2.8)':
+    dependencies:
+      '@tanstack/query-core': 5.108.2
+      react: 19.2.8
+    optionalDependencies:
+      '@types/react': 19.2.18
 
   '@testing-library/dom@10.4.1':
     dependencies:

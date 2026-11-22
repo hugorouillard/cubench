@@ -1,10 +1,10 @@
-import { AuthProvider } from "../features/auth/AuthProvider"
+import { AppProvider } from "./provider"
 import { AppRouter } from "./router"
 
 export const App = () => {
     return (
-        <AuthProvider>
+        <AppProvider>
             <AppRouter />
-        </AuthProvider>
+        </AppProvider>
     )
 }
