@@ -11,7 +11,7 @@ import {
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import type { TimerPhase } from "../../../../features/timer/useTimer"
 import type { Penalty } from "../../../../types"
-import PracticeRoute from "../practice"
+import { PracticeRoute } from "../practice"
 
 const scramble = vi.hoisted(() => ({ random: vi.fn() }))
 const timer = vi.hoisted(() => ({
