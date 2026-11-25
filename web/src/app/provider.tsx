@@ -8,7 +8,6 @@ type AppProviderProps = {
 
 export const AppProvider = ({ children }: AppProviderProps) => {
     const [queryClient] = useState(() => new QueryClient())
-
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>{children}</AuthProvider>

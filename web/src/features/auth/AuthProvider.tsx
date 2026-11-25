@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query"
 import {
     type ReactNode,
     useCallback,
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [sessionError, setSessionError] = useState("")
     // Prevent overlapping commands even before React renders the pending state.
     const operationInFlight = useRef(false)
+    const queryClient = useQueryClient()
 
     useEffect(() => {
         let cancelled = false
@@ -65,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setPending(operation)
             try {
                 const nextAccount = await request()
+                // account queries must never cross a sign-in/sign-out boundary.
+                await queryClient.cancelQueries({ queryKey: ["account"] })
+                queryClient.removeQueries({ queryKey: ["account"] })
                 setAccount(nextAccount)
                 setSessionError("")
             } finally {
@@ -72,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setPending(null)
             }
         },
-        [checking],
+        [checking, queryClient],
     )
 
     const applyAccount = useCallback((updated: AccountDetails) => {

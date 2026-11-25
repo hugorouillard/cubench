@@ -1,17 +1,12 @@
-import { useEffect } from "react"
 import { useNavigate } from "react-router"
 import { AuthPage } from "../../../features/auth/AuthPage"
-import { useAuth } from "../../../features/auth/useAuth"
 
 export const LoginRoute = () => {
     const navigate = useNavigate()
-    const { account, checking } = useAuth()
 
-    useEffect(() => {
-        if (!checking && account) {
-            navigate("/account", { replace: true })
-        }
-    }, [account, checking, navigate])
-
-    return <AuthPage />
+    // Navigate after a successful sign-in, not merely because auth context has
+    // an account: it may be stale when the account loader redirects on a 401.
+    return (
+        <AuthPage onSuccess={() => navigate("/account", { replace: true })} />
+    )
 }

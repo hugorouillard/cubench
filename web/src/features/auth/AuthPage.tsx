@@ -9,13 +9,14 @@ import "./AuthPage.css"
 
 type AuthFormProps = {
     mode: "login" | "register"
+    onSuccess?: () => void
 }
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong"
 }
 
-function AuthForm({ mode }: AuthFormProps) {
+function AuthForm({ mode, onSuccess }: AuthFormProps) {
     const { login, register, checking, pending } = useAuth()
     const busy = checking || pending !== null
     const submitting = pending === mode
@@ -34,6 +35,7 @@ function AuthForm({ mode }: AuthFormProps) {
             if (isRegister)
                 await register({ username, password, invite_code: inviteCode })
             else await login({ username, password })
+            onSuccess?.()
         } catch (authError) {
             setError(errorMessage(authError))
         }
@@ -120,15 +122,15 @@ function AuthForm({ mode }: AuthFormProps) {
     )
 }
 
-export const AuthPage = () => {
+export const AuthPage = ({ onSuccess }: { onSuccess?: () => void }) => {
     const { checking, pending } = useAuth()
     const busy = checking || pending !== null
 
     return (
         <main className="auth-page page-width">
             <div className="auth-columns">
-                <AuthForm mode="register" />
-                <AuthForm mode="login" />
+                <AuthForm mode="register" onSuccess={onSuccess} />
+                <AuthForm mode="login" onSuccess={onSuccess} />
             </div>
             <div className="auth-footer">
                 <button type="button" disabled={busy}>
